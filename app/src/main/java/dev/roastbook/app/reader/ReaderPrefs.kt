@@ -19,6 +19,8 @@ data class ReaderSettings(
     val nanoFailing: Boolean = false,
     val nanoFailReason: String? = null,
     val nanoFailedAt: Long? = null,
+    /** Read bags with the on-device reader (once downloaded) instead of this device's built-in AI. */
+    val preferReader: Boolean = false,
 )
 
 /**
@@ -32,6 +34,7 @@ class ReaderPrefs(private val store: DataStore<Preferences>, private val now: ()
         val nanoFailing = booleanPreferencesKey("nano_failing")
         val nanoFailReason = stringPreferencesKey("nano_fail_reason")
         val nanoFailedAt = longPreferencesKey("nano_failed_at")
+        val preferReader = booleanPreferencesKey("prefer_reader")
     }
 
     val settings: Flow<ReaderSettings> = store.data.map { p ->
@@ -40,13 +43,18 @@ class ReaderPrefs(private val store: DataStore<Preferences>, private val now: ()
             nanoFailing = p[K.nanoFailing] ?: false,
             nanoFailReason = p[K.nanoFailReason],
             nanoFailedAt = p[K.nanoFailedAt],
+            preferReader = p[K.preferReader] ?: false,
         )
     }
 
     suspend fun current(): ReaderSettings = settings.first()
     suspend fun setAllowMetered(on: Boolean) { store.edit { it[K.allowMetered] = on } }
 
+    suspend fun setPreferReader(on: Boolean) { store.edit { it[K.preferReader] = on } }
+
     override suspend fun nanoFailing(): Boolean = current().nanoFailing
+
+    override suspend fun readerPreferred(): Boolean = current().preferReader
 
     override suspend fun recordNano(ok: Boolean, reason: String?) {
         store.edit { p ->

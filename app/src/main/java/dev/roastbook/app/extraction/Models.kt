@@ -24,6 +24,19 @@ data class BagFacts(
             roaster, coffeeName, originCountry, region, producer, process, roastLevel, roastDate, bagDescription, sellerDescription,
         )
             .all { it.isNullOrBlank() } && varietal.isEmpty() && tastingNotes.isEmpty() && elevationM == null && bagSizeG == null
+
+    /** How many fields hold something. */
+    val fieldCount: Int
+        get() = listOf(
+            roaster, coffeeName, originCountry, region, producer, process, roastLevel, roastDate, bagDescription, sellerDescription,
+        ).count { !it.isNullOrBlank() } + listOf(varietal, tastingNotes).count { it.isNotEmpty() } +
+            listOf(elevationM, bagSizeG).count { it != null }
+
+    /**
+     * A reading that names neither the roaster nor the coffee. Nearly every bag prints at least one
+     * of them, so a model that found neither most likely misread the label.
+     */
+    val isThin: Boolean get() = roaster.isNullOrBlank() && coffeeName.isNullOrBlank()
 }
 
 /**
@@ -69,11 +82,16 @@ interface LocalTier {
     fun modelName(): String
 }
 
-/** Device-scoped memory of how Gemini Nano has behaved here; kept out of every backup. */
+/**
+ * Device-scoped memory of how Gemini Nano has behaved here, and the person's choice of reader on
+ * this device; kept out of every backup.
+ */
 interface NanoHealth {
     /** True once Nano has failed on this device, until it next succeeds. */
     suspend fun nanoFailing(): Boolean
     suspend fun recordNano(ok: Boolean, reason: String? = null)
+    /** The person chose, in Settings, to have the on-device reader read bags instead of Nano. */
+    suspend fun readerPreferred(): Boolean = false
 }
 
 /** Where a read runs. The system model (Nano) refuses background callers; the other tiers don't. */
@@ -89,7 +107,11 @@ data class ExtractionTimeouts(
     val preparingBadgeMs: Long = 1_500L,
     /** How long one read waits on Nano's download before parking the row (the download itself continues). */
     val prepareMs: Long = 60_000L,
-    /** Nano answers in 2-4 s on supported phones; a call still running after this is stuck. */
+    /**
+     * Nano answers in 2-4 s on a Pixel phone, but one MediaTek tablet took 26 s for a 255-token
+     * answer (about 10 tokens a second), so this bound is not far above a long, normal answer there.
+     * A call still running after it is stuck or running away.
+     */
     val nanoMs: Long = 90_000L,
     /** The on-device reader takes 20-35 s per bag on a flagship CPU (two calls if the first is not JSON); slower phones get room. */
     val localMs: Long = 6 * 60_000L,

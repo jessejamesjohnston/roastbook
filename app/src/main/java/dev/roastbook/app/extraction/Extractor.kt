@@ -43,6 +43,9 @@ data class ExtractionOutcome(val source: ExtractionSource, val facts: BagFacts?,
  *          5 minutes; the third miss falls through. prepare() and every call are time-bounded, so a
  *          download that never reports back cannot hold the queue.
  *          background blocked → parked until the next foreground; the third miss falls through.
+ *          skipped while the person chose the reader in Settings and it is downloaded.
+ *          a thin reading (neither roaster nor coffee) is checked against the reader when it is
+ *          downloaded, and the reading with more fields is kept (NANO or LOCAL).
  *     2. the on-device reader (downloaded open model, runs in-process) → LOCAL
  *     3. the user's Gemini key → CLOUD
  *     4. a rule-based guess over the OCR text (fills blank fields only) → OCR
@@ -144,6 +147,16 @@ class Extractor @Inject constructor(
             is NanoStep.Read -> {
                 val note = "nano:${nano.modelName()}"
                 val read = trail.with(Tier.NANO, TierOutcome.READ)
+                // A thin reading (neither roaster nor coffee) gets a second opinion from the on-device
+                // reader when it is downloaded; the reading with more fields is kept.
+                if (step.facts.isThin && localReady()) {
+                    val thin = ModelStep.Next(trail.with(Tier.NANO, TierOutcome.EMPTY), "nano read too little (${step.facts.fieldCount} fields)")
+                    val second = localStep(coffeeId, ::images, pages, thin)
+                    if (second is ModelStep.Read && second.facts.fieldCount > step.facts.fieldCount) {
+                        val localNote = "local:${local.modelName()}; after ${second.notes}"
+                        return finish(coffeeId, ExtractionSource.LOCAL, second.facts, ocrText, localNote, second.trail, baseline = coffee)
+                    }
+                }
                 return finish(coffeeId, ExtractionSource.NANO, step.facts, ocrText, note, read, baseline = coffee)
             }
             is NanoStep.Stop -> return step.outcome
@@ -264,6 +277,10 @@ class Extractor @Inject constructor(
     private suspend fun nanoStep(
         coffeeId: String, loadImages: suspend () -> List<Bitmap>, pages: List<OcrPage>, ocrText: String, mode: RunMode,
     ): NanoStep {
+        // The person chose the on-device reader in Settings: Nano is not asked while the reader is ready.
+        if (nanoHealth.readerPreferred() && localReady()) {
+            return NanoStep.Fall(TierOutcome.SKIPPED, "nano skipped (reader chosen in Settings)")
+        }
         val status: NanoStatus? = try {
             withTimeoutOrNull(timeouts.statusMs) { nano.status() }
         } catch (e: CancellationException) {
@@ -277,8 +294,7 @@ class Extractor @Inject constructor(
             // the on-device reader is ready to take over does the read go ahead without Nano;
             // otherwise the row waits for the foreground, where Nano gets its chance, and no attempt
             // is counted.
-            val readerReady = runCatchingCancellable { local.availability() }.getOrNull() == LocalAvailability.READY
-            return if (nanoHealth.nanoFailing() && readerReady) {
+            return if (nanoHealth.nanoFailing() && localReady()) {
                 NanoStep.Fall(TierOutcome.SKIPPED, "nano skipped in the background (failing on this device)")
             } else NanoStep.Stop(ExtractionOutcome(ExtractionSource.NONE, null, "deferred to the foreground"))
         }
@@ -321,7 +337,9 @@ class Extractor @Inject constructor(
             return NanoStep.Fall(TierOutcome.FAILED, "nano threw ${e::class.simpleName}: ${e.message?.take(160)}")
         }
         if (attempt != null && !attempt.isEmpty) {
-            nanoHealth.recordNano(ok = true)
+            // A thin reading is kept, but counts as Nano failing here, so Settings offers the reader.
+            if (attempt.isThin) nanoHealth.recordNano(ok = false, reason = "read neither the roaster nor the coffee")
+            else nanoHealth.recordNano(ok = true)
             return NanoStep.Read(attempt)
         }
         if (attempt != null) {
@@ -330,6 +348,9 @@ class Extractor @Inject constructor(
         // A bag Nano could not put into JSON says nothing about the device: the flag is not set.
         return NanoStep.Fall(TierOutcome.FAILED, "nano unparseable twice (${images.size} images, ${ocrText.length} ocr chars)")
     }
+
+    private suspend fun localReady(): Boolean =
+        runCatchingCancellable { local.availability() }.getOrNull() == LocalAvailability.READY
 
     /** Shows "getting the reader ready" on the card while Nano's model downloads. */
     private suspend fun markPreparing(coffeeId: String) {

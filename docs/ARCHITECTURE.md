@@ -30,8 +30,11 @@ builds the old database from that JSON.
 ```
 create()      DRAFT ──photos imported──▶ EXTRACTING
 EXTRACTING    OCR every photo (2048 px)
+              ├─ 0. reader chosen in Settings and downloaded → Nano skipped ↓
               ├─ 1. Nano (system model; images 1024 px + OCR text) → JSON → parse
               │     ├─ facts                  → LOGGED / RATED, source NANO
+              │     ├─ thin (no roaster, no coffee) and the reader downloaded
+              │     │                         → the reader reads too; more fields wins
               │     ├─ unparseable            → one strict retry, then ↓
               │     ├─ model downloading      → PARKED: stays EXTRACTING, retried at +3 min,
               │     │                           then +5 min; the third miss falls through ↓
@@ -84,9 +87,11 @@ Rules the code holds to:
   `181938105e0eefd1...`. CPU backend for decoder and vision encoder: the GPU
   backend corrupts output on prompts past about 2k tokens (LiteRT-LM #3012).
 - **Offered** on devices with at least 6.5 GiB reported total memory (every
-  phone sold with 8 GB) and an arm64-v8a or x86_64 CPU, where Nano is
-  unavailable or has failed on this device (a device-scoped flag in
-  `no_backup/`).
+  phone sold with 8 GB) and an arm64-v8a or x86_64 CPU. Settings shows it on
+  every such device; where Nano works it carries a switch, off by default, to
+  read with the reader instead (`prefer_reader`). Onboarding mentions it only
+  where Nano is unavailable. A Nano failure or a thin reading sets a
+  device-scoped flag in `no_backup/`, and Settings then says why it is offered.
 - **Download:** a WorkManager foreground job (data sync), unmetered network
   unless the user allows mobile data. Writes `<name>.part`, resumes with an
   HTTP Range request, re-requests the published URL each time (the CDN

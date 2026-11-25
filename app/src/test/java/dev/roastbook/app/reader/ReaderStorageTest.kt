@@ -57,4 +57,14 @@ class ReaderStorageTest {
         prefs.recordNano(ok = true)
         assertEquals(ReaderSettings(allowMetered = true), prefs.current())
     }
+
+    @Test fun theReaderChoiceIsOffByDefaultAndPersists() = runTest {
+        val prefs = ReaderPrefs(PreferenceDataStoreFactory.create { File(context.noBackupFilesDir, "test-${System.nanoTime()}.preferences_pb") })
+        assertFalse(prefs.readerPreferred())
+        prefs.setPreferReader(true)
+        assertTrue(prefs.readerPreferred())
+        assertTrue(prefs.current().preferReader)
+        prefs.setPreferReader(false)
+        assertFalse(prefs.readerPreferred())
+    }
 }

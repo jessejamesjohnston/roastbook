@@ -6,6 +6,19 @@ All notable changes to Roastbook are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Settings, On-device reader: shown on every device that can run the downloadable reader, not
+  only where the built-in AI is missing. Where the device has its own AI, a switch (off by
+  default) has the reader read bags instead, once it is downloaded. Both run on the device.
+
+### Changed
+
+- A built-in AI reading that names neither the roaster nor the coffee is checked against the
+  downloadable reader when it is on the device, and the reading with more fields is kept. Such
+  a reading also counts as the built-in AI struggling, so Settings offers the reader and says
+  why.
+
 ### Fixed
 
 - A model answer that is almost JSON no longer leaks text into a field. When one value broke

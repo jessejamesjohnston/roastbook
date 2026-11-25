@@ -104,12 +104,14 @@ class LocalReaderViewModel @Inject constructor(
     fun cancel() { manager.cancel() }
     fun delete() { viewModelScope.launch { reader.release(); manager.delete() } }
     fun setAllowMetered(on: Boolean) { viewModelScope.launch { manager.setAllowMetered(on) } }
+    fun setPreferReader(on: Boolean) { viewModelScope.launch { prefs.setPreferReader(on) } }
 }
 
 /**
  * Settings' on-device reader section (its label and card). Kept in its own file with its own
- * ViewModel so the Settings screen only places it. Draws nothing where the device's own AI reads
- * bags (see [ReaderOffer.of]), so its label goes with it.
+ * ViewModel so the Settings screen only places it. Shown on every device that can run the reader,
+ * including one whose own AI reads bags (there it carries the choice of which one reads); elsewhere
+ * it says why the reader can't run, or draws nothing (see [ReaderOffer.of]).
  */
 @Composable
 fun LocalReaderSection(vm: LocalReaderViewModel = hiltViewModel()) {
@@ -123,7 +125,9 @@ fun LocalReaderSection(vm: LocalReaderViewModel = hiltViewModel()) {
     // Reader files on disk show their controls at once; otherwise wait for Nano's answer.
     if (!nanoChecked && !(hasFiles && s.eligibility == Eligibility.ELIGIBLE)) return
     var confirmDelete by remember { mutableStateOf(false) }
-    val offer = ReaderOffer.of(s.eligibility, nano, settings?.nanoFailing == true, hasFiles)
+    val offer = ReaderOffer.of(s.eligibility, nano, settings?.nanoFailing == true, hasFiles, everywhere = true)
+    // The device has its own AI, so there is a choice to make between it and the reader.
+    val hasBuiltInAi = nano == NanoStatus.AVAILABLE || nano == NanoStatus.DOWNLOADABLE
     if (offer == ReaderOffer.HIDDEN) return
     fun size(b: Long) = Formatter.formatShortFileSize(context, b)
     val secondary = MaterialTheme.colorScheme.onSurfaceVariant
@@ -178,6 +182,7 @@ fun LocalReaderSection(vm: LocalReaderViewModel = hiltViewModel()) {
                 notificationsOff = notifOff, explainNotifications = explainNotifications, onContinue = ::continueToAsk,
                 onDownload = ::startDownload, onPause = vm::pause, onCancel = vm::cancel, onDelete = { confirmDelete = true },
                 onAllowMetered = vm::setAllowMetered,
+                preferReader = settings?.preferReader == true, onPreferReader = vm::setPreferReader.takeIf { hasBuiltInAi },
             )
         }
     }
@@ -198,6 +203,7 @@ private fun ReaderControls(
     s: ReaderState, size: (Long) -> String, allowMetered: Boolean, nanoFailReason: String?, notificationsOff: Boolean,
     explainNotifications: Boolean, onContinue: () -> Unit,
     onDownload: () -> Unit, onPause: () -> Unit, onCancel: () -> Unit, onDelete: () -> Unit, onAllowMetered: (Boolean) -> Unit,
+    preferReader: Boolean = false, onPreferReader: ((Boolean) -> Unit)? = null,
 ) {
     ReaderIntro(totalSize = size(s.totalBytes), nanoFailing = nanoFailReason != null)
     when (s.phase) {
@@ -206,6 +212,12 @@ private fun ReaderControls(
             ReaderInProgress(s, size, allowMetered, notificationsOff, onPause, onCancel)
         DownloadPhase.NONE, DownloadPhase.FAILED ->
             ReaderIdleOrFailed(s, size, explainNotifications, onContinue, onDownload, onCancel)
+    }
+    // Which model reads bags, where the device has its own AI. Off keeps the device default.
+    if (onPreferReader != null) {
+        Spacer(Modifier.height(10.dp))
+        SwitchRow(title = stringResource(R.string.reader_prefer), hint = stringResource(R.string.reader_prefer_hint),
+            checked = preferReader, onChange = onPreferReader)
     }
     // Once the model is here there's nothing left to download, so the network rule goes away.
     if (s.phase == DownloadPhase.READY) return

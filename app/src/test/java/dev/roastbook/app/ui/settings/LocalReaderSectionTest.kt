@@ -107,14 +107,33 @@ class LocalReaderSectionTest {
     /** Waits for a condition outside the UI tree, letting main-thread work (the ViewModel's launches) run meanwhile. */
     private fun waitUntil(what: () -> Boolean) = compose.waitUntil(10_000) { shadowOf(Looper.getMainLooper()).idle(); what() }
 
-    @Test fun nothingIsDrawnWhereTheDevicesOwnAiReadsBags() {
+    @Test fun nothingIsDrawnWhereTheDevicesOwnAiReadsBagsAndTheReaderCannotRun() {
         val nano = FakeNano(NanoStatus.AVAILABLE)
-        val model = show(manager(), nano)
+        val model = show(manager(totalMem = 4 * ReaderHarness.GIB), nano)
         waitUntil { model.nanoChecked.value && model.state.value != null }
         compose.waitForIdle()
         assertFalse(shown(str(R.string.reader_title)))
-        assertFalse(shown(str(R.string.reader_download, size(total))))
+        assertFalse(shown(str(R.string.reader_cant_title)))
         assertEquals(1, nano.asked)
+    }
+
+    @Test fun whereTheDevicesOwnAiWorksTheReaderIsOfferedWithTheChoice() = runBlocking {
+        val model = show(manager(), FakeNano(NanoStatus.AVAILABLE))
+        waitFor(str(R.string.reader_download, size(total)))
+        assertTrue(shown(str(R.string.reader_explainer, size(total))))
+        assertFalse(shown(str(R.string.reader_nano_failing)))
+        // The device default stays: the built-in AI reads until the person turns this on.
+        assertTrue(shown(str(R.string.reader_prefer)))
+        assertFalse(h.prefs.readerPreferred())
+        click(str(R.string.reader_prefer))
+        waitUntil { model.settings.value?.preferReader == true }
+        assertTrue(h.prefs.readerPreferred())
+    }
+
+    @Test fun withoutABuiltInAiThereIsNoChoiceToMake() {
+        show(manager())
+        waitFor(str(R.string.reader_download, size(total)))
+        assertFalse(shown(str(R.string.reader_prefer)))
     }
 
     @Test fun aDeviceWithTooLittleMemoryIsToldHowMuchItHas() {

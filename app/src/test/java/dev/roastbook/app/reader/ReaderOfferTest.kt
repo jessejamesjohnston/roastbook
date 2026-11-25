@@ -86,4 +86,12 @@ class ReaderOfferTest {
         assertEquals(NanoStatus.UNAVAILABLE, ReaderOffer.probe(tier { error("no AICore") }))
         assertEquals(null, ReaderOffer.probe(tier { kotlinx.coroutines.delay(10_000); NanoStatus.AVAILABLE }, timeoutMs = 1_000))
     }
+
+    @Test fun settingsOffersTheReaderWhereverItCanRun() {
+        // Settings asks for the reader everywhere, so a device whose own AI works can still choose it.
+        assertEquals(ReaderOffer.OFFER, ReaderOffer.of(E, NanoStatus.AVAILABLE, nanoFailing = false, hasReaderFiles = false, everywhere = true))
+        assertEquals(ReaderOffer.OFFER, ReaderOffer.of(E, null, nanoFailing = false, hasReaderFiles = false, everywhere = true))
+        // A device that can't run it, and whose own AI works, still shows nothing.
+        assertEquals(ReaderOffer.HIDDEN, ReaderOffer.of(Eligibility.LOW_MEMORY, NanoStatus.AVAILABLE, nanoFailing = false, hasReaderFiles = false, everywhere = true))
+    }
 }

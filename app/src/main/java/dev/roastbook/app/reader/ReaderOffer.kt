@@ -8,8 +8,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 /** What the Settings section (and onboarding) says about the on-device reader on this device. */
 enum class ReaderOffer {
     /**
-     * Nothing to show: the device's own AI (Gemini Nano) reads bags here, or is on its way, and no
-     * reader files are on disk. A row that only says "nothing to download" is a no-op, so it isn't drawn.
+     * Nothing to show: the device's own AI (Gemini Nano) reads bags here, or is on its way, no
+     * reader files are on disk, and the caller did not ask to offer the reader everywhere. A row that only says "nothing to download" is a no-op, so it isn't drawn.
      */
     HIDDEN,
     /** No working Nano (or reader files already on disk), and this device can run the reader: show the download and its controls. */
@@ -35,9 +35,15 @@ enum class ReaderOffer {
          * stops working later still has a way to it. Reader files already on disk (a finished model,
          * a download in progress or paused, a partial file) always show the controls on a device
          * that can run the reader, so they can be canceled or deleted and nothing is stranded.
+         *
+         * [everywhere] (Settings) offers the reader on every device that can run it, including one
+         * whose built-in AI works, so a person unhappy with that AI's readings can choose the
+         * reader instead. Onboarding leaves it off: there the offer means "this device has no AI".
          */
-        fun of(eligibility: Eligibility, nano: NanoStatus?, nanoFailing: Boolean, hasReaderFiles: Boolean): ReaderOffer {
-            if (eligibility == Eligibility.ELIGIBLE && hasReaderFiles) return OFFER
+        fun of(
+            eligibility: Eligibility, nano: NanoStatus?, nanoFailing: Boolean, hasReaderFiles: Boolean, everywhere: Boolean = false,
+        ): ReaderOffer {
+            if (eligibility == Eligibility.ELIGIBLE && (hasReaderFiles || everywhere)) return OFFER
             val nanoUsable = !nanoFailing && (nano == null || nano == NanoStatus.AVAILABLE || nano == NanoStatus.DOWNLOADABLE)
             if (nanoUsable) return HIDDEN
             return when (eligibility) {
