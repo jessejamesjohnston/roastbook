@@ -16,6 +16,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -54,21 +55,29 @@ fun RatingSheet(coffee: CoffeeEntity, accent: Color, onSave: (RatingDraft) -> Un
     }
     var reaction by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(reaction) { if (reaction != null) { delay(1400); onDismiss() } }
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surfaceContainerHigh) {
-        Column(Modifier.verticalScroll(rememberScrollState()).imePadding().padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
-            Text(coffee.coffeeName ?: coffee.roaster ?: stringResource(R.string.detail_untitled), style = MaterialTheme.typography.titleLarge)
-            Text(stringResource(R.string.rate_title), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(6.dp))
-            if (reaction != null) {
-                Text(
-                    reaction!!,
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                )
-            } else {
-                RatingEditor(draft, accent, onChange = { draft = it }, showNotes = false, showProfile = false)
-                Spacer(Modifier.height(4.dp))
+    // Opens fully expanded: a half-open sheet in a short window (a desktop window that is not
+    // maximized) put Save and Cancel below its edge until it was dragged up.
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = MaterialTheme.colorScheme.surfaceContainerHigh) {
+        Column(Modifier.imePadding().padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
+            // The scores scroll; the actions below stay pinned, so they are on screen at any window height.
+            Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+                Text(coffee.coffeeName ?: coffee.roaster ?: stringResource(R.string.detail_untitled), style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.rate_title), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(6.dp))
+                if (reaction != null) {
+                    Text(
+                        reaction!!,
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                } else {
+                    RatingEditor(draft, accent, onChange = { draft = it }, showNotes = false, showProfile = false)
+                    Spacer(Modifier.height(4.dp))
+                }
+            }
+            if (reaction == null) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     // Saves whatever is entered so far, then opens the Detail editor (profile + notes).
                     TextButton(onClick = { onMore(draft) }) { Text(stringResource(R.string.rate_more)) }

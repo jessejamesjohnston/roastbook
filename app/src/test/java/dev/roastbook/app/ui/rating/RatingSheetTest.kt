@@ -12,6 +12,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasText
@@ -86,6 +87,15 @@ class RatingSheetTest {
         compose.mainClock.autoAdvance = true
         compose.waitForIdle()
         assertEquals(1, dismissed)
+    }
+
+    /** A short window (a desktop window that is not maximized): Save and Cancel are on screen at once. */
+    @Config(qualifiers = "w1100dp-h480dp")
+    @Test fun inAShortWindowTheActionsAreVisibleWithoutScrolling() {
+        show()
+        compose.waitForIdle()
+        compose.onNodeWithText(text(R.string.rate_save)).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.detail_cancel)).assertIsDisplayed()
     }
 
     @Test fun addDetailsHandsOverWhatIsEnteredSoFar() {

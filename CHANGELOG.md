@@ -21,6 +21,9 @@ All notable changes to Roastbook are recorded here. The format follows
 
 ### Fixed
 
+- The rating sheet opens fully expanded with Save and Cancel pinned below the scores, so they
+  are on screen in a short window (a desktop window that is not maximized) without dragging the
+  sheet up first.
 - A model answer that is almost JSON no longer leaks text into a field. When one value broke
   the object (seen on one device: a bare `null` followed by a stray quoted name), the fallback
   parser glued the two together and saved `null "Name` as the producer. It now reads each value
