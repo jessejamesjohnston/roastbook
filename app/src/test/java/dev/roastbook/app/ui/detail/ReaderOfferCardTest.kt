@@ -38,7 +38,8 @@ class ReaderOfferCardTest {
 
     private fun state(
         phase: DownloadPhase, bytes: Long = 0, failure: DownloadFailure? = null, metered: Boolean = false, stopped: Boolean = false,
-    ) = ReaderState(Eligibility.ELIGIBLE, phase, bytes, total, 0, metered, false, failure, "Test model", stopped)
+        starting: Boolean = false,
+    ) = ReaderState(Eligibility.ELIGIBLE, phase, bytes, total, 0, metered, false, failure, "Test model", stopped, starting)
 
     private fun show(s: ReaderState, waiting: Boolean = true, explain: Boolean = false) = compose.setContent {
         RoastbookTheme {
@@ -126,6 +127,23 @@ class ReaderOfferCardTest {
         compose.onNodeWithText(str(R.string.reader_resume)).performClick()
         compose.onNodeWithText(str(R.string.reader_cancel)).performClick()
         assertEquals(listOf("retry", "cancel"), clicks)
+    }
+
+    @Test fun aDownloadStartedAgainOverAFailedOnesPartSaysItIsStarting() {
+        show(state(DownloadPhase.NONE, bytes = total / 2, starting = true))
+        compose.onNodeWithText(str(R.string.detail_reader_starting)).assertExists()
+        assert(!shown(str(R.string.reader_partial, size(total / 2), size(total))))
+        assert(!shown(str(R.string.reader_resume)))
+        assertEquals(1, bars(indeterminate))
+        compose.onNodeWithText(str(R.string.reader_cancel)).performClick()
+        assertEquals(listOf("cancel"), clicks)
+    }
+
+    @Test fun aPartOnDiskWithNoJobStillReadsAsPaused() {
+        show(state(DownloadPhase.NONE, bytes = total / 2))
+        compose.onNodeWithText(str(R.string.reader_partial, size(total / 2), size(total))).assertExists()
+        compose.onNodeWithText(str(R.string.reader_resume)).assertExists()
+        assertEquals(0, bars(anyBar))
     }
 
     @Test fun aDownloadPausedBeforeAnyBytesArrivedSaysPaused() {

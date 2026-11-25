@@ -344,9 +344,14 @@ class LocalReaderManagerTest {
         assertEquals(20L, s.downloadedBytes)
     }
 
-    @Test fun acceptingTheNextOfferAfterAFailureSaysTheDownloadIsStarting() = runBlocking {
+    @Test fun acceptingTheNextOfferAfterAFailureSaysTheDownloadIsStarting() = startingAfterAFailure(partBytes = 0)
+
+    @Test fun acceptingTheNextOfferAfterAFailureThatLeftPartOfTheFileSaysStartingNotPaused() =
+        startingAfterAFailure(partBytes = 20)
+
+    private fun startingAfterAFailure(partBytes: Int) = runBlocking {
         val m = eligibleManager()
-        val failed = failedDownload(m, 0)
+        val failed = failedDownload(m, partBytes)
         h.prefs.declineOffer("c1")
         // The moment between the yes and WorkManager reporting the new job.
         h.prefs.acceptOffer("c2", supersededJobs = setOf(failed.toString()))
@@ -354,6 +359,29 @@ class LocalReaderManagerTest {
         assertEquals(DownloadPhase.NONE, s.phase)
         assertNull(s.failure)
         assertFalse(s.stopped)
+        assertTrue("what the failure left reads as starting, not paused", s.starting)
+        assertEquals("the new job resumes from the part", partBytes.toLong(), s.downloadedBytes)
+    }
+
+    @Test fun aPartOnDiskWithNoBagWaitingIsNotStarting() = runBlocking {
+        val m = eligibleManager()
+        val failed = failedDownload(m, 20)
+        h.prefs.declineOffer("c1")
+        // A failed job set aside while no bag waits (the offer was never accepted again).
+        h.prefs.abandonReader(setOf(failed.toString()))
+        h.writePart(m, 20)
+        m.onDiskChanged()
+        val s = h.awaitState(m) { it.phase == DownloadPhase.NONE && it.downloadedBytes == 20L }
+        assertFalse(s.starting)
+    }
+
+    @Test fun aPausedDownloadWithABagWaitingIsNotStarting() = runBlocking {
+        val m = eligibleManager()
+        m.acceptOffer("c1")
+        h.writePart(m, 20)
+        m.pause()
+        val s = h.awaitState(m) { it.stopped }
+        assertFalse(s.starting)
     }
 
     @Test fun acceptAnOfferSetsAsideTheFailedJobAndStartsANewOne() = runBlocking {

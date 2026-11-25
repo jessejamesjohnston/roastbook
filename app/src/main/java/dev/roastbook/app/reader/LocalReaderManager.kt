@@ -44,6 +44,12 @@ data class ReaderState(
      * never started or canceled; only in [DownloadPhase.NONE].
      */
     val stopped: Boolean = false,
+    /**
+     * A download the person started again (Download on another bag's offer after a failure) is on
+     * its way, and WorkManager has not reported its job yet; only in [DownloadPhase.NONE]. Any
+     * partial file left by the earlier job is where the new one resumes, not a pause.
+     */
+    val starting: Boolean = false,
 )
 
 /**
@@ -212,6 +218,10 @@ class LocalReaderManager @Inject constructor(
             modelName = spec.displayName,
             stopped = phase == DownloadPhase.NONE && info?.state == WorkInfo.State.CANCELLED &&
                 info.id.toString() !in settings.discardedJobs,
+            // Only an accepted offer sets a job aside while a bag waits: Cancel and Delete empty
+            // the list in the same write that sets theirs aside.
+            starting = phase == DownloadPhase.NONE && info != null && info.state.isFinished &&
+                info.id.toString() in settings.discardedJobs && settings.pendingRereads.isNotEmpty(),
         )
     }.flowOn(Dispatchers.IO)
 

@@ -43,7 +43,7 @@ import dev.roastbook.app.ui.components.readerProgressText
  *
  * | Phase | Line | Bar | Buttons |
  * |---|---|---|---|
- * | NONE, nothing yet (the moment after Download) | Starting the download… | moving | Cancel download |
+ * | NONE, nothing yet (the moment after Download, also over a part a failed download left) | Starting the download… | moving | Cancel download |
  * | NONE, stopped part-way (Pause) | Paused at X of Y / Download paused | none | Resume, Cancel download |
  * | WAITING_FOR_NETWORK | Waiting for Wi-Fi (or a connection), with X of Y once some arrived | still, at X | Cancel download |
  * | DOWNLOADING | Downloading: X of Y | filling with the bytes | Cancel download |
@@ -84,7 +84,7 @@ fun ReaderOfferCard(
             }
             return@Column
         }
-        val partial = reader.downloadedBytes > 0
+        val partial = reader.downloadedBytes > 0 && !reader.starting
         val paused = reader.phase == DownloadPhase.NONE && (partial || reader.stopped)
         val failed = reader.phase == DownloadPhase.FAILED
         val line = when (reader.phase) {
