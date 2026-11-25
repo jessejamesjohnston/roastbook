@@ -10,6 +10,10 @@ its tag and signed on the maintainer's machine with the app's release key, by
   password means no more updates to installed copies, so the keystore is backed up on a second
   machine and its password lives in a password manager, never in a file. The keystore and the
   key share that one password; `scripts/release.sh` asks for it once and uses it for both.
+  Before it clones or builds anything, it opens the keystore with that password, looks for the
+  key (the alias is matched without regard to case, as keystores do) and unlocks the key with
+  the same password, so a wrong password or alias, or a key whose password differs, stops it at
+  once without printing the password.
 - Certificate SHA-256 (published in the README and in every release's notes so anyone can check
   an APK):
   `D8:79:AD:13:90:76:D9:92:D6:37:CF:A9:E3:A4:6C:84:2C:9C:E1:99:0A:AC:2A:B6:5B:0F:D7:6E:97:76:38:E1`
@@ -68,8 +72,8 @@ is used whatever the key's alias; if yours holds several, name one with
 5. **Tag.** Commit, then make a signed tag `vX.Y.Z` and push it. A tag starts no release build.
 6. **Build.** `scripts/release.sh vX.Y.Z`. It clones the tag into a temporary directory, builds
    `:app:assembleRelease` with R8 there, and verifies the APK:
-   - `apksigner verify`, the certificate SHA-256 equals the expected one, and the certificate is
-     not a debug certificate;
+   - `apksigner verify` passes (an APK modified after signing fails here), the certificate
+     SHA-256 equals the expected one, and the certificate is not a debug certificate;
    - the commit the Android Gradle Plugin records in `META-INF/version-control-info.textproto`
      is the tag's commit (with `--verify`, only that a commit is recorded);
    - 16 KB page sizes: `zipalign -c -P 16 -v 4` (build-tools 35 or newer), and every 64-bit

@@ -24,6 +24,11 @@ All notable changes to Roastbook are recorded here. The format follows
 
 ### Fixed
 
+- `scripts/release.sh`: a key alias matches regardless of case; keytool runs in English and
+  its listing is parsed without depending on its spacing; a keystore with no private key gets
+  its own message; the password must also unlock the key, checked before the build; and
+  `--verify` reports an APK modified after signing as "the signature does not verify" instead
+  of "not the expected certificate".
 - The rating sheet opens fully expanded with Save and Cancel pinned below the scores, so they
   are on screen in a short window (a desktop window that is not maximized) without dragging the
   sheet up first.
