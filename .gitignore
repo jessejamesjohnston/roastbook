@@ -7,5 +7,7 @@ local.properties
 *.aab
 .kotlin/
 *.jks
+*.p12
+*.pfx
 __pycache__/
 dist/

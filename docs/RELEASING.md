@@ -20,8 +20,8 @@ its tag and signed on the maintainer's machine with the app's release key, by
   This is the form `keytool` and `scripts/release.sh --verify` print. `apksigner verify
   --print-certs` prints the same value in lowercase without colons:
   `d879ad139076d992d637cfa9e3a46c842c9ce1990aac2ab65b0fd76e977638e1`
-- Never commit a keystore (`*.jks` and `*.keystore` are gitignored) and never put the password in
-  a file, `local.properties`, a command line or a log.
+- Never commit a keystore (`*.jks`, `*.keystore`, `*.p12` and `*.pfx` are gitignored) and never
+  put the password in a file, `local.properties`, a command line or a log.
 
 How Gradle gets the key: `app/build.gradle.kts` reads `roastbook.keystore.{path,storePassword,
 keyAlias,keyPassword}` from `local.properties`, then Gradle properties, then the environment as
