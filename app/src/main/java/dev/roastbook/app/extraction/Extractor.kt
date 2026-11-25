@@ -506,9 +506,12 @@ class Extractor @Inject constructor(
         coffeeId: String, source: ExtractionSource, facts: BagFacts?, ocrText: String, note: String, trail: ExtractionTrail,
         baseline: CoffeeEntity? = null, fillBlanksOnly: Boolean = false,
     ): ExtractionOutcome {
-        var f = facts ?: BagFacts()
+        // Every tier's text passes the same cleanup on its way in, so placeholder words and JSON
+        // residue never land in a coffee's details.
+        val cleaned = facts?.let(FieldCleanup::clean)
+        var f = cleaned ?: BagFacts()
         var finalNote = note
-        var finalFacts = facts
+        var finalFacts = cleaned
         db.withTransaction {
             // A restore since the run began replaced the library, possibly with this same id: the
             // result describes the replaced row. The restore bumps the generation before its own

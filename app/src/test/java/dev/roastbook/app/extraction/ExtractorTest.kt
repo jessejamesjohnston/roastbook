@@ -207,6 +207,31 @@ class ExtractorTest {
         assertEquals(1, nano.calls)
     }
 
+    @Test fun placeholderWordsAndResidueFromAModelAnswerAreNeverSaved() = runBlocking {
+        val id = seedCoffee()
+        val nano = FakeNano(answers = mutableListOf({
+            "\"roaster\": \"Lantern Roasters\",\n\"coffee_name\": \"Finca Veleta\",\",\n\"roast_date\": null null\n\"process\": \"null null\""
+        }))
+        extractor(nano, FakeOcr("LANTERN"), NoCloud).run(id)
+        val c = db.coffeeDao().get(id)!!
+        assertEquals("Lantern Roasters", c.roaster)
+        assertEquals("Finca Veleta", c.coffeeName)
+        assertNull(c.roastDate)
+        assertNull(c.process)
+    }
+
+    @Test fun theCloudTierPassesTheSameCleanup() = runBlocking {
+        val id = seedCoffee()
+        val nano = FakeNano(status = NanoStatus.UNAVAILABLE)
+        val cloud = FakeCloud(mutableListOf("""{"roaster":"Signal Roasters Co.","coffee_name":"N/A","roast_date":"Lot 26312","region":"[Huila"}"""))
+        extractor(nano, FakeOcr("SIGNAL"), cloud).run(id)
+        val c = db.coffeeDao().get(id)!!
+        assertEquals("Signal Roasters Co.", c.roaster)
+        assertNull(c.coffeeName)
+        assertNull(c.roastDate)
+        assertEquals("Huila", c.region)
+    }
+
     @Test fun invalidJsonRetriesOnceThenSucceeds() = runBlocking {
         val id = seedCoffee()
         val nano = FakeNano(answers = mutableListOf({ "I can't help with that." }, { """{"roaster":"Larkmoor Coffee"}""" }))

@@ -24,11 +24,15 @@ object BagFactsParser {
     /** The facts, and whether the answer was a JSON object (as asked) or needed the loose path. */
     data class Parsed(val facts: BagFacts, val wellFormed: Boolean)
 
+    /**
+     * The facts pass [FieldCleanup] here too (it runs again before saving), so the checks made on a
+     * reading before it is saved (too thin, how many fields) don't count placeholder words or residue.
+     */
     fun parseChecked(raw: String?): Parsed? {
         if (raw.isNullOrBlank()) return null
         val text = raw.replace("```json", "").replace("```", "").trim()
-        parseJson(text)?.let { return Parsed(it, wellFormed = true) }
-        return parseLoose(text)?.let { Parsed(it, wellFormed = false) }
+        parseJson(text)?.let { return Parsed(FieldCleanup.clean(it), wellFormed = true) }
+        return parseLoose(text)?.let { Parsed(FieldCleanup.clean(it), wellFormed = false) }
     }
 
     private val json = Json { isLenient = true; ignoreUnknownKeys = true }
