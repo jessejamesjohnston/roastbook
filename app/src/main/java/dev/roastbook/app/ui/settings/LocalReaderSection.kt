@@ -222,7 +222,7 @@ private fun ReaderControls(
     // Once the model is here there's nothing left to download, so the network rule goes away.
     if (s.phase == DownloadPhase.READY) return
     Spacer(Modifier.height(10.dp))
-    // One stop for TalkBack: "Off. Download over mobile data. The download doesn't wait for Wi-Fi. Switch".
+    // One stop for TalkBack: "Off. Download over mobile data. Uses mobile data when there's no Wi-Fi. Switch".
     SwitchRow(title = stringResource(R.string.reader_allow_mobile), hint = stringResource(R.string.reader_allow_mobile_hint),
         checked = allowMetered, onChange = onAllowMetered)
 }

@@ -1,33 +1,33 @@
 <resources>
     <!-- Ephemeral reactions when a rating lands (starter set). -->
     <string-array name="rating_react_1">
-        <item>Send it back.</item>
-        <item>Well, now you know.</item>
-        <item>Not every bag is a keeper.</item>
+        <item>Send it back</item>
+        <item>Well, now you know</item>
+        <item>Not every bag is a keeper</item>
     </string-array>
     <string-array name="rating_react_2">
-        <item>Fine for a Tuesday.</item>
+        <item>Fine for a Tuesday</item>
         <item>It\'s coffee. Technically.</item>
-        <item>Better with milk, probably.</item>
+        <item>Better with milk, probably</item>
         <item>Noted. Moving on.</item>
     </string-array>
     <string-array name="rating_react_3">
         <item>Solid. No notes.</item>
-        <item>Would not turn it down.</item>
-        <item>A perfectly good cup.</item>
-        <item>Respectable.</item>
+        <item>Wouldn\'t turn it down</item>
+        <item>A perfectly good cup</item>
+        <item>Respectable</item>
     </string-array>
     <string-array name="rating_react_4">
-        <item>Oh, that\'s nice.</item>
-        <item>Second cup material.</item>
-        <item>Sounds delicious.</item>
-        <item>Keep an eye on this roaster.</item>
+        <item>Oh, that\'s nice</item>
+        <item>Second cup material</item>
+        <item>Sounds delicious</item>
+        <item>Keep an eye on this roaster</item>
     </string-array>
     <string-array name="rating_react_5">
-        <item>Yum.</item>
-        <item>Order two next time.</item>
-        <item>Lock it in.</item>
-        <item>That\'s the one.</item>
-        <item>Tell someone about this.</item>
+        <item>Yum</item>
+        <item>Order two next time</item>
+        <item>Lock it in</item>
+        <item>That\'s the one</item>
+        <item>Tell someone about this</item>
     </string-array>
 </resources>

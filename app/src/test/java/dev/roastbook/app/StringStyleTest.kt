@@ -10,9 +10,9 @@ import org.junit.Test
 import org.w3c.dom.Element
 
 /**
- * The wording rules every string in res/values/strings.xml follows, checked on the text a
- * person sees (XML entities and Android escapes decoded), across <string>, <plurals> and
- * <string-array>:
+ * The wording rules every string in res/values follows (strings.xml, and reactions.xml with the
+ * lines shown when a rating lands), checked on the text a person sees (XML entities and Android
+ * escapes decoded), across <string>, <plurals> and <string-array>:
  *
  * - A single sentence has no closing period. A block of two or more sentences keeps them.
  * - A trailing ellipsis only marks something in progress ("Backing up…", "Waiting for Wi-Fi…"),
@@ -135,12 +135,18 @@ class StringStyleTest {
         return found
     }
 
-    private fun stringsFile(): File =
-        listOf(File("src/main/res/values/strings.xml"), File("app/src/main/res/values/strings.xml")).first { it.exists() }
+    /** Every XML file in res/values; the ones without strings (colors, themes) add nothing. */
+    private fun valuesFiles(): List<File> {
+        val dir = listOf(File("src/main/res/values"), File("app/src/main/res/values")).first { it.isDirectory }
+        return dir.listFiles { f -> f.name.endsWith(".xml") }.orEmpty().sortedBy { it.name }
+    }
+
+    private fun allEntries(): List<Entry> = valuesFiles().flatMap { entries(it) }
 
     @Test fun everyStringFollowsTheWordingRules() {
-        val all = entries(stringsFile())
-        assertTrue("strings.xml parsed to ${all.size} entries", all.size > 300)
+        val all = allEntries()
+        assertTrue("res/values parsed to ${all.size} entries", all.size > 300)
+        assertTrue("reactions.xml is read", all.any { it.name.startsWith("rating_react_5[") })
         assertTrue("plurals items are read", all.any { it.name.startsWith("coffees[") })
         assertTrue("string-array items are read", all.any { it.name.startsWith("sources_seed[") })
 
@@ -161,9 +167,9 @@ class StringStyleTest {
     }
 
     @Test fun everyAllowlistEntryNamesAStringAndSaysWhy() {
-        val names = entries(stringsFile()).map { it.name }.toSet()
+        val names = allEntries().map { it.name }.toSet()
         for ((key, reason) in ALLOWED) {
-            assertTrue("$key names a string in strings.xml", key.second in names)
+            assertTrue("$key names a string in res/values", key.second in names)
             assertTrue("$key gives a reason", reason.isNotBlank())
         }
     }

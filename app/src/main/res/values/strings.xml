@@ -421,7 +421,7 @@
     <string name="reader_delete_confirm">Bags already read keep their details. New bags are read by this device\'s built-in AI if it has one, otherwise with your Gemini key if you have one, or by a guess from the label text.</string>
     <string name="reader_delete_yes">Delete</string>
     <string name="reader_allow_mobile">Download over mobile data</string>
-    <string name="reader_allow_mobile_hint">The download doesn\'t wait for Wi-Fi</string>
+    <string name="reader_allow_mobile_hint">Uses mobile data when there\'s no Wi-Fi</string>
     <string name="reader_failed_space">Not enough free space. The reader needs %1$s.</string>
     <string name="reader_failed_checksum">The download came through damaged, so Roastbook deleted it. Try again.</string>
     <string name="reader_failed_server">Couldn\'t finish the download</string>
@@ -435,7 +435,7 @@
     <string name="detail_reader_offer_not_now">Not now</string>
     <string name="detail_reader_waiting">Roastbook reads this bag again when the reader is ready</string>
     <string name="reader_prefer">Use instead of the built-in AI</string>
-    <string name="reader_prefer_hint">Once the reader is downloaded, it reads your bags in place of this device\'s built-in AI. It\'s slower, and like the built-in AI it keeps your photos on this device.</string>
+    <string name="reader_prefer_hint">Reads bags with the on-device reader once it\'s downloaded, in place of this device\'s built-in AI. It\'s slower, and like the built-in AI it keeps your photos on this device.</string>
     <string name="reader_notif_channel">On-device reader download</string>
     <string name="reader_notif_downloading">Downloading the on-device reader</string>
     <string name="reader_notif_verifying">Checking the download</string>
