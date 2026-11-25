@@ -64,8 +64,10 @@ object BagFactsParser {
      * "key: value" lines, and the pairs of a JSON object that failed to parse as a whole (one bad
      * value breaks every other key otherwise). Each value is read as one token: a quoted string up to
      * its closing quote, a bare null/true/false, a [list], or (YAML style) the unquoted rest of the
-     * line. Text after a value that is not another key is ignored, so a stray string after a bare
-     * null (`"producer": null "Name"`) is not glued onto it. A quoted string that never closes (an
+     * line. A quote closes a string only where the value can end (end of line, a brace, or a comma
+     * before the end or the next key), so unescaped quotes inside the text are kept. Text after a
+     * value that is not another key is ignored, so a stray string after a bare null
+     * (`"producer": null "Name"`) is not glued onto it. A quoted string that never closes (an
      * answer cut off at its token limit) is dropped rather than kept half-written. Several pairs may
      * share a line, and the first may share it with the opening brace. Lists also span lines as
      * [a, b] or as following "- item" lines.
@@ -111,7 +113,10 @@ object BagFactsParser {
     private val keyAt = Regex("""[\s{,]*"?([a-z_]+)"?\s*:\s*""")
     /** A later quoted key on the same line, after something that was not one. */
     private val nextPair = Regex(""",\s*"[a-z_]+"\s*:""")
-    private val literal = Regex("""^(null|true|false)(?![A-Za-z0-9_])""", RegexOption.IGNORE_CASE)
+    /** A bare literal, only where it ends the value: "True North Roasters" is a name, not `true`. */
+    private val literal = Regex("""^(null|true|false)(?=\s*($|[,}"]))""", RegexOption.IGNORE_CASE)
+    /** What may follow a string's closing quote: the line's end, a brace, or a comma before the end or the next key. */
+    private val afterString = Regex("""^\s*($|}|,\s*($|"?[a-z_]+"?\s*:))""")
 
     /** One value read from [t] at [from]; [openList] is set when a list continues on later lines. */
     private class Value(val value: Any?, val end: Int, val openList: MutableList<String>? = null, val dropped: Boolean = false)
@@ -128,7 +133,9 @@ object BagFactsParser {
                     if (c == '\\' && i + 1 < t.length) {
                         sb.append(when (val e = t[i + 1]) { 'n' -> '\n'; 't' -> '\t'; else -> e }); i += 2; continue
                     }
-                    if (c == '"') return Value(sb.toString(), i + 1)
+                    // A quote closes the string only where the value can end; an unescaped quote
+                    // inside the text (`"The "house" lot"`) stays part of it.
+                    if (c == '"' && afterString.containsMatchIn(t.substring(i + 1))) return Value(sb.toString(), i + 1)
                     sb.append(c); i++
                 }
                 Value(null, t.length, dropped = true)

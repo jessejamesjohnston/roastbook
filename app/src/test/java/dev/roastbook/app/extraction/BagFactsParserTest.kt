@@ -200,6 +200,23 @@ class BagFactsParserTest {
         assertEquals("Honey", f.process)
     }
 
+    @Test
+    fun unescapedQuotesInsideAValueAreKept() {
+        val raw = "{\n  \"bag_description\": \"The \"house\" lot is bright.\",\n  \"producer\": null \"Hollin Vale\",\n  \"process\": \"Washed\"\n}"
+        val f = BagFactsParser.parse(raw)!!
+        assertEquals("The \"house\" lot is bright.", f.bagDescription)
+        assertEquals("Washed", f.process)
+    }
+
+    @Test
+    fun namesThatStartWithALiteralWordAreKept() {
+        val f = BagFactsParser.parse("roaster: True North Roasters\nproducer: Null Island Coffee\nprocess: false\nregion: null")!!
+        assertEquals("True North Roasters", f.roaster)
+        assertEquals("Null Island Coffee", f.producer)
+        assertNull(f.process)
+        assertNull(f.region)
+    }
+
     /** An answer cut off mid-value (the token limit) keeps what came before and drops the cut value. */
     @Test
     fun aValueCutOffMidStringIsDropped() {

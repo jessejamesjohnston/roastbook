@@ -90,8 +90,8 @@ Rules the code holds to:
   phone sold with 8 GB) and an arm64-v8a or x86_64 CPU. Settings shows it on
   every such device; where Nano works it carries a switch, off by default, to
   read with the reader instead (`prefer_reader`). Onboarding mentions it only
-  where Nano is unavailable. A Nano failure or a thin reading sets a
-  device-scoped flag in `no_backup/`, and Settings then says why it is offered.
+  where Nano is unavailable. A Nano failure sets a device-scoped flag in
+  `no_backup/`, and Settings then says why it is offered.
 - **Download:** a WorkManager foreground job (data sync), unmetered network
   unless the user allows mobile data. Writes `<name>.part`, resumes with an
   HTTP Range request, re-requests the published URL each time (the CDN

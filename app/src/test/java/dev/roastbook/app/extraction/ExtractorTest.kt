@@ -950,8 +950,6 @@ class ExtractorTest {
         assertEquals("Northwind", c.roaster)
         assertNull(c.producer)
         assertEquals(ExtractionSource.LOCAL, c.extractionSource)
-        // Thin counts as Nano failing here, so Settings offers the reader with its note.
-        assertEquals(listOf(false), health.records)
     }
 
     @Test fun aThinNanoReadingIsKeptWhenTheReaderDoesNoBetter() = runBlocking {
@@ -964,13 +962,23 @@ class ExtractorTest {
         assertEquals(1, local.calls)
     }
 
-    @Test fun aThinNanoReadingWithoutTheReaderIsKeptAndRecorded() = runBlocking {
+    @Test fun aThinNanoReadingWithoutTheReaderIsKeptAndSaysNothingAboutTheDevice() = runBlocking {
         val id = seedCoffee()
         val nano = FakeNano(answers = mutableListOf({ """{"producer":"Hollin Vale"}""" }))
         val local = FakeLocal(availability = LocalAvailability.NOT_DOWNLOADED)
         assertEquals(ExtractionSource.NANO, extractor(nano, FakeOcr("t"), local = local).run(id).source)
         assertEquals(0, local.calls)
-        assertTrue(health.failing)
+        assertEquals(listOf(true), health.records)
+    }
+
+    @Test fun theChosenReaderFindingNothingIsNotCalledMissingBuiltInAi() = runBlocking {
+        val id = seedCoffee()
+        health.preferred = true
+        val local = FakeLocal(answers = mutableListOf({ "{}" }, { "{}" }))
+        extractor(FakeNano(), FakeOcr("Northwind Coffee Roasters"), local = local).run(id)
+        val trail = ExtractionTrail.decode(db.coffeeDao().get(id)!!.extractionTrail)
+        val w = WhatHappenedRules.explain(ExtractionSource.OCR, trail, hasOcrText = true, readerOffered = true, hasKey = false)!!
+        assertEquals(dev.roastbook.app.R.string.what_ocr_local_failed, w.line)
     }
 
     @Test fun aFullNanoReadingIsNotSecondGuessed() = runBlocking {

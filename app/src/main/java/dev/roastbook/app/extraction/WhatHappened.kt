@@ -76,6 +76,8 @@ object WhatHappenedRules {
                     unknownModel != null -> R.string.what_ocr_cloud_model_named
                     trail[Tier.CLOUD] == TierOutcome.FAILED -> cloudFailedLine(trail.cloudFailure, hasKey)
                     trail[Tier.LOCAL] == TierOutcome.FAILED -> R.string.what_ocr_local_failed
+                    // The reader was chosen over the built-in AI and found nothing: not "no built-in AI".
+                    trail[Tier.NANO] == TierOutcome.SKIPPED && trail[Tier.LOCAL] == TierOutcome.EMPTY -> R.string.what_ocr_local_failed
                     trail[Tier.NANO] == TierOutcome.NOT_READY -> R.string.what_ocr_nano_not_ready
                     trail[Tier.NANO] == TierOutcome.FAILED || trail[Tier.NANO] == TierOutcome.EMPTY -> R.string.what_ocr_nano_failed
                     else -> R.string.what_ocr_nano_unsupported

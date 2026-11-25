@@ -15,9 +15,7 @@ All notable changes to Roastbook are recorded here. The format follows
 ### Changed
 
 - A built-in AI reading that names neither the roaster nor the coffee is checked against the
-  downloadable reader when it is on the device, and the reading with more fields is kept. Such
-  a reading also counts as the built-in AI struggling, so Settings offers the reader and says
-  why.
+  downloadable reader when it is on the device, and the reading with more fields is kept.
 
 ### Fixed
 
@@ -29,7 +27,8 @@ All notable changes to Roastbook are recorded here. The format follows
   parser glued the two together and saved `null "Name` as the producer. It now reads each value
   as one token, so a bare `null` stays empty, a value cut off by the token limit is dropped
   instead of saved half-written, and keys that share a line with the opening brace or with
-  each other are no longer skipped.
+  each other are no longer skipped. Unescaped quotes inside a value, and names that begin with
+  a word like "True" or "Null", are kept.
 
 ## [0.4.0] - 2026-11-24
 

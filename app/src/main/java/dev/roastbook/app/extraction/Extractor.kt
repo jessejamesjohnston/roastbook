@@ -337,9 +337,7 @@ class Extractor @Inject constructor(
             return NanoStep.Fall(TierOutcome.FAILED, "nano threw ${e::class.simpleName}: ${e.message?.take(160)}")
         }
         if (attempt != null && !attempt.isEmpty) {
-            // A thin reading is kept, but counts as Nano failing here, so Settings offers the reader.
-            if (attempt.isThin) nanoHealth.recordNano(ok = false, reason = "read neither the roaster nor the coffee")
-            else nanoHealth.recordNano(ok = true)
+            nanoHealth.recordNano(ok = true)
             return NanoStep.Read(attempt)
         }
         if (attempt != null) {
