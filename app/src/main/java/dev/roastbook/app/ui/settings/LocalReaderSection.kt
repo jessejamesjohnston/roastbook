@@ -177,7 +177,7 @@ private fun ReaderControls(
 ) {
     ReaderIntro(totalSize = size(s.totalBytes), nanoFailing = nanoFailReason != null)
     when (s.phase) {
-        DownloadPhase.READY -> ReaderReady(sizeOnDisk = size(s.sizeOnDisk), onDelete = onDelete)
+        DownloadPhase.READY -> ReaderReady(sizeOnDisk = size(s.sizeOnDisk), cache = s.cacheBytes.takeIf { it > 0 }?.let(size), onDelete = onDelete)
         DownloadPhase.DOWNLOADING, DownloadPhase.VERIFYING, DownloadPhase.WAITING_FOR_NETWORK ->
             ReaderInProgress(s, size, allowMetered, notificationsOff, onPause, onCancel)
         DownloadPhase.NONE, DownloadPhase.FAILED ->
@@ -213,10 +213,17 @@ private fun ReaderIntro(totalSize: String, nanoFailing: Boolean) {
     Spacer(Modifier.height(12.dp))
 }
 
-/** The model is downloaded and checked: its size on disk and Delete. */
+/**
+ * The model is downloaded and checked: its size on disk and Delete. Once the reader has run, the
+ * size includes the cache its runtime saved, and the line says how much of it that is, so the number
+ * is no surprise next to the download size. Delete removes both.
+ */
 @Composable
-private fun ReaderReady(sizeOnDisk: String, onDelete: () -> Unit) {
-    Text(stringResource(R.string.reader_ready, sizeOnDisk), style = MaterialTheme.typography.bodyLarge)
+private fun ReaderReady(sizeOnDisk: String, cache: String?, onDelete: () -> Unit) {
+    Text(
+        if (cache == null) stringResource(R.string.reader_ready, sizeOnDisk) else stringResource(R.string.reader_ready_cache, sizeOnDisk, cache),
+        style = MaterialTheme.typography.bodyLarge,
+    )
     Spacer(Modifier.height(8.dp))
     OutlinedButton(onClick = onDelete, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.reader_delete)) }
 }

@@ -50,6 +50,8 @@ data class ReaderState(
      * partial file left by the earlier job is where the new one resumes, not a pause.
      */
     val starting: Boolean = false,
+    /** The part of [sizeOnDisk] the runtime saved to load the model faster ([ModelStore.cacheBytes]). */
+    val cacheBytes: Long = 0,
 )
 
 /**
@@ -212,6 +214,7 @@ class LocalReaderManager @Inject constructor(
             },
             totalBytes = spec.sizeBytes,
             sizeOnDisk = store.sizeOnDisk(),
+            cacheBytes = store.cacheBytes(),
             allowMetered = settings.allowMetered,
             nanoFailing = settings.nanoFailing,
             failure = failure,

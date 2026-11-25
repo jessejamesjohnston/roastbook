@@ -98,6 +98,8 @@ class LiteRtLocalReader @Inject constructor(private val manager: LocalReaderMana
         ).also {
             it.initialize()
             Log.i(TAG, "engine loaded in %.1f s".format((System.nanoTime() - t0) / 1e9))
+            // The first load writes the runtime's cache: Settings' size on disk follows at once.
+            manager.onDiskChanged()
         }
     }
 

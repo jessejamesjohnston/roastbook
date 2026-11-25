@@ -38,6 +38,13 @@ class ModelStore(val root: File, private val spec: ModelSpec) {
         if (!verifiedPart.renameTo(model)) error("could not move the verified model into place")
     }
 
+    /**
+     * What the runtime saved in [cacheDir] the first time it loaded the model (a prepared copy of
+     * the weights, about 1 GB for the 2.6 GB model, so later loads are faster). Counted in
+     * [sizeOnDisk] and removed by [deleteAll].
+     */
+    fun cacheBytes(): Long = if (!cacheDir.exists()) 0L else cacheDir.walkBottomUp().filter { it.isFile }.sumOf { it.length() }
+
     /** Everything the reader keeps on disk: the model, a partial download, the runtime cache. */
     fun sizeOnDisk(): Long = if (!root.exists()) 0L else root.walkBottomUp().filter { it.isFile }.sumOf { it.length() }
 

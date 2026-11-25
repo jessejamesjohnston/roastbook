@@ -259,7 +259,9 @@ class LocalReaderManagerTest {
         m.store.ensureDirs()
         File(m.store.cacheDir, "program.bin").writeBytes(ByteArray(10))
         m.onDiskChanged()
-        assertEquals(10L, h.awaitState(m) { it.sizeOnDisk == 10L }.sizeOnDisk)
+        val s = h.awaitState(m) { it.sizeOnDisk == 10L }
+        assertEquals(10L, s.sizeOnDisk)
+        assertEquals("the runtime's cache is reported on its own as well", 10L, s.cacheBytes)
     }
 
     @Test fun aRunningJobShowsItsReportedBytesThenTheCheck() = runBlocking {

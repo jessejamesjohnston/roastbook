@@ -414,6 +414,7 @@
     <string name="reader_downloading">Downloading: %1$s of %2$s</string>
     <string name="reader_verifying">Checking the download…</string>
     <string name="reader_ready">Ready. Uses %1$s on this device.</string>
+    <string name="reader_ready_cache">Ready. Uses %1$s on this device, including %2$s the reader saved so it starts faster.</string>
     <string name="reader_partial">Paused at %1$s of %2$s</string>
     <string name="reader_resume">Resume</string>
     <string name="reader_pause">Pause</string>

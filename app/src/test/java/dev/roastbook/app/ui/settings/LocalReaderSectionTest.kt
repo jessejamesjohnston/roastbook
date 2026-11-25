@@ -363,6 +363,26 @@ class LocalReaderSectionTest {
         assertEquals(WorkInfo.State.ENQUEUED, h.pendingJob().state)
     }
 
+    /**
+     * After the reader's first read its runtime has saved a cache beside the model, so the size on
+     * disk grows past the download size. The line says how much of it is that cache, and Delete
+     * removes the cache with the model.
+     */
+    @Test fun theSizeOnDiskNamesTheRuntimesCacheAndDeleteRemovesIt() {
+        val m = manager()
+        h.installModel(m)
+        show(m)
+        waitFor(str(R.string.reader_ready, size(total + 64)))
+        java.io.File(m.store.cacheDir, "weights.cache").writeBytes(ByteArray(40))
+        m.onDiskChanged()
+        waitFor(str(R.string.reader_ready_cache, size(total + 64 + 40), size(40)))
+        click(str(R.string.reader_delete))
+        waitFor(str(R.string.reader_delete_title))
+        compose.onNodeWithText(str(R.string.reader_delete_yes)).performClick()
+        waitFor(str(R.string.reader_download, size(total)))
+        assertFalse("the model, its stamp and the cache are all gone", m.store.root.exists())
+    }
+
     @Test fun aReadyReaderShowsItsSizeAndDeleteAsksFirst() {
         val m = manager()
         h.installModel(m)
