@@ -133,6 +133,16 @@ fun ReaderOfferCard(
     }
 }
 
+/**
+ * What the card shows in the moment after Download, before the accepted offer is written: the
+ * download starting. An earlier job's failure or pause is set aside by that write, so neither shows
+ * meanwhile; a download already under way shows as it is.
+ */
+fun ReaderState.asJustAccepted(): ReaderState =
+    if (phase == DownloadPhase.NONE || phase == DownloadPhase.FAILED) {
+        copy(phase = DownloadPhase.NONE, starting = true, stopped = false, failure = null)
+    } else this
+
 /** A filled button and a text button side by side, the second moving below at large text sizes. */
 @Composable
 private fun Buttons(primary: Pair<String, () -> Unit>, secondary: Pair<String, () -> Unit>) {

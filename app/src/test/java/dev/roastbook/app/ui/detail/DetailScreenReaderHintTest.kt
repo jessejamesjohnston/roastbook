@@ -89,6 +89,63 @@ class DetailScreenReaderHintTest : DetailScreenTestBase(eligibleForReader = true
         compose.onNodeWithText(str(R.string.permission_continue)).assertIsDisplayed()
     }
 
+    /** Not now or Download on the offer: neither may show again once Download is tapped. */
+    private fun offerButtonsShown() =
+        compose.onNodeWithText(str(R.string.detail_reader_offer_not_now)).exists() ||
+            compose.onNodeWithText("Download (", substring = true).exists()
+
+    /**
+     * The card that follows the download: starting, or (once the test's job is queued, since its
+     * network rule is never met here) waiting for Wi-Fi.
+     */
+    private fun startingOrQueued() = compose.onNodeWithText(str(R.string.detail_reader_waiting)).exists() && (
+        compose.onNodeWithText(str(R.string.detail_reader_starting)).exists() ||
+            compose.onNodeWithText(str(R.string.reader_waiting_wifi)).exists()
+        )
+
+    @Test fun downloadGoesStraightToTheStartingCard() {
+        grantNotifications()
+        poorBag()
+        show()
+        compose.awaitUntil { vm.readerState.value != null && vm.readerSettings.value != null }
+        compose.onNodeWithText("Download (", substring = true).performClick()
+        // The first frame after the tap, before the choice is written: already the starting card.
+        assertEquals(false, offerButtonsShown())
+        assertEquals(true, startingOrQueued())
+        compose.awaitUntil { vm.readerSettings.value?.pendingRereads == setOf("c1") }
+        assertEquals(false, offerButtonsShown())
+    }
+
+    @Test fun allowOnTheNotificationQuestionGoesStraightToTheStartingCard() = answerTheNotificationQuestion(allow = true)
+
+    @Test fun dontAllowOnTheNotificationQuestionGoesStraightToTheStartingCardToo() = answerTheNotificationQuestion(allow = false)
+
+    private fun answerTheNotificationQuestion(allow: Boolean) {
+        val registry = object : androidx.activity.result.ActivityResultRegistry() {
+            override fun <I, O> onLaunch(
+                requestCode: Int, contract: androidx.activity.result.contract.ActivityResultContract<I, O>, input: I,
+                options: androidx.core.app.ActivityOptionsCompat?,
+            ) {
+                if (allow) grantNotifications()
+                dispatchResult(requestCode, allow)
+            }
+        }
+        val owner = object : androidx.activity.result.ActivityResultRegistryOwner { override val activityResultRegistry = registry }
+        poorBag()
+        show(wrap = { content ->
+            androidx.compose.runtime.CompositionLocalProvider(androidx.activity.compose.LocalActivityResultRegistryOwner provides owner) { content() }
+        })
+        compose.awaitUntil { vm.readerState.value != null && vm.readerSettings.value != null }
+        compose.onNodeWithText("Download (", substring = true).performClick()
+        awaitShown(str(R.string.notif_why_download))
+        compose.onNodeWithText(str(R.string.permission_continue)).performClick()
+        // Android's answer has come back; the choice is still being written.
+        assertEquals(false, offerButtonsShown())
+        assertEquals(true, startingOrQueued())
+        compose.awaitUntil { vm.readerSettings.value?.pendingRereads == setOf("c1") }
+        assertEquals(false, offerButtonsShown())
+    }
+
     @Test fun cancelOnTheCardStopsTheDownloadClearsTheCardAndTheChoice() {
         grantNotifications()
         poorBag()
@@ -112,6 +169,7 @@ class DetailScreenReaderHintTest : DetailScreenTestBase(eligibleForReader = true
         compose.awaitUntil { vm.readerState.value != null && vm.readerSettings.value != null }
         compose.onNodeWithText("Download (", substring = true).performClick()
         awaitShown(str(R.string.detail_reader_waiting))
+        compose.awaitUntil { vm.readerSettings.value?.preferReader == true }
         runBlocking { f.reader.cancel() } // what Settings' Cancel download calls
         awaitGone(str(R.string.detail_reader_waiting))
         assertEquals(false, vm.readerSettings.value!!.preferReader)

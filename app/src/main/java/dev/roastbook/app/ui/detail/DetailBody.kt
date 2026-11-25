@@ -24,7 +24,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -130,18 +134,27 @@ internal fun DetailBody(
             val readerSettings by vm.readerSettings.collectAsState()
             val trailNow = ExtractionTrail.decode(c.extractionTrail)
             val rs = readerState
+            // Download was tapped (and any notification question answered) but the choice is still
+            // being written: the card shows the starting state at once, in the same frame, rather
+            // than the offer's buttons until the write lands.
+            var accepted by rememberSaveable(c.id) { mutableStateOf(false) }
             // Download and Resume ask for notifications the way Settings does (ReaderDownloadStarter).
             val starter = rememberReaderDownloadStarter { action ->
-                if (action == ACCEPT_READER) vm.acceptReaderOffer() else vm.retryReaderDownload()
+                if (action == ACCEPT_READER) { accepted = true; vm.acceptReaderOffer() } else vm.retryReaderDownload()
             }
             val waiting = ReaderNudge.waitingForReader(c.id, readerSettings)
+            // Once the write shows, the stored state takes over (and a later Cancel can clear the card).
+            // A Cancel or Not now counts the bag as answered, which ends the bridge even if the
+            // written state came and went between two frames.
+            LaunchedEffect(waiting) { if (waiting) accepted = false }
+            val justAccepted = accepted && !waiting && c.id !in readerSettings?.offerDeclinedIds.orEmpty()
             val readerCard = rs != null &&
-                (waiting || ReaderNudge.shouldOffer(c.id, c.state, c.extractionSource, trailNow, rs, readerSettings))
+                (waiting || justAccepted || ReaderNudge.shouldOffer(c.id, c.state, c.extractionSource, trailNow, rs, readerSettings))
             if (readerCard) {
                 ReaderOfferCard(
-                    rs, waiting = waiting,
+                    if (justAccepted) rs.asJustAccepted() else rs, waiting = waiting || justAccepted,
                     onDownload = { starter.start(ACCEPT_READER) }, onNotNow = vm::declineReaderOffer,
-                    onRetry = { starter.start(RETRY_READER) }, onCancel = vm::cancelReaderDownload,
+                    onRetry = { starter.start(RETRY_READER) }, onCancel = { accepted = false; vm.cancelReaderDownload() },
                     explainNotifications = starter.explaining, onContinue = starter::continueToAsk,
                 )
             }
