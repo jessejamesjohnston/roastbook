@@ -147,4 +147,65 @@ class BagFactsParserTest {
         assertEquals(listOf("Caturra", "Bourbon"), BagFactsParser.parse("""{"varietal": "Caturra | Bourbon"}""")!!.varietal)
         assertEquals(listOf("Gesha"), BagFactsParser.parse("""{"varietal": "Gesha"}""")!!.varietal)
     }
+
+    // --- The loose path: an answer that is almost JSON (one bad value breaks the whole object) ---
+
+    /** The shape seen from Gemini Nano on a MediaTek tablet: a bare null with a stray string after it. */
+    @Test
+    fun aBareNullFollowedByAStrayStringIsNull() {
+        val raw = """
+            ```json
+            {
+              "roaster": null,
+              "producer": null "Hollin Vale",
+              "process": "Washed",
+              "varietal": [],
+              "elevation_m": null
+            }
+            ```
+        """.trimIndent()
+        val f = BagFactsParser.parse(raw)!!
+        assertNull(f.producer)
+        assertEquals("Washed", f.process)
+    }
+
+    @Test
+    fun aNameThatStartsWithNullIsKept() {
+        // Not JSON (the second line is missing its colon's partner quote), so the loose path reads it.
+        val f = BagFactsParser.parse("{\n\"producer\": \"Nullarbor Growers\",\n\"region: Ridge\n}")!!
+        assertEquals("Nullarbor Growers", f.producer)
+        assertEquals("Nullwood Roasters", BagFactsParser.parse("roaster: Nullwood Roasters\nprocess: null")!!.roaster)
+        assertNull(BagFactsParser.parse("roaster: Nullwood Roasters\nprocess: null")!!.process)
+        assertNull(BagFactsParser.parse("roaster: null, maybe")!!.roaster)
+    }
+
+    @Test
+    fun theLoosePathReadsKeysThatShareALineWithTheBraceOrEachOther() {
+        val raw = "{\"roaster\": \"Larkmoor\", \"coffee_name\": \"Copper Ridge\",\n" +
+            "\"producer\": null \"Hollin Vale\", \"elevation_m\": 1650, \"varietal\": [\"Caturra\", \"Bourbon\"],\n" +
+            "\"origin_country\": \"Peru\"}"
+        val f = BagFactsParser.parse(raw)!!
+        assertEquals("Larkmoor", f.roaster)
+        assertEquals("Copper Ridge", f.coffeeName)
+        assertNull(f.producer)
+        assertEquals(1650, f.elevationM)
+        assertEquals(listOf("Caturra", "Bourbon"), f.varietal)
+        assertEquals("Peru", f.originCountry)
+    }
+
+    @Test
+    fun aQuotedValueKeepsItsCommasAndEscapedQuotes() {
+        val f = BagFactsParser.parse("{\n\"bag_description\": \"Bright, juicy, a \\\"house\\\" lot.\", \"process\": \"Honey\"\n\"region\": Ridge\n")!!
+        assertEquals("Bright, juicy, a \"house\" lot.", f.bagDescription)
+        assertEquals("Honey", f.process)
+    }
+
+    /** An answer cut off mid-value (the token limit) keeps what came before and drops the cut value. */
+    @Test
+    fun aValueCutOffMidStringIsDropped() {
+        val f = BagFactsParser.parse("{\n  \"roaster\": \"Larkmoor\",\n  \"process\": \"Washed\",\n  \"bag_description\": \"A long paragraph that never")!!
+        assertEquals("Larkmoor", f.roaster)
+        assertEquals("Washed", f.process)
+        assertNull(f.bagDescription)
+    }
 }

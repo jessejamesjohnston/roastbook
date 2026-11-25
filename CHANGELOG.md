@@ -6,6 +6,15 @@ All notable changes to Roastbook are recorded here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- A model answer that is almost JSON no longer leaks text into a field. When one value broke
+  the object (seen on one device: a bare `null` followed by a stray quoted name), the fallback
+  parser glued the two together and saved `null "Name` as the producer. It now reads each value
+  as one token, so a bare `null` stays empty, a value cut off by the token limit is dropped
+  instead of saved half-written, and keys that share a line with the opening brace or with
+  each other are no longer skipped.
+
 ## [0.4.0] - 2026-11-24
 
 The first public release.

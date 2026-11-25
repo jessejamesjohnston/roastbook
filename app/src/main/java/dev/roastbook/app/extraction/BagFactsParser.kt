@@ -60,39 +60,93 @@ object BagFactsParser {
         .replace(Regex(""",(\s*[}\]])"""), "$1")
         .replace(Regex("""("[^"]*"|]|\d|null|true|false)(\s*\n\s*)(")"""), "$1,$2$3")
 
-    /** "key: value" lines; lists as [a, b] or as following "- item" lines. */
+    /**
+     * "key: value" lines, and the pairs of a JSON object that failed to parse as a whole (one bad
+     * value breaks every other key otherwise). Each value is read as one token: a quoted string up to
+     * its closing quote, a bare null/true/false, a [list], or (YAML style) the unquoted rest of the
+     * line. Text after a value that is not another key is ignored, so a stray string after a bare
+     * null (`"producer": null "Name"`) is not glued onto it. A quoted string that never closes (an
+     * answer cut off at its token limit) is dropped rather than kept half-written. Several pairs may
+     * share a line, and the first may share it with the opening brace. Lists also span lines as
+     * [a, b] or as following "- item" lines.
+     */
     private fun parseLoose(text: String): BagFacts? {
         val map = mutableMapOf<String, Any?>()
-        var listKey: String? = null
         var list: MutableList<String>? = null
         for (line in text.lines()) {
             val t = line.trim()
-            val m = Regex("^\"?([a-z_]+)\"?\\s*:\\s*(.*)$").find(t)
+            var pos: Int
+            var m = keyAt.matchAt(t, 0)
             if (m == null) {
                 // Inside a multi-line list: "- item", "item", or the closing bracket.
-                if (listKey != null && list != null) {
-                    if (t.startsWith("]")) { listKey = null; list = null; continue }
+                if (list != null) {
+                    if (t.startsWith("]")) { list = null; continue }
                     val item = t.removePrefix("- ").trimEnd(',').trim().trim('"', '\'')
                     if (item.isNotEmpty() && item != "null") list.add(item)
                 }
                 continue
             }
-            val key = m.groupValues[1]; val value = m.groupValues[2].trim().trimEnd(',')
-            if (key !in keys) continue
-            listKey = null; list = null
-            when {
-                value.startsWith("[") -> {
-                    val inner = value.removePrefix("[").substringBefore("]")
-                    val items = inner.split(",").map { it.trim().trim('"', '\'') }.filter { it.isNotBlank() && it != "null" }
-                    map[key] = items
-                    if (!value.contains("]")) { listKey = key; list = items.toMutableList(); map[key] = list }
+            list = null
+            while (m != null) {
+                val key = m.groupValues[1]
+                pos = m.range.last + 1
+                val v = readValue(t, pos)
+                pos = v.end
+                if (key in keys) {
+                    when {
+                        v.openList != null -> { list = v.openList; map[key] = v.openList }
+                        v.dropped -> map.remove(key)
+                        else -> map[key] = v.value
+                    }
                 }
-                value.isEmpty() -> { listKey = key; list = mutableListOf(); map[key] = list }
-                else -> map[key] = value.trim('"', '\'')
+                // The next pair on this line, if any: right here, or after a stray token.
+                m = keyAt.matchAt(t, pos) ?: nextPair.find(t, pos)?.let { keyAt.matchAt(t, it.range.first) }
             }
         }
         if (map.isEmpty()) return null
         return fromMap(map)
+    }
+
+    /** A key at the start of the text: optional brace, commas, whitespace and quotes around it. */
+    private val keyAt = Regex("""[\s{,]*"?([a-z_]+)"?\s*:\s*""")
+    /** A later quoted key on the same line, after something that was not one. */
+    private val nextPair = Regex(""",\s*"[a-z_]+"\s*:""")
+    private val literal = Regex("""^(null|true|false)(?![A-Za-z0-9_])""", RegexOption.IGNORE_CASE)
+
+    /** One value read from [t] at [from]; [openList] is set when a list continues on later lines. */
+    private class Value(val value: Any?, val end: Int, val openList: MutableList<String>? = null, val dropped: Boolean = false)
+
+    private fun readValue(t: String, from: Int): Value {
+        val rest = t.substring(from)
+        return when {
+            rest.isEmpty() -> Value(null, t.length, openList = mutableListOf())
+            rest.startsWith("\"") -> {
+                val sb = StringBuilder()
+                var i = from + 1
+                while (i < t.length) {
+                    val c = t[i]
+                    if (c == '\\' && i + 1 < t.length) {
+                        sb.append(when (val e = t[i + 1]) { 'n' -> '\n'; 't' -> '\t'; else -> e }); i += 2; continue
+                    }
+                    if (c == '"') return Value(sb.toString(), i + 1)
+                    sb.append(c); i++
+                }
+                Value(null, t.length, dropped = true)
+            }
+            rest.startsWith("[") -> {
+                val close = rest.indexOf(']')
+                val inner = rest.substring(1, if (close < 0) rest.length else close)
+                val items = inner.split(",").map { it.trim().trim('"', '\'') }.filter { it.isNotBlank() && it != "null" }
+                if (close < 0) Value(null, t.length, openList = items.toMutableList())
+                else Value(items, from + close + 1)
+            }
+            literal.containsMatchIn(rest) -> Value(null, from + literal.find(rest)!!.range.last + 1)
+            else -> {
+                // Unquoted (YAML style): the rest of the line, up to the next quoted key if one follows.
+                val stop = nextPair.find(t, from)?.range?.first ?: t.length
+                Value(t.substring(from, stop).trim().trimEnd(',', '}').trim().trim('"', '\''), stop)
+            }
+        }
     }
 
     private fun fromMap(m: Map<String, Any?>): BagFacts = BagFacts(
