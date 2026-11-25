@@ -121,7 +121,7 @@ object BagFactsParser {
     /** A bare literal, only where it ends the value: "True North Roasters" is a name, not `true`. */
     private val literal = Regex("""^(null|true|false)(?=\s*($|[,}"]))""", RegexOption.IGNORE_CASE)
     /** What may follow a string's closing quote: the line's end, a brace, or a comma before the end or the next key. */
-    private val afterString = Regex("""^\s*($|}|,\s*($|"?[a-z_]+"?\s*:))""")
+    private val afterString = Regex("""^\s*($|\}|,\s*($|"?[a-z_]+"?\s*:))""")
 
     /** One value read from [t] at [from]; [openList] is set when a list continues on later lines. */
     private class Value(val value: Any?, val end: Int, val openList: MutableList<String>? = null, val dropped: Boolean = false)
