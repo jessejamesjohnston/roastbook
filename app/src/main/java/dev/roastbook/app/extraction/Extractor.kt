@@ -14,6 +14,7 @@ import dev.roastbook.app.data.db.ExtractionSource
 import dev.roastbook.app.data.db.PhotoRole
 import dev.roastbook.app.data.db.RoastbookDatabase
 import dev.roastbook.app.data.photo.PhotoStore
+import dev.roastbook.app.reader.ReaderNudge
 import dev.roastbook.app.util.runCatchingCancellable
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
@@ -117,7 +118,22 @@ class Extractor @Inject constructor(
      * Reads [coffeeId] once through the tiers, in order, and writes the result. Callers outside this
      * class go through [runIfDue], which holds the queue; tests call this directly.
      */
-    suspend fun run(coffeeId: String, mode: RunMode = RunMode.FOREGROUND): ExtractionOutcome {
+    suspend fun run(coffeeId: String, mode: RunMode = RunMode.FOREGROUND): ExtractionOutcome =
+        read(coffeeId, mode).also { waitForReaderIfPoor(coffeeId) }
+
+    /**
+     * A finished read the built-in AI did poorly, while an accepted reader download is still on its
+     * way: the bag waits for the reader too, so it is read again when the reader arrives (see
+     * [NanoHealth.waitForReaderIfComing]). A row still being read (parked) is left alone.
+     */
+    private suspend fun waitForReaderIfPoor(coffeeId: String) {
+        val c = dao.get(coffeeId)?.takeIf { it.state != CoffeeState.EXTRACTING } ?: return
+        if (ReaderNudge.poorBuiltInRead(c.extractionSource, ExtractionTrail.decode(c.extractionTrail))) {
+            runCatchingCancellable { nanoHealth.waitForReaderIfComing(coffeeId) }
+        }
+    }
+
+    private suspend fun read(coffeeId: String, mode: RunMode): ExtractionOutcome {
         // Under the lock a restore holds while it replaces the library, and before the row is read.
         startedIn[coffeeId] = photos.captureLock.withLock { photos.generation }
         val coffee = dao.get(coffeeId) ?: return ExtractionOutcome(ExtractionSource.NONE, null, "missing")
@@ -150,11 +166,11 @@ class Extractor @Inject constructor(
                 val note = "nano:${nano.modelName()}"
                 val read = trail.with(Tier.NANO, TierOutcome.READ).copy(nanoPoor = step.poor)
                 // A poor reading (not the JSON asked for, or neither roaster nor coffee) gets a second
-                // opinion from the on-device reader when it is downloaded; the one with more fields is kept.
+                // opinion from the on-device reader when it is downloaded (see [readerWins]).
                 if (step.poor && localReady()) {
                     val thin = ModelStep.Next(trail.with(Tier.NANO, TierOutcome.EMPTY), "nano read poorly (${step.facts.fieldCount} fields)")
                     val second = localStep(coffeeId, ::images, pages, thin)
-                    if (second is ModelStep.Read && second.facts.fieldCount > step.facts.fieldCount) {
+                    if (second is ModelStep.Read && readerWins(step, second)) {
                         val localNote = "local:${local.modelName()}; after ${second.notes}"
                         return finish(coffeeId, ExtractionSource.LOCAL, second.facts, ocrText, localNote, second.trail, baseline = coffee)
                     }
@@ -197,9 +213,22 @@ class Extractor @Inject constructor(
         OcrPage(label = "photo ${i + 1} (${p.role.name.lowercase()})", isSeller = p.role == PhotoRole.SELLER, text = text.trim())
     }
 
+    /**
+     * The second opinion on a poor built-in reading: the reading with more fields is kept. On a tie,
+     * the reader's wins when the built-in answer was not valid JSON and the reader's was, since its
+     * fields came through as asked rather than picked out of a broken answer. A broken answer with
+     * more fields still wins: the loose parse recovers real content (most often a "key: value" list
+     * in place of JSON), it drops values it can't close, and every field stays editable.
+     */
+    private fun readerWins(nano: NanoStep.Read, reader: ModelStep.Read): Boolean {
+        val (n, r) = nano.facts.fieldCount to reader.facts.fieldCount
+        return r > n || (r == n && !nano.wellFormed && reader.wellFormed)
+    }
+
     /** What a model tier after Nano left: a reading, or the trail and notes to hand to the next tier. */
     private sealed interface ModelStep {
-        data class Read(val facts: BagFacts, val trail: ExtractionTrail, val notes: String) : ModelStep
+        /** [wellFormed]: the answer was the JSON object asked for, the first time. */
+        data class Read(val facts: BagFacts, val trail: ExtractionTrail, val notes: String, val wellFormed: Boolean = true) : ModelStep
         data class Next(val trail: ExtractionTrail, val notes: String) : ModelStep
     }
 
@@ -214,7 +243,7 @@ class Extractor @Inject constructor(
                 countAttemptUpFront(coffeeId)
                 val attempt = try {
                     withTimeout(timeouts.localMs) {
-                        modelAttempt("local", loadImages(), pages) { imgs, prompt -> local.generate(imgs, prompt) }
+                        modelAttemptChecked("local", loadImages(), pages) { imgs, prompt -> local.generate(imgs, prompt) }
                     }
                 } catch (e: TimeoutCancellationException) {
                     notes += "; local timed out"; null.also { trail = trail.with(Tier.LOCAL, TierOutcome.FAILED) }
@@ -227,7 +256,9 @@ class Extractor @Inject constructor(
                     notes += "; local threw ${e::class.simpleName}: ${e.message?.take(120)}"
                     null.also { trail = trail.with(Tier.LOCAL, TierOutcome.FAILED) }
                 }
-                if (attempt != null && !attempt.isEmpty) return ModelStep.Read(attempt, trail.with(Tier.LOCAL, TierOutcome.READ), notes)
+                if (attempt != null && !attempt.facts.isEmpty) {
+                    return ModelStep.Read(attempt.facts, trail.with(Tier.LOCAL, TierOutcome.READ), notes, attempt.wellFormed)
+                }
                 if (trail[Tier.LOCAL] == null) {
                     trail = trail.with(Tier.LOCAL, if (attempt != null) TierOutcome.EMPTY else TierOutcome.FAILED)
                     notes += if (attempt != null) "; local returned no fields" else "; local unparseable twice"
@@ -271,7 +302,7 @@ class Extractor @Inject constructor(
 
     private sealed interface NanoStep {
         /** [poor]: the answer was not the JSON asked for, or names neither the roaster nor the coffee. */
-        data class Read(val facts: BagFacts, val poor: Boolean = false) : NanoStep
+        data class Read(val facts: BagFacts, val poor: Boolean = false, val wellFormed: Boolean = true) : NanoStep
         /** The run ends here: the row was parked for a retry, or left for the foreground. */
         data class Stop(val outcome: ExtractionOutcome) : NanoStep
         data class Fall(val outcome: TierOutcome, val why: String) : NanoStep
@@ -341,7 +372,7 @@ class Extractor @Inject constructor(
         }
         if (attempt != null && !attempt.facts.isEmpty) {
             nanoHealth.recordNano(ok = true)
-            return NanoStep.Read(attempt.facts, poor = !attempt.wellFormed || attempt.facts.isThin)
+            return NanoStep.Read(attempt.facts, poor = !attempt.wellFormed || attempt.facts.isThin, wellFormed = attempt.wellFormed)
         }
         if (attempt != null) {
             return NanoStep.Fall(TierOutcome.EMPTY, "nano returned no fields (${images.size} images, ${ocrText.length} ocr chars)")

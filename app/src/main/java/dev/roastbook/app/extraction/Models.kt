@@ -92,6 +92,8 @@ interface NanoHealth {
     suspend fun recordNano(ok: Boolean, reason: String? = null)
     /** The person chose, in Settings, to have the on-device reader read bags instead of Nano. */
     suspend fun readerPreferred(): Boolean = false
+    /** [coffeeId] was read poorly by the built-in AI: it waits for the reader if one is on its way. */
+    suspend fun waitForReaderIfComing(coffeeId: String) {}
 }
 
 /** Where a read runs. The system model (Nano) refuses background callers; the other tiers don't. */

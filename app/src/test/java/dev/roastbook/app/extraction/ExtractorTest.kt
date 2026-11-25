@@ -97,6 +97,8 @@ class ExtractorTest {
         override suspend fun recordNano(ok: Boolean, reason: String?) { records += ok; failing = !ok }
         var preferred = false
         override suspend fun readerPreferred() = preferred
+        val waitingForReader = mutableListOf<String>()
+        override suspend fun waitForReaderIfComing(coffeeId: String) { waitingForReader += coffeeId }
     }
     private var now = 1_000_000L
     private val clock = Clock { now }
@@ -1013,5 +1015,43 @@ class ExtractorTest {
         val local = FakeLocal(answers = mutableListOf({ """{"roaster":"Larkmoor","coffee_name":"Copper Ridge","process":"Washed"}""" }))
         assertEquals(ExtractionSource.LOCAL, extractor(nano, FakeOcr("t"), local = local).run(id).source)
         assertEquals("Copper Ridge", db.coffeeDao().get(id)!!.coffeeName)
+    }
+
+    @Test fun onATieTheReadersCleanReadingBeatsAMalformedBuiltInOne() = runBlocking {
+        val id = seedCoffee()
+        // Two fields each; the built-in answer is broken JSON, the reader's is the JSON asked for.
+        val nano = FakeNano(answers = mutableListOf({ "{\n\"roaster\": \"Larkmoor\",\n\"process\": \"Washed\"\n\"producer\": null \"x\"\n}" }))
+        val local = FakeLocal(answers = mutableListOf({ """{"roaster":"Larkmoor","coffee_name":"Copper Ridge"}""" }))
+        assertEquals(ExtractionSource.LOCAL, extractor(nano, FakeOcr("t"), local = local).run(id).source)
+        assertEquals("Copper Ridge", db.coffeeDao().get(id)!!.coffeeName)
+    }
+
+    @Test fun onATieAWellFormedThinBuiltInReadingIsKept() = runBlocking {
+        val id = seedCoffee()
+        val nano = FakeNano(answers = mutableListOf({ """{"producer":"Hollin Vale","process":"Washed"}""" }))
+        val local = FakeLocal(answers = mutableListOf({ """{"process":"Natural","varietal":["Geisha"]}""" }))
+        assertEquals(ExtractionSource.NANO, extractor(nano, FakeOcr("t"), local = local).run(id).source)
+    }
+
+    @Test fun aMalformedBuiltInReadingWithMoreFieldsStillBeatsACleanReaderReading() = runBlocking {
+        val id = seedCoffee()
+        val nano = FakeNano(answers = mutableListOf({ "roaster: Larkmoor\ncoffee_name: Copper Ridge\nprocess: Washed" }))
+        val local = FakeLocal(answers = mutableListOf({ """{"roaster":"Larkmoor"}""" }))
+        assertEquals(ExtractionSource.NANO, extractor(nano, FakeOcr("t"), local = local).run(id).source)
+        assertEquals("Copper Ridge", db.coffeeDao().get(id)!!.coffeeName)
+    }
+
+    @Test fun aPoorBuiltInReadingWaitsForAReaderOnItsWay() = runBlocking {
+        val id = seedCoffee()
+        val nano = FakeNano(answers = mutableListOf({ """{"producer":"Hollin Vale"}""" }))
+        extractor(nano, FakeOcr("t"), local = FakeLocal(availability = LocalAvailability.NOT_DOWNLOADED)).run(id)
+        assertEquals(listOf(id), health.waitingForReader)
+    }
+
+    @Test fun aGoodBuiltInReadingDoesNotWaitForTheReader() = runBlocking {
+        val id = seedCoffee()
+        val nano = FakeNano(answers = mutableListOf({ """{"roaster":"Larkmoor"}""" }))
+        extractor(nano, FakeOcr("t"), local = FakeLocal(availability = LocalAvailability.NOT_DOWNLOADED)).run(id)
+        assertEquals(emptyList<String>(), health.waitingForReader)
     }
 }
