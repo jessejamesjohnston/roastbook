@@ -101,11 +101,11 @@ below it), add this repository to [Obtainium](https://github.com/ImranR98/Obtain
 the repository's releases on GitHub.
 
 What the phone brings matters for reading bags. Phones whose system offers Gemini Nano read
-labels on the device with no setup. Other phones can download an optional open model (2.6 GB,
-once; it needs 8 GB of memory or more), add their own Gemini API key, or rely on a
-guess from the printed text, which the app marks as a guess. Where a phone's built-in model reads
-poorly, the open model can be downloaded on any device with the memory for it and chosen in
-Settings to read bags instead; it also runs entirely on the device. Everything else works the
+labels on the device with no setup. Any phone with 8 GB of memory or more can download the
+optional on-device reader, an open model (2.6 GB, once); where the phone has no built-in model it
+reads bags, and where it has one, a switch in Settings can choose the reader instead. Both run
+entirely on the device. Phones can also add their own Gemini API key, or rely on a guess from the
+printed text, which the app marks as a guess. Everything else works the
 same on every phone.
 
 ## How it's built
@@ -119,8 +119,8 @@ every photo. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) has the detail.
 phone's built-in model (Gemini Nano through ML Kit GenAI), then the optional on-device reader
 (Gemma 4 E2B running on [LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM)), then Gemini
 with the user's key if there is one, and falls back to simple rules over the recognized text. A
-built-in reading that names neither the roaster nor the coffee is checked against the on-device
-reader when it is downloaded, and the reading with more fields is kept; a user can also choose the
+built-in reading that is not the JSON asked for, or that names neither the roaster nor the coffee,
+is checked against the on-device reader when it is downloaded, and the reading with more fields is kept; a user can also choose the
 on-device reader outright.
 Every step has a deadline and every read an attempt cap, and the trail of what each tier did is
 stored with the coffee, so the app can say why a field came from where it did. The state lives in

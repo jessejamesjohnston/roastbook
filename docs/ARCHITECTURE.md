@@ -33,8 +33,8 @@ EXTRACTING    OCR every photo (2048 px)
               ├─ 0. reader chosen in Settings and downloaded → Nano skipped ↓
               ├─ 1. Nano (system model; images 1024 px + OCR text) → JSON → parse
               │     ├─ facts                  → LOGGED / RATED, source NANO
-              │     ├─ thin (no roaster, no coffee) and the reader downloaded
-              │     │                         → the reader reads too; more fields wins
+              │     ├─ poor (not the JSON asked for, or no roaster and no coffee)
+              │     │   and the reader downloaded → the reader reads too; more fields wins
               │     ├─ unparseable            → one strict retry, then ↓
               │     ├─ model downloading      → PARKED: stays EXTRACTING, retried at +3 min,
               │     │                           then +5 min; the third miss falls through ↓

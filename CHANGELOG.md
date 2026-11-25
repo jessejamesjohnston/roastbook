@@ -6,46 +6,6 @@ All notable changes to Roastbook are recorded here. The format follows
 
 ## [Unreleased]
 
-### Added
-
-- After a poor reading by the device's built-in AI (an answer that was not the JSON asked for,
-  one with neither roaster nor coffee, or a timeout), a coffee's page offers the downloadable
-  reader in place, with its size, that it runs on the device and that it waits for Wi-Fi.
-  Download makes the reader this device's choice and reads that bag again when it arrives;
-  Not now is remembered for that bag, and after two the offer stops.
-- Settings, On-device reader: shown on every device that can run the downloadable reader, not
-  only where the built-in AI is missing. Where the device has its own AI, a switch (off by
-  default) has the reader read bags instead, once it is downloaded. Both run on the device.
-
-### Changed
-
-- Wording across the app follows one style: no closing period on a single sentence, an ellipsis
-  only on something in progress, a middle dot or a comma to join two parts, a serial comma in a
-  list, American spelling and natural contractions. Settings hints say what the setting does
-  ("Backs up once a day in the background"), and the button that clears a wrong roaster's links
-  is now Not this roaster. A unit test checks every string against these rules and fails the
-  build on a break.
-- A built-in AI reading that was not the JSON asked for, or that names neither the roaster nor
-  the coffee, is checked against the downloadable reader when it is on the device, and the reading with more fields is kept.
-
-### Fixed
-
-- `scripts/release.sh`: a key alias matches regardless of case; keytool runs in English and
-  its listing is parsed without depending on its spacing; a keystore with no private key gets
-  its own message; the password must also unlock the key, checked before the build; and
-  `--verify` reports an APK modified after signing as "the signature does not verify" instead
-  of "not the expected certificate".
-- The rating sheet opens fully expanded with Save and Cancel pinned below the scores, so they
-  are on screen in a short window (a desktop window that is not maximized) without dragging the
-  sheet up first.
-- A model answer that is almost JSON no longer leaks text into a field. When one value broke
-  the object (seen on one device: a bare `null` followed by a stray quoted name), the fallback
-  parser glued the two together and saved `null "Name` as the producer. It now reads each value
-  as one token, so a bare `null` stays empty, a value cut off by the token limit is dropped
-  instead of saved half-written, and keys that share a line with the opening brace or with
-  each other are no longer skipped. Unescaped quotes inside a value, and names that begin with
-  a word like "True" or "Null", are kept.
-
 ## [0.4.0] - 2026-11-24
 
 The first public release.
@@ -55,9 +15,21 @@ The first public release.
 - Photograph a bag (as many photos as you like) and Roastbook reads the label on the device:
   roaster, coffee, origin, region, producer, process, varietal, elevation, roast and tasting
   notes. Every field is a suggestion you can edit, and each coffee says how it was read.
-- Reading falls back in order: the phone's built-in Gemini Nano, an optional open model you can
-  download once (2.6 GB, for phones with 8 GB of memory or more), Gemini with your own API key,
-  then a marked guess from the printed text.
+- Reading falls back in order: the phone's built-in Gemini Nano, the on-device reader (an open
+  model you can download once, 2.6 GB, for phones with 8 GB of memory or more), Gemini with your
+  own API key, then a marked guess from the printed text. Both the built-in AI and the on-device
+  reader run entirely on the device.
+- Settings, On-device reader: shown on every device that can run the reader, whether or not it
+  has a built-in AI. Where it does, a switch (off by default) has the reader read bags in place
+  of the built-in AI, once it is downloaded.
+- When the built-in AI reads a bag poorly (an answer that is not the JSON asked for, or one that
+  names neither the roaster nor the coffee) and the on-device reader is downloaded, the reader
+  reads it too, and the reading with more fields is kept.
+- After a poor reading by the built-in AI, or one that times out, a coffee's page offers the
+  on-device reader in place, with its size, that it runs on the device and that it waits for
+  Wi-Fi unless mobile data is allowed. Download makes the reader this device's choice and reads
+  that bag again when it arrives; Not now is remembered for that bag, and after two of those
+  the offer stops.
 - Rate each coffee on aroma, flavor, acidity, body and finish, with an overall score, notes,
   price and whether you would buy it again. A reminder to rate it, and one second look after
   your first rating.
