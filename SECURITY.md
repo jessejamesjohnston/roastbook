@@ -21,6 +21,19 @@ requests it makes:
 - Links the app opens (`util/WebLinks.kt`): only http and https pages.
 - The update check (`update/`): one request to GitHub's public API; the app never downloads or
   installs an APK.
+- Exported components. In the merged release manifest:
+  - `MainActivity` is exported because the launcher must start it. It reads one extra, the id
+    of a coffee to rate, which its own reminder notification sends, and drops every other extra
+    before any screen reads the intent. Another app can at most ask it to open the rating sheet
+    for an id it would have to guess; an unknown id opens nothing.
+  - Roastbook's own receivers (the reminder receiver and the boot receiver) are declared
+    `exported="false"`.
+  - Three components that AndroidX libraries add are exported, each behind a permission that
+    only the system (and, for `DUMP`, `adb`) holds: WorkManager's `SystemJobService` requires
+    `android.permission.BIND_JOB_SERVICE`, and WorkManager's `DiagnosticsReceiver` and the
+    profile installer's `ProfileInstallReceiver` require `android.permission.DUMP`.
+  - No other component, from Roastbook or a library (ML Kit and Play services included), is
+    exported.
 
 Google's ML Kit and Play services are outside this project's control; report problems in them
 to Google.
