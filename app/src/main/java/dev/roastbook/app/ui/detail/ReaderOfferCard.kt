@@ -46,6 +46,7 @@ import dev.roastbook.app.ui.components.readerProgressText
  * | NONE, nothing yet (the moment after Download, also over a part a failed download left) | Starting the download… | moving | Cancel download |
  * | NONE, stopped part-way (Pause) | Paused at X of Y / Download paused | none | Resume, Cancel download |
  * | WAITING_FOR_NETWORK | Waiting for Wi-Fi (or a connection), with X of Y once some arrived | still, at X | Cancel download |
+ * | DOWNLOADING, no byte yet (the job running before its first report, or reporting 0) | Starting the download… | moving | Cancel download |
  * | DOWNLOADING | Downloading: X of Y | filling with the bytes | Cancel download |
  * | VERIFYING | Checking the download… | moving | Cancel download |
  * | FAILED | why, in Settings' words | none | Try again, Not now (this bag stops waiting) |

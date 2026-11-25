@@ -101,9 +101,17 @@ fun readerFailureText(failure: DownloadFailure?, totalSize: String): String = wh
     DownloadFailure.SERVER, null -> stringResource(R.string.reader_failed_server)
 }
 
-/** The progress line of a download that is running, being checked, or waiting for a network. */
+/**
+ * A download job that is running but has no byte yet: WorkManager reports it RUNNING before the
+ * job's first progress report, and that first report can say 0 bytes. Until a byte arrives it reads
+ * as starting, over a moving bar; a resume counts the part already on disk, so it is not starting.
+ */
+val ReaderState.awaitingFirstBytes: Boolean get() = phase == DownloadPhase.DOWNLOADING && downloadedBytes <= 0L
+
+/** The progress line of a download that is starting, running, being checked, or waiting for a network. */
 @Composable
 fun readerProgressText(s: ReaderState, size: (Long) -> String): String = when {
+    s.awaitingFirstBytes -> stringResource(R.string.detail_reader_starting)
     s.phase == DownloadPhase.VERIFYING -> stringResource(R.string.reader_verifying)
     // Waiting with a part on disk says how far it got, so a stalled download doesn't look lost.
     s.phase == DownloadPhase.WAITING_FOR_NETWORK && s.downloadedBytes > 0 -> stringResource(
@@ -118,14 +126,14 @@ fun readerProgressText(s: ReaderState, size: (Long) -> String): String = when {
 /**
  * The download's bar, the same in Settings and on a coffee's page. It fills with the bytes while
  * the download runs (or stands still where it stopped while waiting for a network), and moves
- * without a value while there is no size to show: starting, checking the file, or the bag being
+ * without a value while there is no size to show: starting (no byte yet), checking the file, or the bag being
  * read once the reader is here. Paused and failed downloads draw no bar, so they don't look busy.
  * TalkBack hears the bar's value and [label].
  */
 @Composable
 fun ReaderProgressBar(s: ReaderState, paused: Boolean, label: String) {
     if (paused || s.phase == DownloadPhase.FAILED) return
-    val known = s.totalBytes > 0 &&
+    val known = s.totalBytes > 0 && !s.awaitingFirstBytes &&
         (s.phase == DownloadPhase.DOWNLOADING || s.phase == DownloadPhase.WAITING_FOR_NETWORK)
     Spacer(Modifier.height(8.dp))
     val modifier = Modifier.fillMaxWidth().semantics { stateDescription = label }

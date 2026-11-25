@@ -13,6 +13,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -243,6 +247,61 @@ class LocalReaderSectionTest {
         assertFalse(m.store.part.exists())
         assertTrue(h.jobs().all { it.state.isFinished })
     }
+
+    /**
+     * The states a device reports after Download, in order: the job enqueued, running before it
+     * reported anything, running with its first report of 0 bytes, then running with bytes. Until a
+     * byte has arrived the section says the download is starting over a moving bar; the bar fills
+     * only from the first bytes. (Showing "Downloading: 0 B of 2.6 GB" over an empty bar read as stuck.)
+     */
+    @Test fun untilTheFirstBytesArriveTheDownloadSaysItIsStartingOverAMovingBar() {
+        grantNotifications()
+        val m = manager()
+        val reported = CompletableDeferred<Unit>()
+        val bytes = CompletableDeferred<Unit>()
+        h.worker = { c, p ->
+            ScriptedWorker(c, p) {
+                reported.await()
+                setProgress(workDataOf(ModelDownloadWorker.KEY_PHASE to "DOWNLOADING", ModelDownloadWorker.KEY_BYTES to 0L))
+                bytes.await()
+                h.writePart(m, 16)
+                setProgress(workDataOf(ModelDownloadWorker.KEY_PHASE to "DOWNLOADING", ModelDownloadWorker.KEY_BYTES to 16L))
+                gate.await(); Result.success()
+            }
+        }
+        runBlocking { m.download() }
+        show(m)
+        val starting = str(R.string.detail_reader_starting)
+        val zero = str(R.string.reader_downloading, size(0), size(total))
+        // Enqueued, its network rule not met yet: an honest wait, not a start.
+        waitFor(str(R.string.reader_waiting_wifi))
+        // Running, nothing reported yet.
+        h.runJob()
+        waitFor(starting)
+        assertFalse(shown(zero))
+        assertEquals(1, bars(indeterminate)); assertEquals(0, bars(determinate))
+        // Running, first report: 0 bytes.
+        reported.complete(Unit)
+        waitUntil { h.jobs().any { it.state == WorkInfo.State.RUNNING && it.progress.keyValueMap.isNotEmpty() } }
+        compose.waitForIdle()
+        assertTrue(shown(starting))
+        assertFalse(shown(zero))
+        assertEquals(1, bars(indeterminate)); assertEquals(0, bars(determinate))
+        assertTrue("Pause and Cancel are there while it starts", shown(str(R.string.reader_pause)) && shown(str(R.string.reader_cancel)))
+        // Running with bytes: the line counts them and the bar fills.
+        bytes.complete(Unit)
+        waitFor(str(R.string.reader_downloading, size(16), size(total)))
+        assertFalse(shown(starting))
+        assertEquals(1, bars(determinate)); assertEquals(0, bars(indeterminate))
+    }
+
+    private val determinate = SemanticsMatcher("a bar with a value") {
+        it.config.getOrNull(SemanticsProperties.ProgressBarRangeInfo)?.let { r -> r != ProgressBarRangeInfo.Indeterminate } == true
+    }
+    private val indeterminate = SemanticsMatcher("a moving bar") {
+        it.config.getOrNull(SemanticsProperties.ProgressBarRangeInfo) == ProgressBarRangeInfo.Indeterminate
+    }
+    private fun bars(m: SemanticsMatcher) = compose.onAllNodes(m).fetchSemanticsNodes().size
 
     @Test fun theCheckCannotBePausedOnlyCanceled() {
         grantNotifications()

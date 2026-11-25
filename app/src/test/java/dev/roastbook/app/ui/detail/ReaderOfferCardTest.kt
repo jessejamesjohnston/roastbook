@@ -1,6 +1,7 @@
 package dev.roastbook.app.ui.detail
 
 import android.text.format.Formatter
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -15,7 +16,14 @@ import dev.roastbook.app.R
 import dev.roastbook.app.reader.DownloadFailure
 import dev.roastbook.app.reader.DownloadPhase
 import dev.roastbook.app.reader.Eligibility
+import dev.roastbook.app.reader.ModelDownloadWorker
+import dev.roastbook.app.reader.ReaderHarness
 import dev.roastbook.app.reader.ReaderState
+import dev.roastbook.app.reader.ScriptedWorker
+import androidx.work.ListenableWorker
+import androidx.work.workDataOf
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.runBlocking
 import dev.roastbook.app.ui.theme.RoastbookTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -88,6 +96,54 @@ class ReaderOfferCardTest {
         assert(!shown(str(R.string.reader_resume)))
         compose.onNodeWithText(str(R.string.reader_cancel)).performClick()
         assertEquals(listOf("cancel"), clicks)
+    }
+
+    /**
+     * The card fed by the real download job through the states a device reports after Download:
+     * running before any report, then a first report of 0 bytes, then bytes. It says the download is
+     * starting over a moving bar until a byte has arrived, never "Downloading: 0 B of …" over an
+     * empty bar.
+     */
+    @Test fun fedByTheRealJobTheCardSaysStartingUntilTheFirstBytes() {
+        val h = ReaderHarness()
+        val gate = CompletableDeferred<Unit>()
+        try {
+            h.device(); val spec = h.debugSpec()
+            val m = h.manager()
+            val reported = CompletableDeferred<Unit>()
+            val bytes = CompletableDeferred<Unit>()
+            h.worker = { c, p ->
+                ScriptedWorker(c, p) {
+                    reported.await()
+                    setProgress(workDataOf(ModelDownloadWorker.KEY_PHASE to "DOWNLOADING", ModelDownloadWorker.KEY_BYTES to 0L))
+                    bytes.await()
+                    setProgress(workDataOf(ModelDownloadWorker.KEY_PHASE to "DOWNLOADING", ModelDownloadWorker.KEY_BYTES to 16L))
+                    gate.await(); ListenableWorker.Result.success()
+                }
+            }
+            runBlocking { m.download() }
+            h.runJob()
+            compose.setContent {
+                val s by m.state.collectAsState(null)
+                RoastbookTheme { s?.let { ReaderOfferCard(it, true, {}, {}, {}, {}) } }
+            }
+            val starting = str(R.string.detail_reader_starting)
+            val zero = str(R.string.reader_downloading, size(0), size(spec.sizeBytes))
+            compose.waitUntil(10_000) { shown(starting) }
+            assert(!shown(zero))
+            assertEquals(1, bars(indeterminate)); assertEquals(0, bars(determinate))
+            reported.complete(Unit)
+            compose.waitUntil(10_000) { h.jobs().any { it.progress.keyValueMap.isNotEmpty() } }
+            compose.waitForIdle()
+            assert(shown(starting)); assert(!shown(zero))
+            assertEquals(1, bars(indeterminate)); assertEquals(0, bars(determinate))
+            bytes.complete(Unit)
+            compose.waitUntil(10_000) { shown(str(R.string.reader_downloading, size(16), size(spec.sizeBytes))) }
+            assert(!shown(starting))
+            assertEquals(1, bars(determinate)); assertEquals(0, bars(indeterminate))
+        } finally {
+            gate.complete(Unit); h.close()
+        }
     }
 
     @Test fun aRunningDownloadFillsItsBarWithTheBytes() {
