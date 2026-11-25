@@ -26,7 +26,7 @@ The first public release.
 - When the built-in AI reads a bag poorly (an answer that is not the JSON asked for, or one that
   names neither the roaster nor the coffee) and the on-device reader is downloaded, the reader
   reads it too, and the reading with more fields is kept. On a tie, the reader's reading is kept
-  when the built-in answer was not valid JSON.
+  when its first answer was valid JSON and the built-in AI's was not.
 - After a poor reading by the built-in AI, or one that times out, a coffee's page offers the
   on-device reader in place, with its size, that it runs on the device, and whether it downloads
   over Wi-Fi only or also over mobile data. Download makes the reader this device's choice and

@@ -35,7 +35,8 @@ EXTRACTING    OCR every photo (2048 px)
               │     ├─ facts                  → LOGGED / RATED, source NANO
               │     ├─ poor (not the JSON asked for, or no roaster and no coffee)
               │     │   and the reader downloaded → the reader reads too; more fields wins
-              │     │   (a tie goes to the reader when Nano's answer was not valid JSON)
+              │     │   (a tie goes to the reader when its first answer was valid JSON
+              │     │   and Nano's was not)
               │     ├─ unparseable            → one strict retry, then ↓
               │     ├─ model downloading      → PARKED: stays EXTRACTING, retried at +3 min,
               │     │                           then +5 min; the third miss falls through ↓
