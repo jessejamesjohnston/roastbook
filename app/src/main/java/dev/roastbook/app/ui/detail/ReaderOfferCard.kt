@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,16 +28,35 @@ import androidx.compose.ui.unit.dp
 import dev.roastbook.app.R
 import dev.roastbook.app.reader.DownloadPhase
 import dev.roastbook.app.reader.ReaderState
+import dev.roastbook.app.ui.components.ReaderProgressBar
+import dev.roastbook.app.ui.components.readerFailureText
+import dev.roastbook.app.ui.components.readerProgressText
 
 /**
  * The in-flow reader offer on a coffee's page, after this device's built-in AI read the bag poorly
  * ([dev.roastbook.app.reader.ReaderNudge]): what the reader is and costs, Download or Not now. Once
- * accepted, the same card follows the download until the bag is read again.
+ * accepted ([waiting]), the same card follows the download until the bag is read again, with a way
+ * out in every state: Cancel download while it runs, waits or is paused, Not now once it failed.
+ *
+ * | Phase | Line | Bar | Buttons |
+ * |---|---|---|---|
+ * | NONE, nothing yet (the moment after Download) | Starting the download… | moving | Cancel download |
+ * | NONE, stopped part-way (Pause) | Paused at X of Y / Download paused | none | Resume, Cancel download |
+ * | WAITING_FOR_NETWORK | Waiting for Wi-Fi (or a connection), with X of Y once some arrived | still, at X | Cancel download |
+ * | DOWNLOADING | Downloading: X of Y | filling with the bytes | Cancel download |
+ * | VERIFYING | Checking the download… | moving | Cancel download |
+ * | FAILED | why, in Settings' words | none | Try again, Not now |
+ * | READY, read not started yet | Reading this bag again with the on-device reader… | moving | none |
+ *
+ * [explainNotifications]: the notification explanation and Continue stand in for the buttons
+ * (see [dev.roastbook.app.ui.components.ReaderDownloadStarter]).
  */
 @Composable
 fun ReaderOfferCard(
     reader: ReaderState, waiting: Boolean,
-    onDownload: () -> Unit, onNotNow: () -> Unit, onRetry: () -> Unit, modifier: Modifier = Modifier,
+    onDownload: () -> Unit, onNotNow: () -> Unit, onRetry: () -> Unit, onCancel: () -> Unit,
+    modifier: Modifier = Modifier,
+    explainNotifications: Boolean = false, onContinue: () -> Unit = {},
 ) {
     val context = LocalContext.current
     fun size(b: Long) = Formatter.formatShortFileSize(context, b)
@@ -50,38 +68,81 @@ fun ReaderOfferCard(
         if (!waiting) {
             Text(stringResource(R.string.detail_reader_offer_title), style = MaterialTheme.typography.titleSmall)
             Spacer(Modifier.height(4.dp))
-            Text(stringResource(R.string.detail_reader_offer_body, size(reader.totalBytes)), style = MaterialTheme.typography.bodyMedium)
+            val body = if (reader.allowMetered) R.string.detail_reader_offer_body_mobile else R.string.detail_reader_offer_body
+            Text(stringResource(body, size(reader.totalBytes)), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(8.dp))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = onDownload, modifier = Modifier.heightIn(min = 48.dp)) {
-                    Text(stringResource(R.string.reader_download, size(reader.totalBytes)))
-                }
-                TextButton(onClick = onNotNow, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.detail_reader_offer_not_now)) }
+            if (explainNotifications) {
+                NotificationExplainer(onContinue)
+            } else {
+                Buttons(
+                    primary = stringResource(R.string.reader_download, size(reader.totalBytes)) to onDownload,
+                    secondary = stringResource(R.string.detail_reader_offer_not_now) to onNotNow,
+                )
             }
             return@Column
         }
+        val partial = reader.downloadedBytes > 0
+        val paused = reader.phase == DownloadPhase.NONE && (partial || reader.stopped)
+        val failed = reader.phase == DownloadPhase.FAILED
         val line = when (reader.phase) {
-            DownloadPhase.VERIFYING -> stringResource(R.string.reader_verifying)
-            DownloadPhase.WAITING_FOR_NETWORK ->
-                stringResource(if (reader.allowMetered) R.string.reader_waiting_network else R.string.reader_waiting_wifi)
-            DownloadPhase.FAILED -> stringResource(R.string.reader_failed_server)
-            else -> stringResource(R.string.reader_downloading, size(reader.downloadedBytes), size(reader.totalBytes))
+            DownloadPhase.READY -> stringResource(R.string.detail_reader_rereading)
+            DownloadPhase.FAILED -> readerFailureText(reader.failure, size(reader.totalBytes))
+            DownloadPhase.NONE -> when {
+                partial -> stringResource(R.string.reader_partial, size(reader.downloadedBytes), size(reader.totalBytes))
+                reader.stopped -> stringResource(R.string.detail_reader_paused)
+                else -> stringResource(R.string.detail_reader_starting)
+            }
+            else -> readerProgressText(reader, ::size)
         }
-        Text(line, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
-        if (reader.phase == DownloadPhase.DOWNLOADING && reader.totalBytes > 0) {
-            Spacer(Modifier.height(8.dp))
-            LinearProgressIndicator(
-                progress = { (reader.downloadedBytes.toFloat() / reader.totalBytes).coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxWidth(),
-            )
+        Text(
+            line, style = MaterialTheme.typography.bodyLarge,
+            color = if (failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        )
+        ReaderProgressBar(reader, paused = paused, label = line)
+        if (reader.phase != DownloadPhase.READY) {
+            Spacer(Modifier.height(6.dp))
+            Text(stringResource(R.string.detail_reader_waiting), style = MaterialTheme.typography.bodySmall, color = secondary)
         }
-        Spacer(Modifier.height(6.dp))
-        Text(stringResource(R.string.detail_reader_waiting), style = MaterialTheme.typography.bodySmall, color = secondary)
-        if (reader.phase == DownloadPhase.FAILED || reader.phase == DownloadPhase.NONE) {
-            Spacer(Modifier.height(8.dp))
-            Button(onClick = onRetry, modifier = Modifier.heightIn(min = 48.dp)) {
-                Text(stringResource(if (reader.phase == DownloadPhase.FAILED) R.string.reader_retry else R.string.reader_resume))
+        when {
+            reader.phase == DownloadPhase.READY -> Unit
+            explainNotifications -> { Spacer(Modifier.height(8.dp)); NotificationExplainer(onContinue) }
+            failed -> {
+                Spacer(Modifier.height(8.dp))
+                Buttons(
+                    primary = stringResource(R.string.reader_retry) to onRetry,
+                    secondary = stringResource(R.string.detail_reader_offer_not_now) to onCancel,
+                )
+            }
+            paused -> {
+                Spacer(Modifier.height(8.dp))
+                Buttons(
+                    primary = stringResource(R.string.reader_resume) to onRetry,
+                    secondary = stringResource(R.string.reader_cancel) to onCancel,
+                )
+            }
+            else -> {
+                Spacer(Modifier.height(4.dp))
+                TextButton(onClick = onCancel, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.reader_cancel)) }
             }
         }
     }
+}
+
+/** A filled button and a text button side by side, the second moving below at large text sizes. */
+@Composable
+private fun Buttons(primary: Pair<String, () -> Unit>, secondary: Pair<String, () -> Unit>) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
+        Button(onClick = primary.second, modifier = Modifier.heightIn(min = 48.dp)) { Text(primary.first) }
+        TextButton(onClick = secondary.second, modifier = Modifier.heightIn(min = 48.dp)) { Text(secondary.first) }
+    }
+}
+
+/** Why Android is about to ask for notifications, and Continue, in place of the download button. */
+@Composable
+private fun NotificationExplainer(onContinue: () -> Unit) {
+    Text(stringResource(R.string.notif_why_download), style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+    Spacer(Modifier.height(8.dp))
+    Button(onClick = onContinue, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.permission_continue)) }
 }

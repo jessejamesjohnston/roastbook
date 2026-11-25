@@ -42,6 +42,9 @@ import dev.roastbook.app.data.db.CoffeeEntity
 import dev.roastbook.app.data.db.CoffeePhotoEntity
 import dev.roastbook.app.data.db.CoffeeState
 import dev.roastbook.app.data.db.ExtractionSource
+import dev.roastbook.app.extraction.ExtractionTrail
+import dev.roastbook.app.reader.ReaderNudge
+import dev.roastbook.app.ui.components.rememberReaderDownloadStarter
 import dev.roastbook.app.ui.components.HeroSquare
 import dev.roastbook.app.ui.components.ThemedTint
 import dev.roastbook.app.ui.components.fileOrNull
@@ -125,20 +128,27 @@ internal fun DetailBody(
             val noteDismissed by vm.noteDismissed.collectAsState()
             val readerState by vm.readerState.collectAsState()
             val readerSettings by vm.readerSettings.collectAsState()
-            val trailNow = dev.roastbook.app.extraction.ExtractionTrail.decode(c.extractionTrail)
+            val trailNow = ExtractionTrail.decode(c.extractionTrail)
             val rs = readerState
-            if (rs != null) {
-                val waiting = dev.roastbook.app.reader.ReaderNudge.waitingForReader(c.id, rs, readerSettings)
-                if (waiting || dev.roastbook.app.reader.ReaderNudge.shouldOffer(c.id, c.state, c.extractionSource, trailNow, rs, readerSettings)) {
-                    ReaderOfferCard(
-                        rs, waiting = waiting,
-                        onDownload = vm::acceptReaderOffer, onNotNow = vm::declineReaderOffer, onRetry = vm::retryReaderDownload,
-                    )
-                }
+            // Download and Resume ask for notifications the way Settings does (ReaderDownloadStarter).
+            val starter = rememberReaderDownloadStarter { action ->
+                if (action == ACCEPT_READER) vm.acceptReaderOffer() else vm.retryReaderDownload()
+            }
+            val waiting = ReaderNudge.waitingForReader(c.id, readerSettings)
+            val readerCard = rs != null &&
+                (waiting || ReaderNudge.shouldOffer(c.id, c.state, c.extractionSource, trailNow, rs, readerSettings))
+            if (readerCard) {
+                ReaderOfferCard(
+                    rs, waiting = waiting,
+                    onDownload = { starter.start(ACCEPT_READER) }, onNotNow = vm::declineReaderOffer,
+                    onRetry = { starter.start(RETRY_READER) }, onCancel = vm::cancelReaderDownload,
+                    explainNotifications = starter.explaining, onContinue = starter::continueToAsk,
+                )
             }
             if (!noteDismissed) {
+                // With the reader's card on the page, the note adds no second pointer to the reader or a key.
                 ExtractionStatusCard(
-                    c, readerOffered = readerOffered, nanoFailing = nanoFailing, hasKey = hasKey,
+                    c, readerOffered = readerOffered, nanoFailing = nanoFailing, hasKey = hasKey, readerCardShown = readerCard,
                     onReread = vm::reextract, onDismiss = vm::dismissNote,
                 )
             }
@@ -150,6 +160,10 @@ internal fun DetailBody(
         }
     }
 }
+
+/** The reader card's two download actions, by name, for [rememberReaderDownloadStarter]. */
+private const val ACCEPT_READER = "accept"
+private const val RETRY_READER = "retry"
 
 /** The one obvious "busy" state while a read runs: a banner above the cards, which are dimmed. */
 @Composable

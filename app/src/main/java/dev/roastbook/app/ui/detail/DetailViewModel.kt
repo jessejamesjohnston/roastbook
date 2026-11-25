@@ -64,6 +64,8 @@ class DetailViewModel @AssistedInject constructor(
     fun declineReaderOffer() { viewModelScope.launch { readerPrefs.declineOffer(id) } }
     /** A failed download, retried from this bag's page. */
     fun retryReaderDownload() { viewModelScope.launch { reader.download() } }
+    /** The card's way out: stops the download, as Settings' Cancel does (no bag waits, the switch goes off). */
+    fun cancelReaderDownload() { viewModelScope.launch { reader.cancel() } }
     val lookingUp = MutableStateFlow(false)
     /** Null = no message; otherwise the last manual lookup's outcome for the card. */
     val lookupOutcome = MutableStateFlow<dev.roastbook.app.cloud.LookupResult?>(null)

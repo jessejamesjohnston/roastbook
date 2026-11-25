@@ -39,6 +39,8 @@ data class ReaderState(
     /** A plain reason for the last failed download, or null. */
     val failure: DownloadFailure?,
     val modelName: String,
+    /** The last download was stopped part-way (Pause), as opposed to never started; only in [DownloadPhase.NONE]. */
+    val stopped: Boolean = false,
 )
 
 /**
@@ -87,16 +89,24 @@ class LocalReaderManager @Inject constructor(
         diskTick.value++
     }
 
-    /** Stops the download and removes the partial file. */
-    fun cancel() {
+    /**
+     * Stops the download and removes the partial file. No bag waits for the reader any more, and the
+     * reader stops being this device's choice ([ReaderPrefs.abandonReader]).
+     */
+    suspend fun cancel() {
         WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
         whenNoWriter { store.part.delete() }
+        prefs.abandonReader()
     }
 
-    /** Removes the model, any partial download and the runtime cache. The reader stops being used at once. */
-    fun delete() {
+    /**
+     * Removes the model, any partial download and the runtime cache. The reader stops being used at
+     * once, and stops being this device's choice ([ReaderPrefs.abandonReader]).
+     */
+    suspend fun delete() {
         WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
         whenNoWriter { store.deleteAll() }
+        prefs.abandonReader()
     }
 
     /**
@@ -176,6 +186,7 @@ class LocalReaderManager @Inject constructor(
             nanoFailing = settings.nanoFailing,
             failure = failure,
             modelName = spec.displayName,
+            stopped = phase == DownloadPhase.NONE && info?.state == WorkInfo.State.CANCELLED,
         )
     }.flowOn(Dispatchers.IO)
 

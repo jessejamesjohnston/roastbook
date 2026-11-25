@@ -26,7 +26,8 @@ class DetailScreenReaderHintTest : DetailScreenTestBase(eligibleForReader = true
     }
 
     @Test fun aPhoneWhoseOwnAiKeepsFailingIsPointedToTheReaderToo() {
-        runBlocking { f.readerPrefs.recordNano(ok = false, reason = "timeout") }
+        // Not now on this bag's offer: the note is what points to the reader then.
+        runBlocking { f.readerPrefs.recordNano(ok = false, reason = "timeout"); f.readerPrefs.declineOffer("c1") }
         insert { copy(roaster = "Northwind", extractionSource = ExtractionSource.OCR, extractionTrail = "nano=failed;local=absent;cloud=off;guess=2") }
         show()
         compose.awaitUntil { vm.nanoFailing.value && vm.readerOffered.value }
@@ -44,7 +45,80 @@ class DetailScreenReaderHintTest : DetailScreenTestBase(eligibleForReader = true
         assertEquals(setOf("c1"), vm.readerSettings.value!!.offerDeclinedIds)
     }
 
+    private fun grantNotifications() = org.robolectric.Shadows.shadowOf(f.context as android.app.Application)
+        .grantPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
+
+    private fun poorBag(id: String = "c1") =
+        insert(id) { copy(roaster = null, producer = "Hollin Vale", extractionSource = ExtractionSource.NANO, extractionTrail = "nano=read;nanoq=poor") }
+
+    private fun awaitShown(text: String) =
+        compose.awaitUntil { runCatching { compose.onNodeWithText(text).assertExists() }.isSuccess }
+
+    private fun awaitGone(text: String) =
+        compose.awaitUntil { runCatching { compose.onNodeWithText(text).assertDoesNotExist() }.isSuccess }
+
+    @Test fun aDoubleTapOnNotNowCountsOnce() {
+        poorBag()
+        show()
+        compose.awaitUntil { vm.readerState.value != null && vm.readerSettings.value != null }
+        val notNow = compose.onNodeWithText(str(R.string.detail_reader_offer_not_now))
+        notNow.performClick()
+        vm.declineReaderOffer() // the second tap, landing before the card goes
+        awaitWritesDone()
+        assertEquals(1, vm.readerSettings.value!!.offerDeclines)
+    }
+
+    @Test fun theOfferCardAndTheNoteNeverBothPointAtTheReader() {
+        runBlocking { f.readerPrefs.recordNano(ok = false, reason = "timeout") }
+        insert { copy(roaster = "Northwind", extractionSource = ExtractionSource.OCR, extractionTrail = "nano=failed;local=absent;cloud=off;guess=2") }
+        show()
+        compose.awaitUntil { vm.nanoFailing.value && vm.readerOffered.value && vm.readerSettings.value != null }
+        awaitShown(str(R.string.detail_reader_offer_title))
+        compose.onNodeWithText(str(R.string.what_hint_download)).assertDoesNotExist()
+        compose.onNodeWithText(str(R.string.what_hint_key)).assertDoesNotExist()
+    }
+
+    @Test fun theFirstDownloadFromTheOfferExplainsNotificationsBeforeAndroidAsks() {
+        poorBag()
+        show()
+        compose.awaitUntil { vm.readerState.value != null && vm.readerSettings.value != null }
+        compose.onNodeWithText("Download (", substring = true).performClick()
+        awaitShown(str(R.string.notif_why_download))
+        // Nothing is chosen or downloading until the question is settled.
+        assertEquals(false, vm.readerSettings.value!!.preferReader)
+        compose.onNodeWithText(str(R.string.permission_continue)).assertIsDisplayed()
+    }
+
+    @Test fun cancelOnTheCardStopsTheDownloadClearsTheCardAndTheChoice() {
+        grantNotifications()
+        poorBag()
+        show()
+        compose.awaitUntil { vm.readerState.value != null && vm.readerSettings.value != null }
+        compose.onNodeWithText("Download (", substring = true).performClick()
+        compose.awaitUntil { vm.readerSettings.value?.preferReader == true }
+        awaitShown(str(R.string.reader_cancel))
+        compose.onNodeWithText(str(R.string.reader_cancel)).performClick()
+        compose.awaitUntil { vm.readerSettings.value?.pendingRereads?.isEmpty() == true }
+        assertEquals(false, vm.readerSettings.value!!.preferReader)
+        awaitGone(str(R.string.detail_reader_waiting))
+        // The bag counts as answered: the offer doesn't come straight back.
+        compose.onNodeWithText(str(R.string.detail_reader_offer_title)).assertDoesNotExist()
+    }
+
+    @Test fun aCancelInSettingsTakesTheWaitingCardAway() {
+        grantNotifications()
+        poorBag()
+        show()
+        compose.awaitUntil { vm.readerState.value != null && vm.readerSettings.value != null }
+        compose.onNodeWithText("Download (", substring = true).performClick()
+        awaitShown(str(R.string.detail_reader_waiting))
+        runBlocking { f.reader.cancel() } // what Settings' Cancel download calls
+        awaitGone(str(R.string.detail_reader_waiting))
+        assertEquals(false, vm.readerSettings.value!!.preferReader)
+    }
+
     @Test fun yesToTheOfferChoosesTheReaderAndFollowsTheDownload() {
+        grantNotifications()
         insert { copy(roaster = null, producer = "Hollin Vale", extractionSource = ExtractionSource.NANO, extractionTrail = "nano=read;nanoq=poor") }
         show()
         compose.awaitUntil { vm.readerState.value != null && vm.readerSettings.value != null }

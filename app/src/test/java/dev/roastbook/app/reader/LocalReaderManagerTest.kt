@@ -129,16 +129,34 @@ class LocalReaderManagerTest {
         assertEquals(20L, m.store.part.length())
         val s = h.awaitState(m) { it.phase == DownloadPhase.NONE }
         assertEquals(20L, s.downloadedBytes)
+        assertTrue("stopped part-way, not never started", s.stopped)
         assertTrue(ReaderOffer.hasReaderFiles(s))
+    }
+
+    @Test fun pauseKeepsTheBagsWaitingAndTheReaderChosen() = runBlocking {
+        val m = eligibleManager()
+        h.prefs.acceptOffer("c1")
+        m.download()
+        m.pause()
+        assertEquals(setOf("c1"), h.prefs.current().pendingRereads)
+        assertTrue(h.prefs.current().preferReader)
+    }
+
+    @Test fun aDownloadNeverStartedIsNotStopped() = runBlocking {
+        assertFalse(h.awaitState(eligibleManager()) { true }.stopped)
     }
 
     @Test fun cancelStopsTheJobAndRemovesThePartialFile() = runBlocking {
         val m = eligibleManager()
+        h.prefs.acceptOffer("c1")
         m.download()
         h.writePart(m, 20)
         m.cancel()
         assertTrue(h.jobs().all { it.state == WorkInfo.State.CANCELLED })
         assertFalse(m.store.part.exists())
+        // No bag waits for a reader that isn't coming, and the switch no longer chooses it.
+        assertEquals(emptySet<String>(), h.prefs.current().pendingRereads)
+        assertFalse(h.prefs.current().preferReader)
         assertEquals(0L, h.awaitState(m) { it.phase == DownloadPhase.NONE && it.downloadedBytes == 0L }.downloadedBytes)
     }
 
@@ -187,7 +205,9 @@ class LocalReaderManagerTest {
         h.installModel(m)
         File(m.store.cacheDir, "program.bin").writeBytes(ByteArray(10))
         h.awaitState(m) { it.phase == DownloadPhase.READY }
+        h.prefs.setPreferReader(true)
         m.delete()
+        assertFalse("the delete dialog promises the built-in AI reads new bags", h.prefs.current().preferReader)
         assertFalse(m.isReady())
         assertFalse(m.store.root.exists())
         val s = h.awaitState(m) { it.phase == DownloadPhase.NONE }

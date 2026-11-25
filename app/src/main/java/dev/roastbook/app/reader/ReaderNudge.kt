@@ -40,7 +40,11 @@ object ReaderNudge {
         return poorBuiltInRead(source, trail)
     }
 
-    /** After a yes: the bag waits for the reader, so its page shows the download's progress. */
-    fun waitingForReader(coffeeId: String, reader: ReaderState?, settings: ReaderSettings?): Boolean =
-        reader != null && settings != null && coffeeId in settings.pendingRereads && reader.phase != DownloadPhase.READY
+    /**
+     * After a yes: the bag waits for the reader, so its page follows the download, and then says the
+     * bag is being read again until that read starts. A cancel or delete empties the list
+     * ([ReaderPrefs.abandonReader]), which takes the card away.
+     */
+    fun waitingForReader(coffeeId: String, settings: ReaderSettings?): Boolean =
+        settings != null && coffeeId in settings.pendingRereads
 }

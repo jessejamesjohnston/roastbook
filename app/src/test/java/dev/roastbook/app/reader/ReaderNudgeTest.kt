@@ -56,10 +56,10 @@ class ReaderNudgeTest {
     @Test fun afterAYesTheBagWaitsForTheReaderInsteadOfBeingOfferedAgain() {
         val yes = ReaderSettings(preferReader = true, pendingRereads = setOf("c1"))
         assertFalse(offer(s = yes))
-        assertTrue(ReaderNudge.waitingForReader("c1", reader(DownloadPhase.DOWNLOADING), yes))
-        assertTrue(ReaderNudge.waitingForReader("c1", reader(DownloadPhase.FAILED), yes))
-        assertFalse(ReaderNudge.waitingForReader("c1", reader(DownloadPhase.READY), yes))
-        assertFalse(ReaderNudge.waitingForReader("c2", reader(DownloadPhase.DOWNLOADING), yes))
-        assertFalse(ReaderNudge.waitingForReader("c1", null, yes))
+        // Every phase, READY included: until its read starts, the bag's page says it is being read again.
+        assertTrue(ReaderNudge.waitingForReader("c1", yes))
+        assertFalse(ReaderNudge.waitingForReader("c2", yes))
+        assertFalse(ReaderNudge.waitingForReader("c1", null))
+        assertFalse("a cancel empties the list, and the card goes", ReaderNudge.waitingForReader("c1", yes.copy(pendingRereads = emptySet())))
     }
 }

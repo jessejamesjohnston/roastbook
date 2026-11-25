@@ -1,11 +1,7 @@
 package dev.roastbook.app.ui.settings
 
 import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
 import android.text.format.Formatter
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
@@ -30,7 +25,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,10 +35,8 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -53,7 +45,6 @@ import dev.roastbook.app.R
 import dev.roastbook.app.extraction.NanoStatus
 import dev.roastbook.app.extraction.NanoTier
 import dev.roastbook.app.reader.DeviceProfile
-import dev.roastbook.app.reader.DownloadFailure
 import dev.roastbook.app.reader.DownloadPhase
 import dev.roastbook.app.reader.Eligibility
 import dev.roastbook.app.reader.LiteRtLocalReader
@@ -61,9 +52,10 @@ import dev.roastbook.app.reader.LocalReaderManager
 import dev.roastbook.app.reader.ReaderOffer
 import dev.roastbook.app.reader.ReaderPrefs
 import dev.roastbook.app.reader.ReaderState
-import dev.roastbook.app.ui.components.NOTIFICATION_PERMISSION
-import dev.roastbook.app.ui.components.PermissionAsk
-import dev.roastbook.app.ui.components.rememberPermissionAsk
+import dev.roastbook.app.ui.components.ReaderProgressBar
+import dev.roastbook.app.ui.components.readerFailureText
+import dev.roastbook.app.ui.components.readerProgressText
+import dev.roastbook.app.ui.components.rememberReaderDownloadStarter
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -101,7 +93,7 @@ class LocalReaderViewModel @Inject constructor(
 
     fun download() { viewModelScope.launch { manager.download() } }
     fun pause() { manager.pause() }
-    fun cancel() { manager.cancel() }
+    fun cancel() { viewModelScope.launch { manager.cancel() } }
     fun delete() { viewModelScope.launch { reader.release(); manager.delete() } }
     fun setAllowMetered(on: Boolean) { viewModelScope.launch { manager.setAllowMetered(on) } }
     fun setPreferReader(on: Boolean) { viewModelScope.launch { prefs.setPreferReader(on) } }
@@ -131,34 +123,9 @@ fun LocalReaderSection(vm: LocalReaderViewModel = hiltViewModel()) {
     if (offer == ReaderOffer.HIDDEN) return
     fun size(b: Long) = Formatter.formatShortFileSize(context, b)
     val secondary = MaterialTheme.colorScheme.onSurfaceVariant
-    // The download is a foreground job whose notification carries its progress and Pause. On
-    // Android 13+ the notification shows only with the notification permission (the job runs
-    // either way); ask when the download starts, and while it's refused, say under the progress
-    // that progress shows only here. Read from the permission
-    // itself, so the line survives the activity being recreated (a font size change, a rotation).
-    fun notificationsOff() = Build.VERSION.SDK_INT >= 33 &&
-        ContextCompat.checkSelfPermission(context, NOTIFICATION_PERMISSION) != PackageManager.PERMISSION_GRANTED
-    var notifOff by remember { mutableStateOf(notificationsOff()) }
-    // The first download that would need the permission says why in one sentence first; Continue
-    // shows Android's dialog, and the download starts whatever the answer.
-    val notifAsk = rememberPermissionAsk(NOTIFICATION_PERMISSION)
-    var explainNotifications by rememberSaveable { mutableStateOf(false) }
-    val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        notifOff = !granted
-        notifAsk.answered(granted)
-        explainNotifications = false
-        vm.download()
-    }
-    fun startDownload() {
-        notifAsk.refresh()
-        if (Build.VERSION.SDK_INT >= 33 && notificationsOff() && notifAsk.value == PermissionAsk.FIRST_ASK) {
-            explainNotifications = true
-        } else vm.download()
-    }
-    fun continueToAsk() {
-        notifAsk.markAsked()
-        notifPermission.launch(NOTIFICATION_PERMISSION)
-    }
+    // The first download that would need the notification permission says why first (see
+    // [ReaderDownloadStarter]); while it's refused, the progress says it shows only here.
+    val starter = rememberReaderDownloadStarter { vm.download() }
 
     SectionLabel(stringResource(R.string.reader_title))
     Column(
@@ -179,8 +146,8 @@ fun LocalReaderSection(vm: LocalReaderViewModel = hiltViewModel()) {
             ReaderOffer.OFFER -> ReaderControls(
                 s, size = ::size, allowMetered = settings?.allowMetered == true,
                 nanoFailReason = settings?.nanoFailReason.takeIf { settings?.nanoFailing == true },
-                notificationsOff = notifOff, explainNotifications = explainNotifications, onContinue = ::continueToAsk,
-                onDownload = ::startDownload, onPause = vm::pause, onCancel = vm::cancel, onDelete = { confirmDelete = true },
+                notificationsOff = starter.notificationsOff, explainNotifications = starter.explaining, onContinue = starter::continueToAsk,
+                onDownload = { starter.start(DOWNLOAD) }, onPause = vm::pause, onCancel = vm::cancel, onDelete = { confirmDelete = true },
                 onAllowMetered = vm::setAllowMetered,
                 preferReader = settings?.preferReader == true, onPreferReader = vm::setPreferReader.takeIf { hasBuiltInAi },
             )
@@ -197,6 +164,9 @@ fun LocalReaderSection(vm: LocalReaderViewModel = hiltViewModel()) {
         dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.detail_cancel)) } },
     )
 }
+
+/** The one action Settings' starter runs. */
+private const val DOWNLOAD = "download"
 
 @Composable
 private fun ReaderControls(
@@ -257,25 +227,10 @@ private fun ReaderInProgress(
     s: ReaderState, size: (Long) -> String, allowMetered: Boolean, notificationsOff: Boolean,
     onPause: () -> Unit, onCancel: () -> Unit,
 ) {
-    val label = when {
-        s.phase == DownloadPhase.VERIFYING -> stringResource(R.string.reader_verifying)
-        // Waiting with a part on disk says how far it got, so a stalled download doesn't look lost.
-        s.phase == DownloadPhase.WAITING_FOR_NETWORK && s.downloadedBytes > 0 -> stringResource(
-            if (allowMetered) R.string.reader_waiting_network_at else R.string.reader_waiting_wifi_at,
-            size(s.downloadedBytes), size(s.totalBytes),
-        )
-        s.phase == DownloadPhase.WAITING_FOR_NETWORK ->
-            stringResource(if (allowMetered) R.string.reader_waiting_network else R.string.reader_waiting_wifi)
-        else -> stringResource(R.string.reader_downloading, size(s.downloadedBytes), size(s.totalBytes))
-    }
+    val label = readerProgressText(s.copy(allowMetered = allowMetered), size)
     // A polite live region: TalkBack hears "Checking the download…" and the like as they change.
     Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
-    Spacer(Modifier.height(8.dp))
-    val fraction = if (s.totalBytes > 0) (s.downloadedBytes.toFloat() / s.totalBytes).coerceIn(0f, 1f) else 0f
-    LinearProgressIndicator(
-        progress = { fraction },
-        modifier = Modifier.fillMaxWidth().semantics { stateDescription = label },
-    )
+    ReaderProgressBar(s, paused = false, label = label)
     if (notificationsOff) {
         Spacer(Modifier.height(6.dp))
         Text(
@@ -302,11 +257,7 @@ private fun ReaderIdleOrFailed(
 ) {
     s.failure?.let { f ->
         Text(
-            when (f) {
-                DownloadFailure.NO_SPACE -> stringResource(R.string.reader_failed_space, size(s.totalBytes))
-                DownloadFailure.CHECKSUM -> stringResource(R.string.reader_failed_checksum)
-                DownloadFailure.SERVER -> stringResource(R.string.reader_failed_server)
-            },
+            readerFailureText(f, size(s.totalBytes)),
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error,
             // Heard when a download or its check ends this way while the person waits on the page.
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },

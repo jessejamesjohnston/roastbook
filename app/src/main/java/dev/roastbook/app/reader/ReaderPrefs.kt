@@ -66,11 +66,16 @@ class ReaderPrefs(private val store: DataStore<Preferences>, private val now: ()
 
     suspend fun setPreferReader(on: Boolean) { store.edit { it[K.preferReader] = on } }
 
-    /** "Not now" on [coffeeId]'s reader offer: that coffee is not offered again, and the count goes up. */
+    /**
+     * "Not now" on [coffeeId]'s reader offer: that coffee is not offered again, and the count goes up
+     * once per coffee, so a second tap before the card goes away doesn't use up the other answer.
+     */
     suspend fun declineOffer(coffeeId: String) {
         store.edit { p ->
+            val declined = p[K.offerDeclinedIds] ?: emptySet()
+            if (coffeeId in declined) return@edit
             p[K.offerDeclines] = (p[K.offerDeclines] ?: 0) + 1
-            p[K.offerDeclinedIds] = (p[K.offerDeclinedIds] ?: emptySet()) + coffeeId
+            p[K.offerDeclinedIds] = declined + coffeeId
         }
     }
 
@@ -79,6 +84,34 @@ class ReaderPrefs(private val store: DataStore<Preferences>, private val now: ()
         store.edit { p ->
             p[K.preferReader] = true
             p[K.pendingRereads] = (p[K.pendingRereads] ?: emptySet()) + coffeeId
+        }
+    }
+
+    /**
+     * The download was canceled or the reader deleted: no bag waits for it any longer, and the
+     * switch that has it read in place of the built-in AI goes off, since there is no reader left to
+     * choose (a later download starts from the built-in AI again). The bags that were waiting count
+     * as answered, so their pages don't offer the reader again straight away.
+     */
+    suspend fun abandonReader() {
+        store.edit { p ->
+            val waiting = p[K.pendingRereads] ?: emptySet()
+            p.remove(K.pendingRereads)
+            p[K.preferReader] = false
+            if (waiting.isNotEmpty()) p[K.offerDeclinedIds] = (p[K.offerDeclinedIds] ?: emptySet()) + waiting
+        }
+    }
+
+    /**
+     * [coffeeId] was read poorly by the built-in AI while an accepted reader download is still on its
+     * way (some bag is already waiting for it): it waits too, and is read again when the reader
+     * arrives. Not for a coffee whose offer was answered "Not now".
+     */
+    override suspend fun waitForReaderIfComing(coffeeId: String) {
+        store.edit { p ->
+            val waiting = p[K.pendingRereads] ?: emptySet()
+            if (waiting.isEmpty() || coffeeId in (p[K.offerDeclinedIds] ?: emptySet())) return@edit
+            p[K.pendingRereads] = waiting + coffeeId
         }
     }
 

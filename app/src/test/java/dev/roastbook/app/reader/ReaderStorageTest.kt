@@ -89,4 +89,39 @@ class ReaderStorageTest {
         ReaderRereads.drain(ready = true, prefs) { if (it == "c") error("boom") else done += it }
         assertEquals(listOf("d"), done)
     }
+
+    private fun freshPrefs() = ReaderPrefs(PreferenceDataStoreFactory.create { File(context.noBackupFilesDir, "test-${System.nanoTime()}.preferences_pb") })
+
+    @Test fun aSecondNotNowOnTheSameBagCountsOnce() = runTest {
+        val prefs = freshPrefs()
+        prefs.declineOffer("a")
+        prefs.declineOffer("a")
+        assertEquals(1, prefs.current().offerDeclines)
+        prefs.declineOffer("b")
+        assertEquals(2, prefs.current().offerDeclines)
+        assertEquals(setOf("a", "b"), prefs.current().offerDeclinedIds)
+    }
+
+    @Test fun abandoningTheReaderEmptiesTheWaitingListTurnsTheSwitchOffAndAnswersThoseBags() = runTest {
+        val prefs = freshPrefs()
+        prefs.acceptOffer("a"); prefs.acceptOffer("b")
+        prefs.declineOffer("c")
+        prefs.abandonReader()
+        val s = prefs.current()
+        assertEquals(emptySet<String>(), s.pendingRereads)
+        assertFalse(s.preferReader)
+        assertEquals(setOf("a", "b", "c"), s.offerDeclinedIds)
+        assertEquals("a cancel is not a Not now", 1, s.offerDeclines)
+    }
+
+    @Test fun aPoorReadWaitsForTheReaderOnlyWhileAnAcceptedDownloadIsComing() = runTest {
+        val prefs = freshPrefs()
+        prefs.waitForReaderIfComing("x")
+        assertEquals("nothing is coming", emptySet<String>(), prefs.current().pendingRereads)
+        prefs.acceptOffer("a")
+        prefs.declineOffer("d")
+        prefs.waitForReaderIfComing("x")
+        prefs.waitForReaderIfComing("d")
+        assertEquals(setOf("a", "x"), prefs.current().pendingRereads)
+    }
 }

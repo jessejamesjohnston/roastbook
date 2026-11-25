@@ -432,8 +432,12 @@
     <string name="reader_nano_failing">This device\'s built-in AI couldn\'t read a recent bag. The on-device reader can read bags instead.</string>
     <string name="detail_reader_offer_title">Read this bag with the on-device reader?</string>
     <string name="detail_reader_offer_body">This device\'s built-in AI didn\'t read this bag well. The on-device reader is a one-time download of %1$s from Hugging Face, over Wi-Fi. It runs on this device, so your photos stay here. When it\'s ready, Roastbook reads this bag again with it and uses it for new bags. You can change that in Settings.</string>
+    <string name="detail_reader_offer_body_mobile">This device\'s built-in AI didn\'t read this bag well. The on-device reader is a one-time download of %1$s from Hugging Face, over Wi-Fi or mobile data. It runs on this device, so your photos stay here. When it\'s ready, Roastbook reads this bag again with it and uses it for new bags. You can change that in Settings.</string>
     <string name="detail_reader_offer_not_now">Not now</string>
     <string name="detail_reader_waiting">Roastbook reads this bag again when the reader is ready</string>
+    <string name="detail_reader_starting">Starting the download…</string>
+    <string name="detail_reader_paused">Download paused</string>
+    <string name="detail_reader_rereading">Reading this bag again with the on-device reader…</string>
     <string name="reader_prefer">Use instead of the built-in AI</string>
     <string name="reader_prefer_hint">Reads bags with the on-device reader once it\'s downloaded, in place of this device\'s built-in AI. It\'s slower, and like the built-in AI it keeps your photos on this device.</string>
     <string name="reader_notif_channel">On-device reader download</string>

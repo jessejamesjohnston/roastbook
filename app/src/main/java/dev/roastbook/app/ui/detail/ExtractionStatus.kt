@@ -91,7 +91,7 @@ fun extractionSourceLabel(c: CoffeeEntity): String? {
 @Composable
 fun ExtractionStatusCard(
     c: CoffeeEntity, readerOffered: Boolean, nanoFailing: Boolean, hasKey: Boolean,
-    onReread: () -> Unit, onDismiss: () -> Unit, modifier: Modifier = Modifier,
+    onReread: () -> Unit, onDismiss: () -> Unit, modifier: Modifier = Modifier, readerCardShown: Boolean = false,
 ) {
     if (c.state == CoffeeState.EXTRACTING) return
     val w = WhatHappenedRules.explain(
@@ -101,6 +101,7 @@ fun ExtractionStatusCard(
         readerOffered = readerOffered,
         hasKey = hasKey,
         nanoFailing = nanoFailing,
+        readerCardShown = readerCardShown,
     ) ?: return
     val secondary = MaterialTheme.colorScheme.onSurfaceVariant
     Column(

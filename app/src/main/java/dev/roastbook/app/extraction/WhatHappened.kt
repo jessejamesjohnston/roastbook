@@ -28,6 +28,7 @@ object WhatHappenedRules {
      * [readerOffered]: the on-device reader could run here but is not downloaded.
      * [nanoFailing]: the device's own AI has been failing here (Settings shows the reader then).
      * [hasKey]: a Gemini key is saved.
+     * [readerCardShown]: the page shows the reader's offer or download card, so no hint is added.
      *
      * The download hint points at Settings, so it appears only where Settings shows the reader:
      * Nano was unavailable for this read, or has been failing. A read that fell back because Nano
@@ -40,6 +41,7 @@ object WhatHappenedRules {
         readerOffered: Boolean,
         hasKey: Boolean,
         nanoFailing: Boolean = false,
+        readerCardShown: Boolean = false,
     ): WhatHappened? {
         val tierOfSource = when (source) {
             ExtractionSource.NANO -> Tier.NANO
@@ -52,6 +54,8 @@ object WhatHappenedRules {
             return WhatHappened(R.string.what_kept_earlier)
         }
         val hint = when {
+            // The reader's own card is on the page, offering it or following its download: one next step is enough.
+            readerCardShown -> null
             readerOffered && (trail[Tier.NANO] == TierOutcome.UNSUPPORTED || nanoFailing) -> R.string.what_hint_download
             !hasKey -> R.string.what_hint_key
             else -> null
