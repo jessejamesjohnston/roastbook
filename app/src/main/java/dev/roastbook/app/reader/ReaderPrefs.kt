@@ -30,8 +30,9 @@ data class ReaderSettings(
     /** Coffees to read again with the reader once its download finishes (the offer was accepted). */
     val pendingRereads: Set<String> = emptySet(),
     /**
-     * The download jobs that were canceled or whose reader was deleted. WorkManager records those
-     * as CANCELLED, the same as a pause, so this is how a stopped job tells the two apart.
+     * Download jobs whose outcome no longer stands: canceled ones, ones whose reader was deleted
+     * (WorkManager records both as CANCELLED, the same as a pause, so this is how a stopped job
+     * tells the two apart), and a failed one an accepted offer is downloading again.
      */
     val discardedJobs: Set<String> = emptySet(),
 )
@@ -74,23 +75,37 @@ class ReaderPrefs(private val store: DataStore<Preferences>, private val now: ()
     suspend fun setPreferReader(on: Boolean) { store.edit { it[K.preferReader] = on } }
 
     /**
-     * "Not now" on [coffeeId]'s reader offer: that coffee is not offered again, and the count goes up
-     * once per coffee, so a second tap before the card goes away doesn't use up the other answer.
+     * "Not now" on [coffeeId]'s reader card. On the offer, that coffee is not offered again, and the
+     * count goes up once per coffee, so a second tap before the card goes away doesn't use up the
+     * other answer. On a failed download the bag was waiting for, the bag stops waiting and is not
+     * offered again, without counting as a decline (the person said yes once): the partial
+     * download and the reader switch stay as they are, for Settings to retry or cancel.
      */
     suspend fun declineOffer(coffeeId: String) {
         store.edit { p ->
             val declined = p[K.offerDeclinedIds] ?: emptySet()
+            val waiting = p[K.pendingRereads] ?: emptySet()
+            if (coffeeId in waiting) {
+                p[K.pendingRereads] = waiting - coffeeId
+                p[K.offerDeclinedIds] = declined + coffeeId
+                return@edit
+            }
             if (coffeeId in declined) return@edit
             p[K.offerDeclines] = (p[K.offerDeclines] ?: 0) + 1
             p[K.offerDeclinedIds] = declined + coffeeId
         }
     }
 
-    /** The person accepted the reader for [coffeeId]: they chose the reader, and that bag is read again once it is here. */
-    suspend fun acceptOffer(coffeeId: String) {
+    /**
+     * The person accepted the reader for [coffeeId]: they chose the reader, and that bag is read again
+     * once it is here. [supersededJobs] are the finished download jobs the new download replaces, so
+     * an earlier failure doesn't show while the new job is on its way.
+     */
+    suspend fun acceptOffer(coffeeId: String, supersededJobs: Set<String> = emptySet()) {
         store.edit { p ->
             p[K.preferReader] = true
             p[K.pendingRereads] = (p[K.pendingRereads] ?: emptySet()) + coffeeId
+            if (supersededJobs.isNotEmpty()) p[K.discardedJobs] = supersededJobs
         }
     }
 

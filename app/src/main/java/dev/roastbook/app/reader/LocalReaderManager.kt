@@ -77,6 +77,21 @@ class LocalReaderManager @Inject constructor(
         enqueue(replace = false, allowMetered = prefs.current().allowMetered)
     }
 
+    /**
+     * Yes to the reader offer on [coffeeId]'s page: the reader becomes this device's choice, that bag
+     * waits for it, and the download starts. A failed or stopped earlier job is set aside in the same
+     * write, so the card says the download is starting rather than showing the old outcome.
+     */
+    suspend fun acceptOffer(coffeeId: String) {
+        prefs.acceptOffer(coffeeId, supersededJobs = jobIds { it.state.isFinished })
+        download()
+    }
+
+    private suspend fun jobIds(which: (WorkInfo) -> Boolean): Set<String> = kotlinx.coroutines.withContext(Dispatchers.IO) {
+        runCatching { WorkManager.getInstance(context).getWorkInfosForUniqueWork(WORK_NAME).get() }.getOrNull().orEmpty()
+            .filter(which).map { it.id.toString() }.toSet()
+    }
+
     /** Re-applies the network rule to a waiting or running download. */
     suspend fun setAllowMetered(on: Boolean) {
         prefs.setAllowMetered(on)
@@ -114,11 +129,8 @@ class LocalReaderManager @Inject constructor(
 
     /** Stops the download job for good (Cancel or Delete) and returns its ids, so [state] doesn't call it paused. */
     private suspend fun stopJobs(): Set<String> {
-        val wm = WorkManager.getInstance(context)
-        wm.cancelUniqueWork(WORK_NAME)
-        return kotlinx.coroutines.withContext(Dispatchers.IO) {
-            runCatching { wm.getWorkInfosForUniqueWork(WORK_NAME).get() }.getOrNull().orEmpty().map { it.id.toString() }.toSet()
-        }
+        WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
+        return jobIds { true }
     }
 
     /**
@@ -176,7 +188,7 @@ class LocalReaderManager @Inject constructor(
                     DownloadPhase.DOWNLOADING
                 }
             info.state == WorkInfo.State.ENQUEUED || info.state == WorkInfo.State.BLOCKED -> DownloadPhase.WAITING_FOR_NETWORK
-            info.state == WorkInfo.State.FAILED -> DownloadPhase.FAILED
+            info.state == WorkInfo.State.FAILED && info.id.toString() !in settings.discardedJobs -> DownloadPhase.FAILED
             else -> DownloadPhase.NONE
         }
         val failure = if (phase == DownloadPhase.FAILED) when (info?.outputData?.getString(ModelDownloadWorker.KEY_FAILURE)) {

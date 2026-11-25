@@ -114,6 +114,30 @@ class ReaderStorageTest {
         assertEquals("a cancel is not a Not now", 1, s.offerDeclines)
     }
 
+    @Test fun notNowOnABagWaitingForAFailedDownloadStopsOnlyThatBagWaiting() = runTest {
+        val prefs = freshPrefs()
+        prefs.acceptOffer("a"); prefs.acceptOffer("b")
+        prefs.declineOffer("a")
+        val s = prefs.current()
+        assertEquals(setOf("b"), s.pendingRereads)
+        assertEquals(setOf("a"), s.offerDeclinedIds)
+        assertEquals("the person said yes once, so it is not a decline", 0, s.offerDeclines)
+        assertTrue("the reader stays this device's choice", s.preferReader)
+        prefs.declineOffer("a")
+        assertEquals("a second tap changes nothing", 0, prefs.current().offerDeclines)
+        assertEquals("when the reader arrives, that bag is not read again", setOf("b"), prefs.takePendingRereads())
+    }
+
+    @Test fun acceptingAnOfferSetsAsideTheJobsItReplaces() = runTest {
+        val prefs = freshPrefs()
+        prefs.acceptOffer("a")
+        assertEquals(emptySet<String>(), prefs.current().discardedJobs)
+        prefs.acceptOffer("b", supersededJobs = setOf("job-1"))
+        assertEquals(setOf("job-1"), prefs.current().discardedJobs)
+        prefs.abandonReader(setOf("job-2"))
+        assertEquals(setOf("job-2"), prefs.current().discardedJobs)
+    }
+
     @Test fun aPoorReadWaitsForTheReaderOnlyWhileAnAcceptedDownloadIsComing() = runTest {
         val prefs = freshPrefs()
         prefs.waitForReaderIfComing("x")

@@ -322,6 +322,51 @@ class LocalReaderManagerTest {
         }
     }
 
+    private suspend fun failedDownload(m: LocalReaderManager, partBytes: Int): java.util.UUID {
+        h.worker = { c, p -> ScriptedWorker(c, p) { Result.failure(workDataOf(ModelDownloadWorker.KEY_FAILURE to "NETWORK")) } }
+        m.acceptOffer("c1")
+        h.writePart(m, partBytes)
+        val id = h.pendingJob().id
+        h.runJob()
+        h.awaitState(m) { it.phase == DownloadPhase.FAILED }
+        return id
+    }
+
+    @Test fun notNowOnAFailedDownloadKeepsThePartTheSwitchAndTheFailure() = runBlocking {
+        val m = eligibleManager()
+        failedDownload(m, 20)
+        h.prefs.declineOffer("c1")
+        assertEquals(20L, m.store.part.length())
+        assertTrue(h.prefs.current().preferReader)
+        assertEquals(emptySet<String>(), h.prefs.current().pendingRereads)
+        val s = h.awaitState(m) { it.phase == DownloadPhase.FAILED }
+        assertEquals("Settings still says why", DownloadFailure.SERVER, s.failure)
+        assertEquals(20L, s.downloadedBytes)
+    }
+
+    @Test fun acceptingTheNextOfferAfterAFailureSaysTheDownloadIsStarting() = runBlocking {
+        val m = eligibleManager()
+        val failed = failedDownload(m, 0)
+        h.prefs.declineOffer("c1")
+        // The moment between the yes and WorkManager reporting the new job.
+        h.prefs.acceptOffer("c2", supersededJobs = setOf(failed.toString()))
+        val s = h.awaitState(m) { it.phase != DownloadPhase.FAILED }
+        assertEquals(DownloadPhase.NONE, s.phase)
+        assertNull(s.failure)
+        assertFalse(s.stopped)
+    }
+
+    @Test fun acceptAnOfferSetsAsideTheFailedJobAndStartsANewOne() = runBlocking {
+        val m = eligibleManager()
+        val failed = failedDownload(m, 0)
+        h.prefs.declineOffer("c1")
+        m.acceptOffer("c2")
+        assertTrue(failed.toString() in h.prefs.current().discardedJobs)
+        assertEquals(setOf("c2"), h.prefs.current().pendingRereads)
+        assertNotEquals(failed, h.pendingJob().id)
+        assertEquals(DownloadPhase.WAITING_FOR_NETWORK, h.awaitState(m) { it.phase == DownloadPhase.WAITING_FOR_NETWORK }.phase)
+    }
+
     @Test fun theStateCarriesTheDevicesPrefsAndTheModelName() = runBlocking {
         val m = eligibleManager()
         h.prefs.recordNano(ok = false, reason = "no model")

@@ -144,7 +144,9 @@ class ReaderOfferCardTest {
         var s by androidx.compose.runtime.mutableStateOf(state(DownloadPhase.FAILED, failure = DownloadFailure.NO_SPACE))
         compose.setContent {
             RoastbookTheme {
-                ReaderOfferCard(s, true, {}, {}, onRetry = { clicks += "retry" }, onCancel = { clicks += "cancel" })
+                ReaderOfferCard(
+                    s, true, {}, onNotNow = { clicks += "notNow" }, onRetry = { clicks += "retry" }, onCancel = { clicks += "cancel" },
+                )
             }
         }
         for ((failure, text) in table) {
@@ -152,9 +154,11 @@ class ReaderOfferCardTest {
             compose.onNodeWithText(text).assertExists()
             assertEquals(0, bars(anyBar))
         }
+        // Not now only stops this bag waiting; throwing the download away is Settings' Cancel download.
+        assert(!shown(str(R.string.reader_cancel)))
         compose.onNodeWithText(str(R.string.reader_retry)).performClick()
         compose.onNodeWithText(str(R.string.detail_reader_offer_not_now)).performClick()
-        assertEquals(listOf("retry", "cancel"), clicks)
+        assertEquals(listOf("retry", "notNow"), clicks)
     }
 
     @Test fun onceTheReaderIsHereTheCardSaysTheBagIsBeingReadAgain() {

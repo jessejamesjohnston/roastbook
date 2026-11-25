@@ -36,7 +36,10 @@ import dev.roastbook.app.ui.components.readerProgressText
  * The in-flow reader offer on a coffee's page, after this device's built-in AI read the bag poorly
  * ([dev.roastbook.app.reader.ReaderNudge]): what the reader is and costs, Download or Not now. Once
  * accepted ([waiting]), the same card follows the download until the bag is read again, with a way
- * out in every state: Cancel download while it runs, waits or is paused, Not now once it failed.
+ * out in every state: Cancel download while it runs, waits or is paused. Once it failed, Not now
+ * stops this bag waiting and keeps what was downloaded and the reader switch
+ * ([dev.roastbook.app.reader.ReaderPrefs.declineOffer]); Settings still offers Try again, and
+ * Cancel download when part of the file is there.
  *
  * | Phase | Line | Bar | Buttons |
  * |---|---|---|---|
@@ -45,7 +48,7 @@ import dev.roastbook.app.ui.components.readerProgressText
  * | WAITING_FOR_NETWORK | Waiting for Wi-Fi (or a connection), with X of Y once some arrived | still, at X | Cancel download |
  * | DOWNLOADING | Downloading: X of Y | filling with the bytes | Cancel download |
  * | VERIFYING | Checking the download… | moving | Cancel download |
- * | FAILED | why, in Settings' words | none | Try again, Not now |
+ * | FAILED | why, in Settings' words | none | Try again, Not now (this bag stops waiting) |
  * | READY, read not started yet | Reading this bag again with the on-device reader… | moving | none |
  *
  * [explainNotifications]: the notification explanation and Continue stand in for the buttons
@@ -111,7 +114,7 @@ fun ReaderOfferCard(
                 Spacer(Modifier.height(8.dp))
                 Buttons(
                     primary = stringResource(R.string.reader_retry) to onRetry,
-                    secondary = stringResource(R.string.detail_reader_offer_not_now) to onCancel,
+                    secondary = stringResource(R.string.detail_reader_offer_not_now) to onNotNow,
                 )
             }
             paused -> {

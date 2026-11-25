@@ -60,7 +60,7 @@ class DetailViewModel @AssistedInject constructor(
     val readerSettings: StateFlow<dev.roastbook.app.reader.ReaderSettings?> = readerPrefs.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     /** Yes to the in-flow offer: the reader becomes this device's choice, downloads, and reads this bag again when ready. */
-    fun acceptReaderOffer() { viewModelScope.launch { readerPrefs.acceptOffer(id); reader.download() } }
+    fun acceptReaderOffer() { viewModelScope.launch { reader.acceptOffer(id) } }
     fun declineReaderOffer() { viewModelScope.launch { readerPrefs.declineOffer(id) } }
     /** A failed download, retried from this bag's page. */
     fun retryReaderDownload() { viewModelScope.launch { reader.download() } }
