@@ -91,10 +91,18 @@ Android 12 or newer, open it, and allow your browser or Files app to install app
 asks. Installing from outside a store means updates come only when you install them; Android
 refuses any update not signed with the same key as the copy you have.
 
-Check the download before you install it: `SHA256SUMS` in each release lists the file's hash,
-and `apksigner verify --print-certs roastbook-<version>.apk` should report this certificate SHA-256:
+Check the download before you install it: `SHA256SUMS` in each release lists the file's hash.
+The easy check of the signature is `scripts/release.sh --verify roastbook-<version>.apk` from a
+clone of this repository. It needs the Android SDK's build-tools but no key, checks the
+signature, compares the signing certificate with Roastbook's, and prints the certificate SHA-256
+in this form:
 
 `D8:79:AD:13:90:76:D9:92:D6:37:CF:A9:E3:A4:6C:84:2C:9C:E1:99:0A:AC:2A:B6:5B:0F:D7:6E:97:76:38:E1`
+
+To check by hand, run `apksigner verify --print-certs roastbook-<version>.apk`. It prints the
+same value in lowercase without colons, on the line `Signer #1 certificate SHA-256 digest:`
+
+`d879ad139076d992d637cfa9e3a46c842c9ce1990aac2ab65b0fd76e977638e1`
 
 To hear about new versions: tap Settings, About, Check for updates (or turn on Check weekly
 below it), add this repository to [Obtainium](https://github.com/ImranR98/Obtainium), or watch

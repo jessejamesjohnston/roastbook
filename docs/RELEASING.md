@@ -17,6 +17,9 @@ its tag and signed on the maintainer's machine with the app's release key, by
 - Certificate SHA-256 (published in the README and in every release's notes so anyone can check
   an APK):
   `D8:79:AD:13:90:76:D9:92:D6:37:CF:A9:E3:A4:6C:84:2C:9C:E1:99:0A:AC:2A:B6:5B:0F:D7:6E:97:76:38:E1`
+  This is the form `keytool` and `scripts/release.sh --verify` print. `apksigner verify
+  --print-certs` prints the same value in lowercase without colons:
+  `d879ad139076d992d637cfa9e3a46c842c9ce1990aac2ab65b0fd76e977638e1`
 - Never commit a keystore (`*.jks` and `*.keystore` are gitignored) and never put the password in
   a file, `local.properties`, a command line or a log.
 
@@ -99,7 +102,9 @@ is used whatever the key's alias; if yours holds several, name one with
    `NoSuchMethod`.
 8. **Publish.** Create the release as a draft from the tag, attach the APK and `SHA256SUMS`
    (never the mapping file), paste the changelog section and the certificate SHA-256 into the
-   notes, then publish:
+   notes, then publish. Give the certificate in both forms, the colon form above and the
+   lowercase form `apksigner verify --print-certs` prints, and name
+   `scripts/release.sh --verify roastbook-X.Y.Z.apk` as the easy check:
 
    ```sh
    gh release create vX.Y.Z dist/roastbook-X.Y.Z.apk dist/SHA256SUMS --draft \
