@@ -264,6 +264,17 @@ class LocalReaderManagerTest {
         assertEquals("the runtime's cache is reported on its own as well", 10L, s.cacheBytes)
     }
 
+    @Test fun whatTheRuntimeWritesBesideTheModelCountsAsItsCacheButTheModelAndPartDoNot() = runBlocking {
+        val m = eligibleManager()
+        h.installModel(m)
+        h.writePart(m, 5)
+        File(m.store.root, "test.bin.xnnpack_cache").writeBytes(ByteArray(7))
+        File(m.store.cacheDir, "program.bin").writeBytes(ByteArray(3))
+        m.onDiskChanged()
+        val s = h.awaitState(m) { it.cacheBytes == 10L }
+        assertEquals(ReaderHarness.MODEL_BYTES.size + 64L + 5 + 10, s.sizeOnDisk)
+    }
+
     @Test fun aRunningJobShowsItsReportedBytesThenTheCheck() = runBlocking {
         val m = eligibleManager()
         val verifying = CompletableDeferred<Unit>()

@@ -39,11 +39,15 @@ class ModelStore(val root: File, private val spec: ModelSpec) {
     }
 
     /**
-     * What the runtime saved in [cacheDir] the first time it loaded the model (a prepared copy of
-     * the weights, about 1 GB for the 2.6 GB model, so later loads are faster). Counted in
-     * [sizeOnDisk] and removed by [deleteAll].
+     * Everything here other than the model, its stamp and a partial download: what the runtime
+     * writes when it loads the model (its cache, measured at about 1 GB beside the 2.6 GB model),
+     * wherever in this folder it puts it. Counted in [sizeOnDisk] and removed by [deleteAll].
      */
-    fun cacheBytes(): Long = if (!cacheDir.exists()) 0L else cacheDir.walkBottomUp().filter { it.isFile }.sumOf { it.length() }
+    fun cacheBytes(): Long {
+        if (!root.exists()) return 0L
+        val own = setOf(model, part, stamp).map { it.absoluteFile }
+        return root.walkBottomUp().filter { it.isFile && it.absoluteFile !in own }.sumOf { it.length() }
+    }
 
     /** Everything the reader keeps on disk: the model, a partial download, the runtime cache. */
     fun sizeOnDisk(): Long = if (!root.exists()) 0L else root.walkBottomUp().filter { it.isFile }.sumOf { it.length() }

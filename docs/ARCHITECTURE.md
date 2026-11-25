@@ -144,9 +144,11 @@ Rules the code holds to:
   the file on disk, Cancel download.
 - **Storage:** `no_backup/reader/` (model, partial download, runtime cache).
   Neither backup tier includes it. Settings shows its size and deletes it.
-  The first time the engine loads the model, LiteRT-LM writes about 1 GB of
-  cache in `cache/` there, so the reader then uses about 3.6 GB; Settings'
-  line says how much of the total is that cache.
+  Once the engine has loaded the model, the folder holds about 1 GB more
+  than the model (measured: 2.6 GB right after the download, 3.6 GB after
+  reads), which is LiteRT-LM's cache (its `cacheDir` points there). Settings'
+  line names everything beside the model, its stamp and a partial download
+  as that cache.
 - **Runtime:** one engine per process, loaded on first use, closed after a
   minute idle; calls are serialized, and a cancelled read stops the native
   call and waits for it before the engine is reused or closed.

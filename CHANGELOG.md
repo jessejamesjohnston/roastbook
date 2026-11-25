@@ -25,9 +25,9 @@ The first public release.
   has a built-in AI. Where it does, a switch (off by default) has the reader read bags in place
   of the built-in AI, once it is downloaded. Canceling the download or deleting the reader turns
   the switch off. The download says it is starting over a moving bar until the first bytes
-  arrive, then shows a bar that fills as they do. Once the reader has run, its size on disk
-  includes about 1 GB of cache its runtime saves to load faster, and Settings says so; Delete
-  removes it with the model.
+  arrive, then shows a bar that fills as they do. Once the reader has run, its folder also holds
+  the runtime's cache (about 1 GB), and Settings says how much of the size on disk that is;
+  Delete removes it with the model.
 - When the built-in AI reads a bag poorly (an answer that is not the JSON asked for, or one that
   names neither the roaster nor the coffee) and the on-device reader is downloaded, the reader
   reads it too, and the reading with more fields is kept. On a tie, the reader's reading is kept
