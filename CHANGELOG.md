@@ -6,6 +6,8 @@ All notable changes to Roastbook are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-24
+
 The first public release.
 
 ### Added
