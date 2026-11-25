@@ -17,8 +17,8 @@ import org.w3c.dom.Element
  * - A single sentence has no closing period. A block of two or more sentences keeps them.
  * - A trailing ellipsis only marks something in progress ("Backing up…", "Waiting for Wi-Fi…"),
  *   never a label that opens a dialog, a picker or a screen.
- * - Two parts are joined with a middle dot ( · ) or a comma, never an em dash, an en dash or
- *   a semicolon.
+ * - Two parts are joined with a middle dot ( · ) or a comma, never an em dash, an en dash, a
+ *   hyphen standing in for a dash (" - " or "--") or a semicolon.
  * - American spelling.
  * - Natural contractions ("can't", "it's"), unless the words sit inside quotation marks.
  * - Lists of three or more take a serial comma. That check only prints a warning: it cannot
@@ -56,6 +56,8 @@ class StringStyleTest {
         /** Text inside straight or curly double quotes, which may be someone else's words. */
         val QUOTED = Regex("\"[^\"]*\"|“[^”]*”")
         val SENTENCE_END = Regex("[.!?](?=\\s|$)")
+        /** A hyphen used as a dash: one with a space on each side, or two in a row. */
+        val HYPHEN_AS_DASH = Regex("\\s-\\s|--")
         val SERIAL_COMMA_MISSING = Regex("\\w[^,.;:·]*, [^,.;:·]+ (and|or) \\w")
     }
 
@@ -126,8 +128,8 @@ class StringStyleTest {
         if (beforeEllipsis != null && !beforeEllipsis.trim().substringBefore(' ').endsWith("ing", ignoreCase = true)) {
             found[Rule.ELLIPSIS] = "a trailing ellipsis on something that is not in progress"
         }
-        if ('\u2014' in t || '\u2013' in t || Regex(";\\s").containsMatchIn(t)) {
-            found[Rule.DASH_OR_SEMICOLON_JOIN] = "an em dash, en dash or semicolon join (use · or a comma)"
+        if ('\u2014' in t || '\u2013' in t || HYPHEN_AS_DASH.containsMatchIn(t) || Regex(";\\s").containsMatchIn(t)) {
+            found[Rule.DASH_OR_SEMICOLON_JOIN] = "a dash or semicolon join (use · or a comma)"
         }
         UK_SPELLINGS.find(t)?.let { found[Rule.UK_SPELLING] = "UK spelling \"${it.value}\"" }
         val unquoted = QUOTED.replace(t.replace('’', '\''), "")
@@ -184,6 +186,10 @@ class StringStyleTest {
         assertEquals(setOf(Rule.DASH_OR_SEMICOLON_JOIN), rules("Working offline \u2014 using saved data"))
         assertEquals(setOf(Rule.DASH_OR_SEMICOLON_JOIN), rules("Paused \u2013 tap to resume"))
         assertEquals(setOf(Rule.DASH_OR_SEMICOLON_JOIN), rules("Drive works; some other apps may not"))
+        assertEquals(setOf(Rule.DASH_OR_SEMICOLON_JOIN), rules("Paused - tap to resume"))
+        assertEquals(setOf(Rule.DASH_OR_SEMICOLON_JOIN), rules("Paused -- tap to resume"))
+        assertEquals(setOf(Rule.DASH_OR_SEMICOLON_JOIN), rules("Paused--tap to resume"))
+        assertEquals(setOf(Rule.DASH_OR_SEMICOLON_JOIN), rules("%1\$s - %2\$s"))
         for (uk in listOf("Sign-in cancelled", "Pick a colour", "Favourites", "Odd behaviour", "Centre it", "Organise", "Recognised")) {
             assertEquals(uk, setOf(Rule.UK_SPELLING), rules(uk))
         }
@@ -210,6 +216,10 @@ class StringStyleTest {
             "Don't stop, it's set, you're done",
             "Google doesn't know the model \"It is new\". Change it in Settings.",
             "The sign says “Do not enter”",
+            "Waiting for Wi-Fi",
+            "Gemma 4 E2B, one-time download, arm64-v8a or x86-64",
+            "Temperature -5 to 40",
+            "https://github.com/jessejamesjohnston/roastbook/blob/main/LICENSE",
         )) {
             assertEquals(good, emptyMap<Rule, String>(), violations(good))
         }
