@@ -105,7 +105,8 @@ Rules the code holds to:
   Gemini key then read it, the coffee's page offers the reader with its size
   and how it downloads. Only where the reader can run
   and is neither downloaded nor downloading, never twice on the same coffee,
-  and not at all after two "Not now" answers.
+  and not at all after two "Not now" answers to the offer (Not now on a
+  failed download does not count toward the two).
 - **Bags that wait for the reader:** Download on the card turns
   `prefer_reader` on, adds the coffee to `pending_rereads` (device-scoped
   DataStore under `no_backup/`) and starts the download. A bag Nano reads
@@ -123,7 +124,9 @@ Rules the code holds to:
   records a canceled job as CANCELLED, as it does a paused one, so Cancel and
   Delete store the ids of the jobs they stop and only other stopped jobs read
   as paused. On a failed download, the card offers Try again and Not now; Not
-  now only takes that bag off the list. The partial file, the switch and the
+  now only takes that bag off the list and marks it answered, without
+  counting toward the two "Not now" answers that stop the offer (the person
+  already said yes once). The partial file, the switch and the
   failure in Settings stay, and Settings keeps Try again and, with part of
   the file on disk, Cancel download.
 - **Storage:** `no_backup/reader/` (model, partial download, runtime cache).
