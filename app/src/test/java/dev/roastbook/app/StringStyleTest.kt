@@ -49,10 +49,13 @@ class StringStyleTest {
             RegexOption.IGNORE_CASE,
         )
         val UNCONTRACTED = Regex(
-            "\\b(do not|cannot|will not|you are|it is|does not|is not)\\b",
+            "\\b(do not|cannot|will not|you are|it is|does not|is not|are not|has not|have not|was not|were not|" +
+                "would not|should not|could not|did not|that is|there is|you will|we are|what is)\\b",
             RegexOption.IGNORE_CASE,
         )
 
+        /** The first word of a state in progress: letters only, at least six, ending in "ing". */
+        val PROGRESS_VERB = Regex("\\p{L}{3,}ing", RegexOption.IGNORE_CASE)
         /** Text inside straight or curly double quotes, which may be someone else's words. */
         val QUOTED = Regex("\"[^\"]*\"|“[^”]*”")
         val SENTENCE_END = Regex("[.!?](?=\\s|$)")
@@ -123,8 +126,10 @@ class StringStyleTest {
             t.endsWith("...") -> t.dropLast(3)
             else -> null
         }
-        // A state in progress starts with its "-ing" verb: "Backing up…", "Waiting for Wi-Fi…".
-        if (beforeEllipsis != null && !beforeEllipsis.trim().substringBefore(' ').endsWith("ing", ignoreCase = true)) {
+        // A state in progress starts with its "-ing" verb: "Backing up…", "Waiting for Wi-Fi…". The same
+        // rule in every Merriment Labs app: the first word is letters only, at least six of them, ending
+        // in "ing", so "Ring…" and "Bring…" (verbs, not states) fail.
+        if (beforeEllipsis != null && !PROGRESS_VERB.matches(beforeEllipsis.trim().substringBefore(' '))) {
             found[Rule.ELLIPSIS] = "a trailing ellipsis on something that is not in progress"
         }
         if ('\u2014' in t || '\u2013' in t || HYPHEN_AS_DASH.containsMatchIn(t) || Regex(";\\s").containsMatchIn(t)) {
@@ -184,6 +189,10 @@ class StringStyleTest {
         assertEquals(setOf(Rule.ELLIPSIS), rules("Restore from a backup…"))
         assertEquals(setOf(Rule.ELLIPSIS), rules("Edit name..."))
         assertEquals(setOf(Rule.ELLIPSIS), rules("Save to device, then sharing…"))
+        assertEquals(setOf(Rule.ELLIPSIS), rules("Ring…"))
+        assertEquals(setOf(Rule.ELLIPSIS), rules("Bring…"))
+        assertEquals(setOf(Rule.ELLIPSIS), rules("Bring it…"))
+        assertEquals(setOf(Rule.ELLIPSIS), rules("Re-saving…"))
         assertEquals(setOf(Rule.DASH_OR_SEMICOLON_JOIN), rules("Working offline \u2014 using saved data"))
         assertEquals(setOf(Rule.DASH_OR_SEMICOLON_JOIN), rules("Paused \u2013 tap to resume"))
         assertEquals(setOf(Rule.DASH_OR_SEMICOLON_JOIN), rules("Drive works; some other apps may not"))
@@ -194,7 +203,10 @@ class StringStyleTest {
         for (uk in listOf("Sign-in cancelled", "Pick a colour", "Favourites", "Odd behaviour", "Centre it", "Organise", "Recognised")) {
             assertEquals(uk, setOf(Rule.UK_SPELLING), rules(uk))
         }
-        for (long in listOf("Do not stop", "You cannot miss it", "It will not ring", "You are set", "It is slower", "It does not read", "This is not set")) {
+        for (long in listOf("Do not stop", "You cannot miss it", "It will not ring", "You are set", "It is slower", "It does not read", "This is not set",
+            "They are not here", "It has not run", "You have not added one", "It was not saved", "They were not read",
+            "It would not open", "It should not", "It could not finish", "It did not start", "That is all", "There is one",
+            "You will see it", "We are done", "What is this")) {
             assertEquals(long, setOf(Rule.UNCONTRACTED), rules(long))
         }
     }
@@ -202,6 +214,7 @@ class StringStyleTest {
     @Test fun theRulesLeaveGoodTextAlone() {
         for (good in listOf(
             "Backing up…",
+            "Saving…",
             "Checking GitHub…",
             "Waiting for Wi-Fi…",
             "Getting the built-in AI ready…",
