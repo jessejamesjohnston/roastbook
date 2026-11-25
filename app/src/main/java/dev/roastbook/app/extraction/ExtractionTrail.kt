@@ -44,7 +44,18 @@ data class ExtractionTrail(
     val cloudModel: String? = null,
     /** Nano's reading was kept but was poor (not the JSON asked for, or neither roaster nor coffee). */
     val nanoPoor: Boolean = false,
+    /**
+     * The fields whose value came from a built-in AI answer that was not the JSON asked for
+     * (`garbled=coffeeName,roastDate`), by their [dev.roastbook.app.data.db.CoffeeEntity.userEdited]
+     * names. A later clean reading replaces exactly these, or clears them where it has nothing (see
+     * [dev.roastbook.app.extraction.Extractor]). Unlike the rest of the trail it outlives a Read
+     * again ([carriedAcrossReread]), since that is when it is needed.
+     */
+    val garbledFields: Set<String> = emptySet(),
 ) {
+    /** What a Read again keeps of the last read's trail: only which fields a garbled answer filled. */
+    fun carriedAcrossReread(): ExtractionTrail = ExtractionTrail(garbledFields = garbledFields)
+
     operator fun get(tier: Tier): TierOutcome? = outcomes[tier]
 
     fun with(tier: Tier, outcome: TierOutcome) = copy(outcomes = outcomes + (tier to outcome))
@@ -57,12 +68,15 @@ data class ExtractionTrail(
         cloudFailure?.let { add("$CLOUD_WHY=${it.name.lowercase()}") }
         cloudModel?.takeIf { MODEL_ID.matches(it) }?.let { add("$CLOUD_MODEL=$it") }
         if (nanoPoor) add("$NANO_QUALITY=poor")
+        garbledFields.filter { FIELD.matches(it) }.sorted().takeIf { it.isNotEmpty() }?.let { add("$GARBLED=${it.joinToString(",")}") }
     }.joinToString(";")
 
     companion object {
         private const val CLOUD_WHY = "cloudwhy"
         private const val CLOUD_MODEL = "cloudmodel"
         private const val NANO_QUALITY = "nanoq"
+        private const val GARBLED = "garbled"
+        private val FIELD = Regex("[A-Za-z]{1,32}")
         private val MODEL_ID = Regex("[A-Za-z0-9._/-]{1,64}")
 
         fun decode(s: String?): ExtractionTrail {
@@ -71,11 +85,13 @@ data class ExtractionTrail(
             var cloudWhy: CloudFailure? = null
             var cloudModel: String? = null
             var nanoPoor = false
+            var garbled = emptySet<String>()
             val map = linkedMapOf<Tier, TierOutcome>()
             for (part in s.split(';')) {
                 val (k, v) = part.split('=', limit = 2).takeIf { it.size == 2 } ?: continue
                 if (k.trim() == CLOUD_WHY) { cloudWhy = CloudFailure.entries.firstOrNull { it.name.equals(v.trim(), ignoreCase = true) }; continue }
                 if (k.trim() == NANO_QUALITY) { nanoPoor = v.trim() == "poor"; continue }
+                if (k.trim() == GARBLED) { garbled = v.split(',').map { it.trim() }.filter { FIELD.matches(it) }.toSet(); continue }
                 if (k.trim() == CLOUD_MODEL) { cloudModel = v.trim().takeIf { MODEL_ID.matches(it) }; continue }
                 val tier = Tier.entries.firstOrNull { it.key == k.trim() } ?: continue
                 if (tier == Tier.GUESS) {
@@ -85,7 +101,7 @@ data class ExtractionTrail(
                     TierOutcome.entries.firstOrNull { it.name.equals(v.trim(), ignoreCase = true) }?.let { map[tier] = it }
                 }
             }
-            return ExtractionTrail(map, guessed, cloudWhy, cloudModel, nanoPoor)
+            return ExtractionTrail(map, guessed, cloudWhy, cloudModel, nanoPoor, garbled)
         }
     }
 }

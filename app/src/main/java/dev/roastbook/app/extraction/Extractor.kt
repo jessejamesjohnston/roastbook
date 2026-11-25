@@ -175,7 +175,7 @@ class Extractor @Inject constructor(
                         return finish(coffeeId, ExtractionSource.LOCAL, second.facts, ocrText, localNote, second.trail, baseline = coffee)
                     }
                 }
-                return finish(coffeeId, ExtractionSource.NANO, step.facts, ocrText, note, read, baseline = coffee)
+                return finish(coffeeId, ExtractionSource.NANO, step.facts, ocrText, note, read, baseline = coffee, garbled = !step.wellFormed)
             }
             is NanoStep.Stop -> return step.outcome
             is NanoStep.Fall -> ModelStep.Next(trail.with(Tier.NANO, step.outcome), step.why)
@@ -504,7 +504,7 @@ class Extractor @Inject constructor(
      */
     private suspend fun finish(
         coffeeId: String, source: ExtractionSource, facts: BagFacts?, ocrText: String, note: String, trail: ExtractionTrail,
-        baseline: CoffeeEntity? = null, fillBlanksOnly: Boolean = false,
+        baseline: CoffeeEntity? = null, fillBlanksOnly: Boolean = false, garbled: Boolean = false,
     ): ExtractionOutcome {
         // Every tier's text passes the same cleanup on its way in, so placeholder words and JSON
         // residue never land in a coffee's details.
@@ -523,46 +523,62 @@ class Extractor @Inject constructor(
             val modelRead = coffee.extractionSource in MODEL_SOURCES
             if (fillBlanksOnly && modelRead) { f = BagFacts(); finalFacts = null }
             val userEdited = mutableListOf<String>()
+            // Fields a garbled built-in answer filled before this read, and after it.
+            val garbledBefore = ExtractionTrail.decode(coffee.extractionTrail).garbledFields
+            val garbledAfter = mutableSetOf<String>()
+            // A reading that came through as asked: any model's JSON, except a built-in one judged poor.
+            val cleanRead = source in MODEL_SOURCES && !garbled && !trail.nanoPoor && !fillBlanksOnly
             var filled = 0
             // Fields whose final value is this read's suggestion (for a guess: how many fields are a guess).
             var matching = 0
             fun blank(v: Any?) = v == null || (v is String && v.isBlank()) || (v is List<*> && v.isEmpty())
-            fun <T> merge(name: String, current: T, base: T?, suggested: T?): T {
+            fun <T> merge(name: String, current: T, base: T?, suggested: T?, cleared: T): T {
                 if (name in coffee.userEdited || (baseline != null && current != base)) {
                     if (suggested != null) userEdited += name
                     return current
                 }
-                if (suggested == null) return current
-                if (fillBlanksOnly && !blank(current)) { if (current == suggested) matching++; return current }
+                if (suggested == null) {
+                    // A clean reading with nothing for a field only a garbled answer filled: a blank
+                    // to fill in beats a confident wrong value.
+                    if (name in garbledBefore && cleanRead) return cleared
+                    if (name in garbledBefore) garbledAfter += name
+                    return current
+                }
+                if (fillBlanksOnly && !blank(current)) {
+                    if (current == suggested) matching++
+                    if (name in garbledBefore) garbledAfter += name
+                    return current
+                }
                 if (suggested != current) filled++
                 matching++
+                if (garbled) garbledAfter += name
                 return suggested
             }
             val updated = coffee.copy(
                 // A re-read must not un-rate a coffee.
                 state = if (coffee.overall != null) CoffeeState.RATED else CoffeeState.LOGGED,
-                roaster = merge("roaster", coffee.roaster, baseline?.roaster, TextCase.title(f.roaster)),
-                coffeeName = merge("coffeeName", coffee.coffeeName, baseline?.coffeeName, TextCase.title(f.coffeeName)),
-                originCountry = merge("originCountry", coffee.originCountry, baseline?.originCountry, TextCase.title(f.originCountry)),
-                region = merge("region", coffee.region, baseline?.region, TextCase.title(f.region)),
-                producer = merge("producer", coffee.producer, baseline?.producer, TextCase.title(f.producer)),
-                process = merge("process", coffee.process, baseline?.process, TextCase.sentence(f.process)),
+                roaster = merge("roaster", coffee.roaster, baseline?.roaster, TextCase.title(f.roaster), null),
+                coffeeName = merge("coffeeName", coffee.coffeeName, baseline?.coffeeName, TextCase.title(f.coffeeName), null),
+                originCountry = merge("originCountry", coffee.originCountry, baseline?.originCountry, TextCase.title(f.originCountry), null),
+                region = merge("region", coffee.region, baseline?.region, TextCase.title(f.region), null),
+                producer = merge("producer", coffee.producer, baseline?.producer, TextCase.title(f.producer), null),
+                process = merge("process", coffee.process, baseline?.process, TextCase.sentence(f.process), null),
                 varietal = merge(
-                    "varietal", coffee.varietal, baseline?.varietal, TextCase.titleList(f.varietal).takeIf { it.isNotEmpty() },
+                    "varietal", coffee.varietal, baseline?.varietal, TextCase.titleList(f.varietal).takeIf { it.isNotEmpty() }, emptyList(),
                 ),
-                elevationM = merge("elevationM", coffee.elevationM, baseline?.elevationM, f.elevationM),
-                roastLevel = merge("roastLevel", coffee.roastLevel, baseline?.roastLevel, TextCase.sentence(f.roastLevel)),
-                roastDate = merge("roastDate", coffee.roastDate, baseline?.roastDate, f.roastDate),
-                bagSizeG = merge("bagSizeG", coffee.bagSizeG, baseline?.bagSizeG, f.bagSizeG),
+                elevationM = merge("elevationM", coffee.elevationM, baseline?.elevationM, f.elevationM, null),
+                roastLevel = merge("roastLevel", coffee.roastLevel, baseline?.roastLevel, TextCase.sentence(f.roastLevel), null),
+                roastDate = merge("roastDate", coffee.roastDate, baseline?.roastDate, f.roastDate, null),
+                bagSizeG = merge("bagSizeG", coffee.bagSizeG, baseline?.bagSizeG, f.bagSizeG, null),
                 tastingNotes = merge(
                     "tastingNotes", coffee.tastingNotes, baseline?.tastingNotes,
-                    TextCase.titleList(f.tastingNotes).takeIf { it.isNotEmpty() },
+                    TextCase.titleList(f.tastingNotes).takeIf { it.isNotEmpty() }, emptyList(),
                 ),
                 bagDescription = merge(
-                    "bagDescription", coffee.bagDescription, baseline?.bagDescription, TextCase.sentence(f.bagDescription),
+                    "bagDescription", coffee.bagDescription, baseline?.bagDescription, TextCase.sentence(f.bagDescription), null,
                 ),
                 sellerDescription = merge(
-                    "sellerDescription", coffee.sellerDescription, baseline?.sellerDescription, TextCase.sentence(f.sellerDescription),
+                    "sellerDescription", coffee.sellerDescription, baseline?.sellerDescription, TextCase.sentence(f.sellerDescription), null,
                 ),
                 ocrText = ocrText.ifBlank { null } ?: coffee.ocrText,
                 // Provenance names the tier that produced the retained fields: a failed re-read keeps it.
@@ -583,7 +599,8 @@ class Extractor @Inject constructor(
             )
             val isGuess = source == ExtractionSource.OCR
             val guessOutcome = if (matching > 0) TierOutcome.READ else TierOutcome.EMPTY
-            val t = if (isGuess) trail.copy(guessedFields = matching).with(Tier.GUESS, guessOutcome) else trail
+            val t = (if (isGuess) trail.copy(guessedFields = matching).with(Tier.GUESS, guessOutcome) else trail)
+                .copy(garbledFields = garbledAfter)
             val meta = updated.extractionMeta!!
             val withNote = if (isGuess) meta.replaceFirst("ocr-guess;", "ocr-guess ($filled fields);") else meta
             finalNote = withNote

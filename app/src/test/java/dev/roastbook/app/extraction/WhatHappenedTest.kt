@@ -31,6 +31,16 @@ class WhatHappenedTest {
         assertEquals(ExtractionTrail(), ExtractionTrail.decode("garbage;x=y"))
     }
 
+    @Test fun theFieldsAGarbledAnswerFilledRoundTripAndOutliveAReadAgain() {
+        val trail = ExtractionTrail().with(Tier.NANO, TierOutcome.READ).copy(nanoPoor = true, garbledFields = setOf("roastDate", "coffeeName"))
+        assertEquals("nano=read;nanoq=poor;garbled=coffeeName,roastDate", trail.encode())
+        assertEquals(trail, ExtractionTrail.decode(trail.encode()))
+        assertEquals("garbled=coffeeName,roastDate", trail.carriedAcrossReread().encode())
+        // A name that isn't a plain field name is dropped rather than allowed to break the trail.
+        assertEquals(setOf("roaster"), ExtractionTrail.decode("garbled=roaster,bad=name,").garbledFields)
+        assertEquals("", ExtractionTrail().carriedAcrossReread().encode())
+    }
+
     @Test fun nanoReadSaysNothing() {
         assertNull(explain(ExtractionSource.NANO, "nano=read"))
         assertNull(explain(ExtractionSource.NANO, ""))

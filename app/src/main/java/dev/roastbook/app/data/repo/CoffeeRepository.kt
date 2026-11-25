@@ -143,7 +143,8 @@ class CoffeeRepository @Inject constructor(
     /**
      * "Reread": queue extraction (and the hero crop) again for one coffee. Fields the user edited by
      * hand stay listed in [CoffeeEntity.userEdited], so the new read only fills or improves the
-     * fields the user never touched.
+     * fields the user never touched. The trail keeps only which fields a garbled built-in answer
+     * filled ([dev.roastbook.app.extraction.ExtractionTrail.garbledFields]).
      */
     suspend fun reextract(id: String) {
         val queued = committed {
@@ -153,7 +154,9 @@ class CoffeeRepository @Inject constructor(
                     state = CoffeeState.EXTRACTING,
                     extractionAttempts = 0,
                     nextAttemptAt = null,
-                    extractionTrail = null,
+                    // Which fields a garbled built-in answer filled stays, so the new read can replace them.
+                    extractionTrail = dev.roastbook.app.extraction.ExtractionTrail.decode(c.extractionTrail)
+                        .carriedAcrossReread().encode().ifEmpty { null },
                     heroSegmented = false,
                     heroAttempts = 0,
                     updatedAt = System.currentTimeMillis(),

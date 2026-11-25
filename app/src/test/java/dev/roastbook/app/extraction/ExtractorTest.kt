@@ -442,6 +442,97 @@ class ExtractorTest {
         assertEquals(ExtractionSource.NANO, c.extractionSource)
     }
 
+    // --- A garbled built-in answer's fields give way to a clean reading ---
+
+    /** Not the JSON asked for: the "key: value" lines a broken answer falls back to. */
+    private val garbledAnswer = """
+        roaster: Lantern Roasters
+        coffee_name: Finca Veleta
+        varietal: Caturra
+        tasting_notes: [Plum, Cocoa]
+        roast_date: 3 November
+    """.trimIndent()
+
+    @Test fun aGarbledBuiltInAnswerRecordsWhichFieldsItFilled() = runBlocking {
+        val id = seedCoffee()
+        extractor(FakeNano(answers = mutableListOf({ garbledAnswer }, { garbledAnswer })), FakeOcr("x")).run(id)
+        val c = db.coffeeDao().get(id)!!
+        assertEquals(ExtractionSource.NANO, c.extractionSource)
+        assertEquals(
+            setOf("roaster", "coffeeName", "varietal", "tastingNotes", "roastDate"),
+            ExtractionTrail.decode(c.extractionTrail).garbledFields,
+        )
+        // Read again keeps that record (and nothing else of the old trail) until the new read lands.
+        repo.reextract(id)
+        val queued = db.coffeeDao().get(id)!!
+        assertEquals(CoffeeState.EXTRACTING, queued.state)
+        assertEquals(ExtractionTrail(garbledFields = setOf("roaster", "coffeeName", "varietal", "tastingNotes", "roastDate")),
+            ExtractionTrail.decode(queued.extractionTrail))
+    }
+
+    /**
+     * The rule, end to end through Read again: a clean reading by the on-device reader replaces every
+     * field a garbled built-in answer filled, and clears the ones it has nothing for. A field the user
+     * edited is never touched, and a field an earlier clean reading filled stays.
+     */
+    @Test fun theReadersRereadReplacesOrClearsWhatOnlyAGarbledAnswerFilled() = runBlocking {
+        val id = seedCoffee()
+        // 1. A clean reading fills the producer and the region.
+        extractor(FakeNano(answers = mutableListOf({ """{"producer":"Hollin Vale","region":"Huila"}""" })), FakeOcr("x")).run(id)
+        // 2. Read again: the built-in AI answers garbled, filling five other fields and leaving those two.
+        repo.reextract(id)
+        extractor(FakeNano(answers = mutableListOf({ garbledAnswer }, { garbledAnswer })), FakeOcr("x")).run(id)
+        // 3. The person corrects one of the garbled fields by hand.
+        repo.edit(id) { it.copy(varietal = listOf("Gesha")) }
+        // 4. The reader reads it again (the device chose it) and finds only a roaster and the process.
+        health.preferred = true
+        repo.reextract(id)
+        val reader = FakeLocal(answers = mutableListOf({ """{"roaster":"Signal Roasters","process":"Washed"}""" }))
+        val out = extractor(FakeNano(), FakeOcr("x"), local = reader).run(id)
+        assertEquals(ExtractionSource.LOCAL, out.source)
+        val c = db.coffeeDao().get(id)!!
+        assertEquals("the reader's value replaces the garbled one", "Signal Roasters", c.roaster)
+        assertEquals("Washed", c.process)
+        assertNull("a garbled name the reader didn't confirm is cleared", c.coffeeName)
+        assertEquals(emptyList<String>(), c.tastingNotes)
+        assertNull(c.roastDate)
+        assertEquals("the user's edit stays", listOf("Gesha"), c.varietal)
+        assertEquals("the earlier clean reading stays", "Hollin Vale", c.producer)
+        assertEquals("Huila", c.region)
+        assertEquals(ExtractionSource.LOCAL, c.extractionSource)
+        assertEquals(emptySet<String>(), ExtractionTrail.decode(c.extractionTrail).garbledFields)
+    }
+
+    @Test fun aRereadThatIsGarbledTooOrOnlyAGuessKeepsWhatItHasNothingFor() = runBlocking {
+        val id = seedCoffee()
+        extractor(FakeNano(answers = mutableListOf({ garbledAnswer }, { garbledAnswer })), FakeOcr("x")).run(id)
+        // Garbled again, with only a roaster: the other garbled values stay, and stay marked.
+        repo.reextract(id)
+        extractor(FakeNano(answers = mutableListOf({ "roaster: Lantern" }, { "roaster: Lantern" })), FakeOcr("x")).run(id)
+        var c = db.coffeeDao().get(id)!!
+        assertEquals("Finca Veleta", c.coffeeName)
+        assertEquals(setOf("roaster", "coffeeName", "varietal", "tastingNotes", "roastDate"), ExtractionTrail.decode(c.extractionTrail).garbledFields)
+        // Every model fails and the label-text guess runs: a guess never replaces a model's reading.
+        repo.reextract(id)
+        extractor(FakeNano(answers = mutableListOf({ "nope" }, { "nope" })), FakeOcr("NORTHWIND")).run(id)
+        c = db.coffeeDao().get(id)!!
+        assertEquals("Finca Veleta", c.coffeeName)
+        assertEquals(ExtractionSource.NANO, c.extractionSource)
+        assert("coffeeName" in ExtractionTrail.decode(c.extractionTrail).garbledFields)
+    }
+
+    @Test fun aCleanRereadByTheBuiltInAiReplacesGarbledFieldsToo() = runBlocking {
+        val id = seedCoffee()
+        extractor(FakeNano(answers = mutableListOf({ garbledAnswer }, { garbledAnswer })), FakeOcr("x")).run(id)
+        repo.reextract(id)
+        extractor(FakeNano(answers = mutableListOf({ """{"roaster":"Lantern Roasters","coffee_name":"Finca Veleta"}""" })), FakeOcr("x")).run(id)
+        val c = db.coffeeDao().get(id)!!
+        assertEquals("Finca Veleta", c.coffeeName)
+        assertEquals(emptyList<String>(), c.varietal)
+        assertNull(c.roastDate)
+        assertEquals(emptySet<String>(), ExtractionTrail.decode(c.extractionTrail).garbledFields)
+    }
+
     // --- The per-row edit marker closes the window before the run's first read ---
 
     private suspend fun seedLoggedNanoCoffee(): String {
