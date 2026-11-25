@@ -1,0 +1,11 @@
+name: Idea
+description: Suggest something Roastbook could do.
+labels: [idea]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What would you like Roastbook to do, and what would it help you with? The README's Roadmap lists what is planned and what is not.
+    validations:
+      required: true

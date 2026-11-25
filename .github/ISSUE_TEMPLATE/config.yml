@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem
+    url: https://github.com/jessejamesjohnston/roastbook/security/advisories/new
+    about: Please report security problems privately.
+  - name: Questions and other feedback
+    url: https://merrimentlabs.com/contact
+    about: Write to Merriment Labs.

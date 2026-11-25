@@ -1,0 +1,65 @@
+name: Android
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Builds and tests only, with no secrets. Releases are built from a tag and signed locally by
+# scripts/release.sh; no key ever goes to GitHub. Actions are pinned to commits (the tag is in
+# the comment) so a moved tag cannot change what runs here.
+permissions:
+  contents: read
+
+# A newer push to the same branch or pull request replaces a run still going.
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build, lint, unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+      # Robolectric fetches its Android runtime jar (~200 MB) from Maven Central at test time, outside
+      # Gradle's cache; downloading it on every run gets rate-limited (HTTP 429 fails the first test class).
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: robolectric-
+      # Compiler warnings fail the build (app/build.gradle.kts).
+      - name: Unit tests and coverage
+        run: ./gradlew --no-daemon testDebugUnitTest createDebugUnitTestCoverageReport
+      # Line coverage of non-generated code, minus the SDK adapters named in the script.
+      - name: Coverage gate (95% line)
+        run: python3 scripts/coverage.py --min 95
+      # Lint warnings fail the build too (app/lint.xml lists the checks that are off, and why).
+      - name: Lint
+        run: ./gradlew --no-daemon lintDebug
+      - name: Debug APK
+        run: ./gradlew --no-daemon assembleDebug
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: roastbook-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: reports
+          retention-days: 7
+          path: |
+            app/build/reports/coverage/test/debug/
+            app/build/reports/lint-results-debug.html
+            app/build/reports/tests/testDebugUnitTest/

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Tier 0 backup (Android Auto Backup / device transfer). Only what is listed is backed up:
+  - autobackup/   a consistent copy of the database (VACUUM INTO, refreshed when the app goes to
+                  the background after a write) plus a mirror of the 256 px thumbs
+  - datastore/    preferences
+  The live WAL-mode database and the photo originals/squares are deliberately absent (an include
+  list is exhaustive, so nothing else is backed up): the live file is not consistent mid-write, and
+  full photos would blow the 25 MB quota. They come back from a Tier 1 zip.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="file" path="autobackup/" />
+        <include domain="file" path="datastore/" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="file" path="autobackup/" />
+        <include domain="file" path="datastore/" />
+    </device-transfer>
+</data-extraction-rules>

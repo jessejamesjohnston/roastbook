@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Roastbook mark: a coffee bag with a bean on its label, after the merrimentlabs.com art. -->
+    <group android:translateX="28.800" android:translateY="19.770" android:scaleX="0.42" android:scaleY="0.42">
+        <path android:fillColor="#F6B23C" android:pathData="M22,18 h76 l6,14 H16 z" />
+        <path android:fillColor="#E9855F" android:pathData="M16,32 h88 l-4,104 c0,5 -4,9 -9,9 H29 c-5,0 -9,-4 -9,-9 z" />
+        <path android:fillColor="#000000" android:fillAlpha="0.08" android:pathData="M16,32 h88 l-1,10 H17 z" />
+        <path android:fillColor="#FFF4E4" android:pathData="M40,58 h40 a8,8 0 0 1 8,8 v38 a8,8 0 0 1 -8,8 h-40 a8,8 0 0 1 -8,-8 v-38 a8,8 0 0 1 8,-8 z" />
+        <group android:translateX="43.680" android:translateY="60.680" android:scaleX="0.68" android:scaleY="0.68"><group android:pivotX="24" android:pivotY="24" android:rotation="28"><path android:fillColor="#7A4A2E" android:pathData="M9,24 a15,20 0 1,0 30,0 a15,20 0 1,0 -30,0 z" /><path android:strokeColor="#3E2215" android:strokeWidth="3" android:strokeLineCap="round" android:pathData="M17,9 c7,7 7,23 14,30" /></group></group>
+        <path android:fillColor="#5A3320" android:fillAlpha="0.8" android:pathData="M44,96 h32 a2,2 0 0 1 2,2 v0 a2,2 0 0 1 -2,2 h-32 a2,2 0 0 1 -2,-2 v0 a2,2 0 0 1 2,-2 z" />
+        <path android:fillColor="#5A3320" android:fillAlpha="0.45" android:pathData="M48.5,104 h23.0 a1.5,1.5 0 0 1 1.5,1.5 v0.0 a1.5,1.5 0 0 1 -1.5,1.5 h-23.0 a1.5,1.5 0 0 1 -1.5,-1.5 v-0.0 a1.5,1.5 0 0 1 1.5,-1.5 z" />
+    </group>
+</vector>

@@ -1,0 +1,29 @@
+name: Bug report
+description: Something in Roastbook does not work as it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Roastbook version
+      description: Settings, About shows it.
+      placeholder: "0.4.0"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and Android version
+      placeholder: "A phone or tablet, Android 16"
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: Screenshots help. Please leave out anything personal.

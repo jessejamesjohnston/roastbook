@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lint runs with warnings as errors (app/build.gradle.kts). These checks are off because their
+     result depends on what was published on the day of the build, not on this code: the same commit
+     would pass one week and fail the next. Dependency and SDK upgrades are made as deliberate
+     changes of their own, each with its own build and test run. -->
+<lint>
+    <issue id="GradleDependency" severity="ignore" />
+    <issue id="NewerVersionAvailable" severity="ignore" />
+    <issue id="AndroidGradlePluginVersion" severity="ignore" />
+    <issue id="OldTargetApi" severity="ignore" />
+</lint>

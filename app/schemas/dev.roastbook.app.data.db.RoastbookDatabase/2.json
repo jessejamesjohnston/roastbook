@@ -1,0 +1,500 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "5a6121b2ba36a9519925024995993695",
+    "entities": [
+      {
+        "tableName": "coffee",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `logged_at` INTEGER NOT NULL, `state` TEXT NOT NULL, `roaster` TEXT, `coffee_name` TEXT, `origin_country` TEXT, `region` TEXT, `producer` TEXT, `process` TEXT, `varietal` TEXT NOT NULL, `elevation_m` INTEGER, `roast_level` TEXT, `roast_date` TEXT, `bag_size_g` INTEGER, `tasting_notes` TEXT NOT NULL, `bag_description` TEXT, `seller_description` TEXT, `notes` TEXT, `aroma` INTEGER, `flavor` INTEGER, `acidity` INTEGER, `body` INTEGER, `finish` INTEGER, `overall` REAL, `buy_again` INTEGER NOT NULL, `rated_at` INTEGER, `last_tasted_at` INTEGER, `hero_photo_id` TEXT, `tint_light` INTEGER, `tint_dark` INTEGER, `accent_light` INTEGER, `accent_dark` INTEGER, `palette_fallback` INTEGER NOT NULL, `hero_segmented` INTEGER NOT NULL DEFAULT 0, `hero_attempts` INTEGER NOT NULL DEFAULT 0, `extraction_source` TEXT NOT NULL, `extraction_meta` TEXT, `extraction_attempts` INTEGER NOT NULL, `ocr_text` TEXT, `roaster_url` TEXT, `product_url` TEXT, `roaster_city` TEXT, `enrichment_status` TEXT, `source_id` TEXT, `price_usd` REAL, `remind_at` INTEGER, `second_look_at` INTEGER, `second_look_done` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "loggedAt",
+            "columnName": "logged_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "roaster",
+            "columnName": "roaster",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "coffeeName",
+            "columnName": "coffee_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "originCountry",
+            "columnName": "origin_country",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "region",
+            "columnName": "region",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "producer",
+            "columnName": "producer",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "process",
+            "columnName": "process",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "varietal",
+            "columnName": "varietal",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "elevationM",
+            "columnName": "elevation_m",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "roastLevel",
+            "columnName": "roast_level",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "roastDate",
+            "columnName": "roast_date",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "bagSizeG",
+            "columnName": "bag_size_g",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "tastingNotes",
+            "columnName": "tasting_notes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bagDescription",
+            "columnName": "bag_description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sellerDescription",
+            "columnName": "seller_description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "aroma",
+            "columnName": "aroma",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "flavor",
+            "columnName": "flavor",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "acidity",
+            "columnName": "acidity",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "body",
+            "columnName": "body",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "finish",
+            "columnName": "finish",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "overall",
+            "columnName": "overall",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "buyAgain",
+            "columnName": "buy_again",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ratedAt",
+            "columnName": "rated_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastTastedAt",
+            "columnName": "last_tasted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "heroPhotoId",
+            "columnName": "hero_photo_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "tintLight",
+            "columnName": "tint_light",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "tintDark",
+            "columnName": "tint_dark",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "accentLight",
+            "columnName": "accent_light",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "accentDark",
+            "columnName": "accent_dark",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "paletteFallback",
+            "columnName": "palette_fallback",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "heroSegmented",
+            "columnName": "hero_segmented",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "heroAttempts",
+            "columnName": "hero_attempts",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "extractionSource",
+            "columnName": "extraction_source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "extractionMeta",
+            "columnName": "extraction_meta",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "extractionAttempts",
+            "columnName": "extraction_attempts",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ocrText",
+            "columnName": "ocr_text",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "roasterUrl",
+            "columnName": "roaster_url",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "productUrl",
+            "columnName": "product_url",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "roasterCity",
+            "columnName": "roaster_city",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "enrichmentStatus",
+            "columnName": "enrichment_status",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceId",
+            "columnName": "source_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "priceUsd",
+            "columnName": "price_usd",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "remindAt",
+            "columnName": "remind_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "secondLookAt",
+            "columnName": "second_look_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "secondLookDone",
+            "columnName": "second_look_done",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_coffee_logged_at",
+            "unique": false,
+            "columnNames": [
+              "logged_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_coffee_logged_at` ON `${TABLE_NAME}` (`logged_at`)"
+          },
+          {
+            "name": "index_coffee_overall",
+            "unique": false,
+            "columnNames": [
+              "overall"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_coffee_overall` ON `${TABLE_NAME}` (`overall`)"
+          },
+          {
+            "name": "index_coffee_aroma",
+            "unique": false,
+            "columnNames": [
+              "aroma"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_coffee_aroma` ON `${TABLE_NAME}` (`aroma`)"
+          },
+          {
+            "name": "index_coffee_flavor",
+            "unique": false,
+            "columnNames": [
+              "flavor"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_coffee_flavor` ON `${TABLE_NAME}` (`flavor`)"
+          },
+          {
+            "name": "index_coffee_acidity",
+            "unique": false,
+            "columnNames": [
+              "acidity"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_coffee_acidity` ON `${TABLE_NAME}` (`acidity`)"
+          },
+          {
+            "name": "index_coffee_body",
+            "unique": false,
+            "columnNames": [
+              "body"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_coffee_body` ON `${TABLE_NAME}` (`body`)"
+          },
+          {
+            "name": "index_coffee_finish",
+            "unique": false,
+            "columnNames": [
+              "finish"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_coffee_finish` ON `${TABLE_NAME}` (`finish`)"
+          },
+          {
+            "name": "index_coffee_state",
+            "unique": false,
+            "columnNames": [
+              "state"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_coffee_state` ON `${TABLE_NAME}` (`state`)"
+          }
+        ]
+      },
+      {
+        "tableName": "coffee_photo",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `coffee_id` TEXT NOT NULL, `role` TEXT NOT NULL, `position` INTEGER NOT NULL, `original` TEXT NOT NULL, `square` TEXT, `thumb` TEXT, `taken_at` INTEGER NOT NULL, `added_at` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`coffee_id`) REFERENCES `coffee`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "coffeeId",
+            "columnName": "coffee_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "role",
+            "columnName": "role",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "original",
+            "columnName": "original",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "square",
+            "columnName": "square",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "thumb",
+            "columnName": "thumb",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "takenAt",
+            "columnName": "taken_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "addedAt",
+            "columnName": "added_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_coffee_photo_coffee_id",
+            "unique": false,
+            "columnNames": [
+              "coffee_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_coffee_photo_coffee_id` ON `${TABLE_NAME}` (`coffee_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "coffee",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "coffee_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "source",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `is_seed` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSeed",
+            "columnName": "is_seed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_source_name",
+            "unique": true,
+            "columnNames": [
+              "name"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_source_name` ON `${TABLE_NAME}` (`name`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5a6121b2ba36a9519925024995993695')"
+    ]
+  }
+}

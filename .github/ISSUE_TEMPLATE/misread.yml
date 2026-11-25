@@ -1,0 +1,23 @@
+name: Misread label
+description: Roastbook filled in a field wrongly from a bag.
+labels: [reading]
+body:
+  - type: textarea
+    id: label
+    attributes:
+      label: What the bag says
+      description: Type the relevant text from the label.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: What Roastbook filled in
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: How it was read
+      description: The coffee's page says how it was read.
+      options: [On-device (built-in model), On-device reader (downloaded model), Gemini with my key, Guess from the printed text, Not sure]
