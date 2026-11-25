@@ -81,13 +81,17 @@ Rules the code holds to:
   roast date with no digit at all is empty. Any other roast date is kept as
   written, whatever its style (`03NOV26`, `KW 45`): nothing parses it, it is
   shown and edited as text. It only removes.
-- When Nano's answer was not the JSON asked for, the trail lists the fields
-  it filled (`garbled=coffeeName,roastDate`), and Reread keeps that list. A
-  later clean reading (the reader, a Gemini key, or Nano answering as asked)
-  replaces each listed field with its own value, or clears it when it has
-  none. Fields the user edited are never touched, fields an earlier clean
-  reading filled stay, and a reading that is garbled too, or the guess, keeps
-  them.
+- A reading by Nano or the reader is garbled when its first answer was not
+  the JSON asked for. The trail lists each field a garbled reading changed
+  (`garbled=coffeeName,roastDate`), plus any listed field it repeats, and
+  Reread keeps that list. A later reading that is not garbled (a Gemini
+  key's never is) replaces each listed field it has a value for. Unless it
+  is a poor Nano reading (one naming neither the roaster nor the coffee), it
+  also clears each listed field it has nothing for: a blank to fill in beats
+  a confident wrong value. Fields the user edited are never touched. A value
+  from an earlier clean reading stays unless a garbled reading changed it,
+  which lists it like the rest. A reading that is garbled too, or the guess,
+  keeps the listed fields.
 - `extraction_source` names the tier that produced the retained fields. A
   failed re-read keeps the previous source.
 - The foreground scheduler runs only while the app is visible (Nano refuses
