@@ -59,19 +59,22 @@ class FieldCleanupTest {
         }
     }
 
-    @Test fun datesThatParseAreKeptAsPrinted() {
+    /** Roast dates as bags stamp them: every style with a digit is kept as written. */
+    @Test fun everyRoastDateWithADigitIsKeptAsWritten() {
         val dates = listOf(
-            "2026-11-03", "2026/11/3", "03/11/2026", "11-03-26", "3.11.26", "08/02", "Roasted 12/09",
-            "Nov 3", "3 November", "3rd of Nov", "November 2026", "Roasted on Sept. 14, 2026",
+            "03NOV26", "03 NOV 26", "11.03.26", "11/03/2026", "2026-11-03", "2026/11/03", "Nov 3", "3 nov. 2026",
+            "3. November 2026", "08/02", "KW 45", "ROASTED 03NOV26", "Roasted on Sept. 14, 2026", "12 März 2026", "Lot 26312",
         )
-        for (d in dates) assertEquals(d, FieldCleanup.date(d))
+        for (d in dates) assertEquals("<$d>", d, FieldCleanup.date(d))
+        // Residue around a date goes; the date stays.
+        assertEquals("03NOV26", FieldCleanup.date("03NOV26\","))
+        assertEquals("11.03.26", FieldCleanup.date("  11.03.26 "))
     }
 
-    @Test fun datesThatDoNotParseAreEmpty() {
-        val notDates = listOf(
-            "null null", "null", "unknown", "fresh", "Lot 26312", "2026", "45/78", "13/13", "1520 m", "Batch 7", "\",",
-        )
-        for (d in notDates) assertNull("<$d>", FieldCleanup.date(d))
+    @Test fun aRoastDateIsEmptiedOnlyWhenItIsJunkOrHasNoDigit() {
+        for (d in listOf("null null", "null", "unknown", "N/A", ",", "\",", "[]", "-", "roasted fresh", "fresh", "")) {
+            assertNull("<$d>", FieldCleanup.date(d))
+        }
     }
 
     @Test fun everyTextFieldAndListIsCleaned() {

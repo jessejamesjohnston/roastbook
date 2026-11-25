@@ -78,7 +78,9 @@ Rules the code holds to:
   placeholder words (`null`, `none`, `n/a`, `unknown`, `undefined`) is empty,
   quotes, commas, brackets and braces left at either end by a broken answer
   are trimmed (a quote, bracket or brace only when it has no partner), and a
-  roast date that is not recognizably a date is empty. It only removes.
+  roast date with no digit at all is empty. Any other roast date is kept as
+  written, whatever its style (`03NOV26`, `KW 45`): nothing parses it, it is
+  shown and edited as text. It only removes.
 - When Nano's answer was not the JSON asked for, the trail lists the fields
   it filled (`garbled=coffeeName,roastDate`), and Reread keeps that list. A
   later clean reading (the reader, a Gemini key, or Nano answering as asked)

@@ -16,7 +16,7 @@ The first public release.
   roaster, coffee, origin, region, producer, process, varietal, elevation, roast and tasting
   notes. Every field is a suggestion you can edit, and each coffee says how it was read.
   Placeholder words and stray JSON punctuation in a model's answer are never saved as a value,
-  and a roast date that isn't a date is left blank.
+  and a roast date without a single digit is left blank (any other is kept as printed).
 - Reading falls back in order: the phone's built-in Gemini Nano, the on-device reader (an open
   model you can download once, 2.6 GB, for phones with 8 GB of memory or more), Gemini with your
   own API key, then a marked guess from the printed text. Both the built-in AI and the on-device

@@ -11,7 +11,7 @@ package dev.roastbook.app.extraction
  * - Quotes, commas, brackets and braces left at either end by a broken answer are trimmed. A quote,
  *   bracket or brace goes only when it has no partner in the value, so text that was quoted or
  *   bracketed on purpose keeps its marks, and apostrophes and periods are never touched.
- * - A roast date that is not recognizably a date is empty (see [date]).
+ * - A roast date with no digit at all is empty; any other date is kept as written (see [date]).
  *
  * Every rule only removes; nothing is invented or reworded. Running it twice changes nothing.
  */
@@ -63,31 +63,11 @@ object FieldCleanup {
         }
     }
 
-    private const val MONTH =
-        "jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|june?|july?|aug(ust)?|sep(t|tember)?|oct(ober)?|nov(ember)?|dec(ember)?"
-    /** A year first: 2026-11-03, 2026/11/3. */
-    private val YEAR_FIRST = Regex("""(?<!\d)(19|20)\d{2}[./-](\d{1,2})[./-](\d{1,2})(?!\d)""")
-    /** Day and month in either order, with an optional year: 03/11, 3.11.26, 11-03-2026. */
-    private val DAY_MONTH = Regex("""(?<!\d)(\d{1,2})[./-](\d{1,2})(?:[./-](\d{2}|\d{4}))?(?![\d./-])""")
-    /** A month by name beside a day or a year: Nov 3, 3rd November, November 2026. */
-    private val NAMED_MONTH = Regex(
-        """\b($MONTH)\.?,?\s+\d{1,4}\b|\b\d{1,2}(st|nd|rd|th)?\s+(of\s+)?($MONTH)\b""",
-        RegexOption.IGNORE_CASE,
-    )
-
     /**
-     * A roast date as the bag prints it, kept word for word, or null when it is not recognizably a
-     * date: a year-first date, a day and month in either order (a year is optional, since many bags
-     * print only the day and month), or a month by name beside a day or a year. Text that is none of
-     * these, such as a lot code or placeholder words, is not a date.
+     * A roast date as the bag prints it, trimmed of residue and otherwise kept word for word. Bags
+     * stamp it in every style ("03NOV26", "11.03.26", "3 nov. 2026", "KW 45"), and nothing in the app
+     * parses it (it is shown and edited as text), so the only dates dropped are junk: what [text]
+     * empties, and text with no digit at all, which can't name a day.
      */
-    fun date(s: String?): String? {
-        val t = text(s) ?: return null
-        if (YEAR_FIRST.find(t)?.let { m -> m.groupValues[2].toInt() in 1..12 && m.groupValues[3].toInt() in 1..31 } == true) return t
-        if (DAY_MONTH.findAll(t).any { m -> plausibleDayMonth(m.groupValues[1].toInt(), m.groupValues[2].toInt()) }) return t
-        if (NAMED_MONTH.containsMatchIn(t)) return t
-        return null
-    }
-
-    private fun plausibleDayMonth(a: Int, b: Int) = a in 1..31 && b in 1..31 && (a <= 12 || b <= 12)
+    fun date(s: String?): String? = text(s)?.takeIf { t -> t.any { it.isDigit() } }
 }

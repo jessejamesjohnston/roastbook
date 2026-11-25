@@ -223,7 +223,7 @@ class ExtractorTest {
     @Test fun theCloudTierPassesTheSameCleanup() = runBlocking {
         val id = seedCoffee()
         val nano = FakeNano(status = NanoStatus.UNAVAILABLE)
-        val cloud = FakeCloud(mutableListOf("""{"roaster":"Signal Roasters Co.","coffee_name":"N/A","roast_date":"Lot 26312","region":"[Huila"}"""))
+        val cloud = FakeCloud(mutableListOf("""{"roaster":"Signal Roasters Co.","coffee_name":"N/A","roast_date":"roasted fresh","region":"[Huila"}"""))
         extractor(nano, FakeOcr("SIGNAL"), cloud).run(id)
         val c = db.coffeeDao().get(id)!!
         assertEquals("Signal Roasters Co.", c.roaster)
