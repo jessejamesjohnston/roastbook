@@ -503,9 +503,11 @@ class SettingsViewModelTest {
 
     @Test fun theLastBackupTimeReadsNaturallyInTheMiddleOfItsLine() {
         val saved = java.util.Locale.getDefault()
+        val savedZone = java.util.TimeZone.getDefault()
+        val zone = java.time.ZoneId.of("America/Los_Angeles")
         java.util.Locale.setDefault(java.util.Locale.US)
+        java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone(zone))
         try {
-            val zone = java.time.ZoneId.of("America/Los_Angeles")
             // Wednesday 2026-11-25, 15:00 local time.
             val now = java.time.ZonedDateTime.of(2026, 11, 25, 15, 0, 0, 0, zone).toInstant().toEpochMilli()
             val s = 1000L
@@ -524,6 +526,7 @@ class SettingsViewModelTest {
             assertEquals("Nov 17, 2026", at(8 * 86400 * s))
         } finally {
             java.util.Locale.setDefault(saved)
+            java.util.TimeZone.setDefault(savedZone)
         }
     }
 
