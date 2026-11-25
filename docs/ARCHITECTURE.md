@@ -101,8 +101,9 @@ Rules the code holds to:
   A `.verified` stamp avoids re-hashing on every check.
 - **The offer on a coffee's page** (`ReaderNudge`, `ReaderOfferCard`): after
   Nano reads a bag poorly (not the JSON asked for, or neither roaster nor
-  coffee) or times out, throws or finds nothing, the coffee's page offers the
-  reader with its size and how it downloads. Only where the reader can run
+  coffee) or times out, throws or finds nothing, and neither the reader nor a
+  Gemini key then read it, the coffee's page offers the reader with its size
+  and how it downloads. Only where the reader can run
   and is neither downloaded nor downloading, never twice on the same coffee,
   and not at all after two "Not now" answers.
 - **Bags that wait for the reader:** Download on the card turns

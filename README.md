@@ -129,9 +129,8 @@ phone's built-in model (Gemini Nano through ML Kit GenAI), then the optional on-
 with the user's key if there is one, and falls back to simple rules over the recognized text. A
 built-in reading that is not the JSON asked for, or that names neither the roaster nor the coffee,
 is checked against the on-device reader when it is downloaded, and the reading with more fields is
-kept (on a tie, the reader's, when its first answer was valid JSON and the built-in one's was
-not); a user can also choose
-the on-device reader outright.
+kept (on a tie, the reader's, when its first answer was valid JSON and the built-in answer was
+not); a user can also choose the on-device reader outright.
 Every step has a deadline and every read an attempt cap, and the trail of what each tier did is
 stored with the coffee, so the app can say why a field came from where it did. The state lives in
 Room, so a read survives the app being closed, and reads that don't need the foreground continue

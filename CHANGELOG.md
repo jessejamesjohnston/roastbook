@@ -32,8 +32,10 @@ The first public release.
   over Wi-Fi only or also over mobile data. Download makes the reader this device's choice and
   reads that bag again when it arrives, along with any other bag the built-in AI reads poorly
   meanwhile. Until then the card follows the download (progress, paused, waiting for Wi-Fi, or
-  why it failed) and can cancel it. Not now is remembered for that bag, and after two of those
-  the offer stops.
+  why it failed) and can cancel it while it runs, waits or is paused. When it failed, the card
+  offers Try again, or Not now, which stops that bag waiting and leaves the partial download
+  and the switch for Settings to retry or cancel. Not now on the offer is remembered for that
+  bag, and after two of those the offer stops.
 - Rate each coffee on aroma, flavor, acidity, body and finish, with an overall score, notes,
   price and whether you would buy it again. A reminder to rate it, and one second look after
   your first rating.
