@@ -71,6 +71,32 @@ class LocalReaderManagerTest {
         assertEquals(DownloadPhase.WAITING_FOR_NETWORK, h.awaitState(m) { it.phase == DownloadPhase.WAITING_FOR_NETWORK }.phase)
     }
 
+    /**
+     * WorkManager reports a new job ENQUEUED first, even when its network rule is met and it runs a
+     * few milliseconds later. A first attempt with nothing on disk reads as starting for a moment,
+     * so "Waiting for Wi-Fi" never flashes on Wi-Fi; one still enqueued after that says it is waiting.
+     */
+    @Test fun aJustEnqueuedDownloadReadsAsStartingThenAsWaitingIfItStaysThere() = runBlocking {
+        h.device(); h.debugSpec()
+        val m = h.manager(startingGrace = 1_500L)
+        m.download()
+        assertEquals(WorkInfo.State.ENQUEUED, h.pendingJob().state)
+        val first = h.awaitState(m) { it.phase != DownloadPhase.NONE }
+        assertEquals(DownloadPhase.DOWNLOADING, first.phase)
+        assertEquals(0L, first.downloadedBytes)
+        assertEquals(DownloadPhase.WAITING_FOR_NETWORK, h.awaitState(m) { it.phase == DownloadPhase.WAITING_FOR_NETWORK }.phase)
+    }
+
+    @Test fun anEnqueuedDownloadWithAPartOnDiskSaysItIsWaitingAtOnce() = runBlocking {
+        h.device(); h.debugSpec()
+        val m = h.manager(startingGrace = 60_000L)
+        h.writePart(m, 12)
+        m.download()
+        val first = h.awaitState(m) { it.phase != DownloadPhase.NONE }
+        assertEquals(DownloadPhase.WAITING_FOR_NETWORK, first.phase)
+        assertEquals(12L, first.downloadedBytes)
+    }
+
     @Test fun aDownloadUsesMobileDataWhenThePersonAllowedIt() = runBlocking {
         val m = eligibleManager()
         h.prefs.setAllowMetered(true)

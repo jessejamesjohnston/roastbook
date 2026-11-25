@@ -23,6 +23,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.transformLatest
+import kotlinx.coroutines.delay
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 /** What Settings shows about the reader's model file. */
 enum class DownloadPhase { NONE, WAITING_FOR_NETWORK, DOWNLOADING, VERIFYING, READY, FAILED }
@@ -178,7 +182,31 @@ class LocalReaderManager @Inject constructor(
 
     val state: Flow<ReaderState> by lazy { stateFlow() }
 
-    private fun stateFlow(): Flow<ReaderState> = combine(
+    /**
+     * How long a just-enqueued download reads as starting rather than waiting for a network.
+     * WorkManager reports every new job ENQUEUED first, for a few milliseconds when the network rule
+     * is met, so without this the person could see "Waiting for Wi-Fi…" flash on Wi-Fi. A job still
+     * enqueued after this really is waiting, and says so.
+     */
+    internal var startingGraceMs: Long = 2_000L
+
+    /** When this process first saw each download job enqueued, for [startingGraceMs]. */
+    private val firstSeenEnqueued = ConcurrentHashMap<UUID, Long>()
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private fun stateFlow(): Flow<ReaderState> = rawState().transformLatest { (s, graceLeft) ->
+        if (graceLeft <= 0L) {
+            emit(s)
+        } else {
+            // Starting, then (if nothing has changed by then) the honest wait.
+            emit(s.copy(phase = DownloadPhase.DOWNLOADING, downloadedBytes = 0L))
+            delay(graceLeft)
+            emit(s)
+        }
+    }.flowOn(Dispatchers.IO)
+
+    /** The state from WorkManager and the prefs, and how much of a fresh enqueue's grace is left. */
+    private fun rawState(): Flow<Pair<ReaderState, Long>> = combine(
         WorkManager.getInstance(context).getWorkInfosForUniqueWorkFlow(WORK_NAME),
         prefs.settings,
         diskTick,
@@ -204,6 +232,13 @@ class LocalReaderManager @Inject constructor(
             DownloadResult.Reason.HASH_MISMATCH.name, DownloadResult.Reason.SIZE_MISMATCH.name -> DownloadFailure.CHECKSUM
             else -> DownloadFailure.SERVER
         } else null
+        // A first attempt with nothing on disk, enqueued moments ago: still starting (see [startingGraceMs]).
+        val now = System.currentTimeMillis()
+        val graceLeft = if (phase == DownloadPhase.WAITING_FOR_NETWORK && info?.state == WorkInfo.State.ENQUEUED &&
+            info.runAttemptCount == 0 && store.partialBytes() == 0L
+        ) {
+            startingGraceMs - (now - firstSeenEnqueued.getOrPut(info.id) { now })
+        } else 0L
         ReaderState(
             eligibility = eligibility,
             phase = phase,
@@ -225,8 +260,8 @@ class LocalReaderManager @Inject constructor(
             // the list in the same write that sets theirs aside.
             starting = phase == DownloadPhase.NONE && info != null && info.state.isFinished &&
                 info.id.toString() in settings.discardedJobs && settings.pendingRereads.isNotEmpty(),
-        )
-    }.flowOn(Dispatchers.IO)
+        ) to graceLeft
+    }
 
     /**
      * Debug builds only: `no_backup/reader-debug-spec.properties` (url, fileName, sizeBytes,

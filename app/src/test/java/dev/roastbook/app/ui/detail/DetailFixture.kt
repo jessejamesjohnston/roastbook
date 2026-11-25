@@ -46,7 +46,7 @@ class DetailFixture(key: String? = null, eligibleForReader: Boolean = false) {
             val am = graph.context.getSystemService(ActivityManager::class.java)
             shadowOf(am).setMemoryInfo(ActivityManager.MemoryInfo().apply { totalMem = 8L * 1024 * 1024 * 1024 })
         }
-        reader = LocalReaderManager(graph.context, readerPrefs)
+        reader = LocalReaderManager(graph.context, readerPrefs).also { it.startingGraceMs = 0L }
     }
 
     /** Owns every ViewModel built here, so [close] stops their flows before the database closes. */

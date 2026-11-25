@@ -87,10 +87,12 @@ class LocalReaderSectionTest {
 
     private fun grantNotifications() = shadowOf(ApplicationProvider.getApplicationContext<Application>()).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
 
-    private fun manager(totalMem: Long = 8 * ReaderHarness.GIB, abis: List<String> = listOf("arm64-v8a")): LocalReaderManager {
+    private fun manager(
+        totalMem: Long = 8 * ReaderHarness.GIB, abis: List<String> = listOf("arm64-v8a"), startingGrace: Long = 0L,
+    ): LocalReaderManager {
         h.device(totalMem, abis)
         h.debugSpec()
-        return h.manager()
+        return h.manager(startingGrace)
     }
 
     private fun show(m: LocalReaderManager, nano: FakeNano = FakeNano(NanoStatus.UNAVAILABLE)): LocalReaderViewModel {
@@ -293,6 +295,17 @@ class LocalReaderSectionTest {
         waitFor(str(R.string.reader_downloading, size(16), size(total)))
         assertFalse(shown(starting))
         assertEquals(1, bars(determinate)); assertEquals(0, bars(indeterminate))
+    }
+
+    /** The device's first state after Download, a job just enqueued, reads as starting too. */
+    @Test fun aJustEnqueuedDownloadSaysItIsStartingNotWaitingForWifi() {
+        grantNotifications()
+        val m = manager(startingGrace = 60_000L)
+        runBlocking { m.download() }
+        show(m)
+        waitFor(str(R.string.detail_reader_starting))
+        assertFalse(shown(str(R.string.reader_waiting_wifi)))
+        assertEquals(1, bars(indeterminate)); assertEquals(0, bars(determinate))
     }
 
     private val determinate = SemanticsMatcher("a bar with a value") {

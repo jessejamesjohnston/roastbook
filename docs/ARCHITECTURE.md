@@ -111,7 +111,12 @@ Rules the code holds to:
   unless the user allows mobile data. Writes `<name>.part`, resumes with an
   HTTP Range request, re-requests the published URL each time (the CDN
   redirect is signed and expires), verifies size and SHA-256, then renames.
-  A `.verified` stamp avoids re-hashing on every check.
+  A `.verified` stamp avoids re-hashing on every check. Until the first byte
+  arrives the download reads as starting: WorkManager reports a new job
+  ENQUEUED (measured: 14 ms before RUNNING on an emulator), then RUNNING
+  before any progress, so a first attempt with nothing on disk reads as
+  starting for its first 2 seconds enqueued, and as waiting for a network
+  only after that.
 - **The offer on a coffee's page** (`ReaderNudge`, `ReaderOfferCard`): after
   Nano reads a bag poorly (not the JSON asked for, or neither roaster nor
   coffee) or times out, throws or finds nothing, and neither the reader nor a

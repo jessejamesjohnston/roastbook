@@ -82,7 +82,11 @@ class ReaderHarness {
         return ModelSpec(displayName ?: "Debug model", url, "test.bin", bytes.size.toLong(), sha256(bytes))
     }
 
-    fun manager(): LocalReaderManager = LocalReaderManager(context, prefs)
+    /**
+     * A manager whose just-enqueued downloads read as waiting at once ([startingGrace] 0), since
+     * the test WorkManager never meets a network rule on its own; a test of the grace sets it.
+     */
+    fun manager(startingGrace: Long = 0L): LocalReaderManager = LocalReaderManager(context, prefs).also { it.startingGraceMs = startingGrace }
 
     /** Puts a verified model in place, as a finished download leaves it. */
     fun installModel(m: LocalReaderManager, bytes: ByteArray = MODEL_BYTES) {
