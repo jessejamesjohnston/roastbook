@@ -87,6 +87,10 @@
     <string name="settings_backing_up">Backing up…</string>
     <string name="settings_last_backup">Last backup %1$s · %2$s · %3$s</string>
     <string name="settings_last_backup_never">No backup yet</string>
+    <!-- The time in settings_last_backup, under a minute ago: "Last backup just now · 184 KB · 1 coffee". -->
+    <string name="settings_last_backup_just_now">just now</string>
+    <!-- The time in settings_last_backup, on the day before today and at least a day ago. -->
+    <string name="settings_last_backup_yesterday">yesterday</string>
     <string name="settings_last_backup_failed">Last backup failed: %1$s</string>
     <plurals name="settings_backup_keeps">
         <item quantity="one">Keeps the newest %1$d backup in the folder</item>

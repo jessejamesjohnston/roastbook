@@ -1,6 +1,5 @@
 package dev.roastbook.app.ui.settings
 
-import android.text.format.DateUtils
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -96,7 +95,11 @@ internal fun BackupCard(vm: SettingsViewModel) {
             if (last == null) stringResource(R.string.settings_last_backup_never)
             else stringResource(
                 R.string.settings_last_backup,
-                DateUtils.getRelativeTimeSpanString(last, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString(),
+                SettingsViewModel.lastBackupWhen(
+                    last, System.currentTimeMillis(),
+                    justNow = stringResource(R.string.settings_last_backup_just_now),
+                    yesterday = stringResource(R.string.settings_last_backup_yesterday),
+                ),
                 SettingsViewModel.humanBytes(state.lastBackupBytes ?: 0),
                 pluralStringResource(R.plurals.coffees, state.lastBackupCoffees ?: 0, state.lastBackupCoffees ?: 0),
             ),

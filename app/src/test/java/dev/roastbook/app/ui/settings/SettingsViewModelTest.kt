@@ -501,6 +501,32 @@ class SettingsViewModelTest {
 
     // ---- Formatting ----
 
+    @Test fun theLastBackupTimeReadsNaturallyInTheMiddleOfItsLine() {
+        val saved = java.util.Locale.getDefault()
+        java.util.Locale.setDefault(java.util.Locale.US)
+        try {
+            val zone = java.time.ZoneId.of("America/Los_Angeles")
+            // Wednesday 2026-11-25, 15:00 local time.
+            val now = java.time.ZonedDateTime.of(2026, 11, 25, 15, 0, 0, 0, zone).toInstant().toEpochMilli()
+            val s = 1000L
+            fun at(ago: Long) = SettingsViewModel.lastBackupWhen(now - ago, now, "just now", "yesterday", zone)
+            assertEquals("just now", at(0))
+            assertEquals("just now", at(59 * s))
+            assertEquals("a clock moved back is not the future", "just now", at(-120 * s))
+            assertEquals("1 minute ago", at(60 * s))
+            assertEquals("1 minute ago", at(119 * s))
+            assertEquals("2 minutes ago", at(120 * s))
+            assertEquals("1 hour ago", at(3600 * s))
+            assertEquals("still today, so hours", "14 hours ago", at(14 * 3600 * s))
+            assertEquals("the day before, under a day ago", "16 hours ago", at(16 * 3600 * s))
+            assertEquals("yesterday", at(26 * 3600 * s))
+            assertEquals("3 days ago", at(3 * 86400 * s))
+            assertEquals("Nov 17, 2026", at(8 * 86400 * s))
+        } finally {
+            java.util.Locale.setDefault(saved)
+        }
+    }
+
     @Test fun sizesReadAsBytesKilobytesOrMegabytes() {
         assertEquals("512 B", SettingsViewModel.humanBytes(512))
         assertEquals("2 KB", SettingsViewModel.humanBytes(2048))

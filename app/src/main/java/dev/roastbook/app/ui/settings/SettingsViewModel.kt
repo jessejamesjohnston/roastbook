@@ -3,6 +3,7 @@ package dev.roastbook.app.ui.settings
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.text.format.DateUtils
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -297,6 +298,22 @@ class SettingsViewModel @Inject constructor(
     }
 
     companion object {
+        /**
+         * When the last backup ran, as it reads inside "Last backup … · size · coffees": [justNow]
+         * under a minute ago (or when the clock has since moved back), [yesterday] where Android would
+         * say "Yesterday" (capitalized, which reads wrong mid-line), otherwise Android's own
+         * "1 minute ago", "3 hours ago", "2 days ago" or a date.
+         */
+        fun lastBackupWhen(
+            last: Long, now: Long, justNow: String, yesterday: String, zone: java.time.ZoneId = java.time.ZoneId.systemDefault(),
+        ): String {
+            val ago = now - last
+            if (ago < DateUtils.MINUTE_IN_MILLIS) return justNow
+            fun day(t: Long) = java.time.Instant.ofEpochMilli(t).atZone(zone).toLocalDate()
+            if (ago >= DateUtils.DAY_IN_MILLIS && ago < DateUtils.WEEK_IN_MILLIS && day(last) == day(now).minusDays(1)) return yesterday
+            return DateUtils.getRelativeTimeSpanString(last, now, DateUtils.MINUTE_IN_MILLIS).toString()
+        }
+
         fun humanBytes(b: Long): String = when {
             b >= 1L shl 20 -> "%.1f MB".format(java.util.Locale.US, b / (1024f * 1024f))
             b >= 1L shl 10 -> "%d KB".format(java.util.Locale.US, b / 1024)

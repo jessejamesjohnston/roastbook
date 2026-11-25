@@ -231,6 +231,17 @@ class SettingsScreenTest {
         assertTrue(gone(str(R.string.settings_last_backup_never)))
     }
 
+    @Test fun aBackupThatJustRanSaysJustNow() {
+        runBlocking { rig.backupPrefs.recordSuccess(System.currentTimeMillis(), "roastbook-test.zip", 2048, 1) }
+        show()
+        waitForText(
+            str(
+                R.string.settings_last_backup, str(R.string.settings_last_backup_just_now),
+                SettingsViewModel.humanBytes(2048), context.resources.getQuantityString(R.plurals.coffees, 1, 1),
+            ),
+        )
+    }
+
     @Test fun aScheduledBackupThatFailedIsShownUntilTheNextSuccessAndKeepsBackupsOn() {
         FolderDocumentsProvider.install(java.io.File(rig.scratch, "Coffee backups"))
         // Stored before the ViewModel starts, as a daily run would have left it.
