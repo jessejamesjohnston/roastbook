@@ -37,6 +37,7 @@ class RoastbookApp : Application(), Configuration.Provider {
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var userPrefs: dev.roastbook.app.data.prefs.UserPrefs
     @Inject lateinit var weeklyUpdateCheck: dev.roastbook.app.update.WeeklyUpdateCheck
+    @Inject lateinit var readerRereads: dev.roastbook.app.reader.ReaderRereads
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
@@ -50,6 +51,8 @@ class RoastbookApp : Application(), Configuration.Provider {
             runCatching { reminders.rescheduleAll() } // alarms don't survive a force-stop or update
         }
         scheduler.start()
+        // Bags whose reader offer was accepted are read again as soon as the reader is downloaded.
+        appScope.launch { runCatching { readerRereads.run() } }
         // Tier 1 schedule follows the settings: a folder plus the daily switch arms the job, either going away disarms it.
         appScope.launch { backupPrefs.state.collect { runCatching { backupScheduler.sync(it) } } }
         // The weekly update check follows its switch (off by default), including after a restore.

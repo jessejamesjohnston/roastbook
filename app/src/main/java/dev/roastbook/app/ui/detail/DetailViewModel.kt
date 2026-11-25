@@ -34,9 +34,10 @@ class DetailViewModel @AssistedInject constructor(
     private val pending: PendingActions,
     private val enricher: Enricher,
     secrets: SecretStore,
-    reader: dev.roastbook.app.reader.LocalReaderManager,
+    private val reader: dev.roastbook.app.reader.LocalReaderManager,
     private val readNotes: ReadNotes,
     userPrefs: dev.roastbook.app.data.prefs.UserPrefs,
+    private val readerPrefs: dev.roastbook.app.reader.ReaderPrefs,
 ) : ViewModel() {
     /** The person closed this coffee's "what happened" note (until the next read). */
     val noteDismissed: StateFlow<Boolean> = readNotes.dismissed.map { id in it }
@@ -53,6 +54,16 @@ class DetailViewModel @AssistedInject constructor(
     /** The device's own AI has been failing here, so Settings shows the reader even where Nano is reported available. */
     val nanoFailing: StateFlow<Boolean> = reader.state.map { it.nanoFailing }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    /** The reader's download state and the device's reader settings, for the in-flow offer ([dev.roastbook.app.reader.ReaderNudge]). */
+    val readerState: StateFlow<dev.roastbook.app.reader.ReaderState?> = reader.state
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    val readerSettings: StateFlow<dev.roastbook.app.reader.ReaderSettings?> = readerPrefs.settings
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    /** Yes to the in-flow offer: the reader becomes this device's choice, downloads, and reads this bag again when ready. */
+    fun acceptReaderOffer() { viewModelScope.launch { readerPrefs.acceptOffer(id); reader.download() } }
+    fun declineReaderOffer() { viewModelScope.launch { readerPrefs.declineOffer(id) } }
+    /** A failed download, retried from this bag's page. */
+    fun retryReaderDownload() { viewModelScope.launch { reader.download() } }
     val lookingUp = MutableStateFlow(false)
     /** Null = no message; otherwise the last manual lookup's outcome for the card. */
     val lookupOutcome = MutableStateFlow<dev.roastbook.app.cloud.LookupResult?>(null)

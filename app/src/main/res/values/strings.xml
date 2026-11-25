@@ -430,6 +430,10 @@
     <string name="reader_cant_memory">It needs 8 GB of memory, and this device has %1$s. To have bags read online, add a Gemini key under Cloud AI. Without one, Roastbook still reads the label text and fills in what it can.</string>
     <string name="reader_cant_cpu">This device\'s processor isn\'t supported. To have bags read online, add a Gemini key under Cloud AI. Without one, Roastbook still reads the label text and fills in what it can.</string>
     <string name="reader_nano_failing">This device\'s built-in AI couldn\'t read a recent bag. The on-device reader can read bags instead.</string>
+    <string name="detail_reader_offer_title">Read this bag with the on-device reader?</string>
+    <string name="detail_reader_offer_body">This device\'s built-in AI didn\'t read this bag well. The on-device reader is a one-time download of %1$s from Hugging Face, over Wi-Fi. It runs on this device, so your photos stay here. When it\'s ready, Roastbook reads this bag again with it and uses it for new bags. You can change that in Settings.</string>
+    <string name="detail_reader_offer_not_now">Not now</string>
+    <string name="detail_reader_waiting">Roastbook reads this bag again when the reader is ready.</string>
     <string name="reader_prefer">Use instead of the built-in AI</string>
     <string name="reader_prefer_hint">Once the reader is downloaded, it reads your bags in place of this device\'s built-in AI. It is slower, and like the built-in AI it keeps your photos on this device.</string>
     <string name="reader_notif_channel">On-device reader download</string>

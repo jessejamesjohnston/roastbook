@@ -53,7 +53,7 @@ class DetailFixture(key: String? = null, eligibleForReader: Boolean = false) {
     private val store = ViewModelStore()
     private var made = 0
 
-    fun vm(id: String) = DetailViewModel(id, graph.repo, graph.photos, pending, enricher, secrets, reader, readNotes, graph.userPrefs)
+    fun vm(id: String) = DetailViewModel(id, graph.repo, graph.photos, pending, enricher, secrets, reader, readNotes, graph.userPrefs, readerPrefs)
         .also { store.put("detail-${made++}", it) }
 
     fun close() {

@@ -989,4 +989,29 @@ class ExtractorTest {
         assertEquals(0, local.calls)
         assertEquals(listOf(true), health.records)
     }
+
+    @Test fun aMalformedNanoAnswerIsKeptButMarkedPoor() = runBlocking {
+        val id = seedCoffee()
+        val nano = FakeNano(answers = mutableListOf({ "{\n\"roaster\": \"Larkmoor\",\n\"producer\": null \"Hollin Vale\"\n}" }))
+        assertEquals(ExtractionSource.NANO, extractor(nano, FakeOcr("t")).run(id).source)
+        val c = db.coffeeDao().get(id)!!
+        assertEquals("Larkmoor", c.roaster)
+        assertNull(c.producer)
+        assertTrue(ExtractionTrail.decode(c.extractionTrail).nanoPoor)
+    }
+
+    @Test fun aWellFormedNanoAnswerWithARoasterIsNotPoor() = runBlocking {
+        val id = seedCoffee()
+        val nano = FakeNano(answers = mutableListOf({ """{"roaster":"Larkmoor"}""" }))
+        extractor(nano, FakeOcr("t")).run(id)
+        assertEquals(false, ExtractionTrail.decode(db.coffeeDao().get(id)!!.extractionTrail).nanoPoor)
+    }
+
+    @Test fun aMalformedNanoAnswerGetsTheReadersSecondOpinion() = runBlocking {
+        val id = seedCoffee()
+        val nano = FakeNano(answers = mutableListOf({ "{\n\"roaster\": \"Larkmoor\",\n\"producer\": null \"Hollin Vale\"\n}" }))
+        val local = FakeLocal(answers = mutableListOf({ """{"roaster":"Larkmoor","coffee_name":"Copper Ridge","process":"Washed"}""" }))
+        assertEquals(ExtractionSource.LOCAL, extractor(nano, FakeOcr("t"), local = local).run(id).source)
+        assertEquals("Copper Ridge", db.coffeeDao().get(id)!!.coffeeName)
+    }
 }

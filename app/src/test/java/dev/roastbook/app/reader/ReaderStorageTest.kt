@@ -67,4 +67,26 @@ class ReaderStorageTest {
         prefs.setPreferReader(false)
         assertFalse(prefs.readerPreferred())
     }
+
+    @Test fun theInFlowOfferRemembersItsAnswersAndHandsOverWaitingBagsOnce() = runTest {
+        val prefs = ReaderPrefs(PreferenceDataStoreFactory.create { File(context.noBackupFilesDir, "test-${System.nanoTime()}.preferences_pb") })
+        prefs.declineOffer("a")
+        assertEquals(1, prefs.current().offerDeclines)
+        assertEquals(setOf("a"), prefs.current().offerDeclinedIds)
+        prefs.acceptOffer("b")
+        assertTrue(prefs.current().preferReader)
+        assertEquals(setOf("b"), prefs.current().pendingRereads)
+        val reread = mutableListOf<String>()
+        ReaderRereads.drain(ready = false, prefs) { reread += it }
+        assertEquals(emptyList<String>(), reread)
+        ReaderRereads.drain(ready = true, prefs) { reread += it }
+        ReaderRereads.drain(ready = true, prefs) { reread += it }
+        assertEquals(listOf("b"), reread)
+        assertEquals(emptySet<String>(), prefs.current().pendingRereads)
+        // A reread that throws does not stop the others.
+        prefs.acceptOffer("c"); prefs.acceptOffer("d")
+        val done = mutableListOf<String>()
+        ReaderRereads.drain(ready = true, prefs) { if (it == "c") error("boom") else done += it }
+        assertEquals(listOf("d"), done)
+    }
 }

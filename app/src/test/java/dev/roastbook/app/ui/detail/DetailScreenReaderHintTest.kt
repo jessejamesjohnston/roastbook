@@ -6,6 +6,8 @@ import dev.roastbook.app.R
 import dev.roastbook.app.data.db.ExtractionSource
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
+import org.junit.Assert.assertEquals
+import androidx.compose.ui.test.performClick
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -29,5 +31,28 @@ class DetailScreenReaderHintTest : DetailScreenTestBase(eligibleForReader = true
         show()
         compose.awaitUntil { vm.nanoFailing.value && vm.readerOffered.value }
         compose.onNodeWithText(str(R.string.what_hint_download)).assertIsDisplayed()
+    }
+
+    @Test fun aPoorBuiltInReadingOffersTheReaderInPlace() {
+        insert { copy(roaster = null, producer = "Hollin Vale", extractionSource = ExtractionSource.NANO, extractionTrail = "nano=read;nanoq=poor") }
+        show()
+        compose.awaitUntil { vm.readerState.value != null && vm.readerSettings.value != null }
+        compose.onNodeWithText(str(R.string.detail_reader_offer_title)).assertIsDisplayed()
+        compose.onNodeWithText(str(R.string.detail_reader_offer_not_now)).performClick()
+        compose.awaitUntil { vm.readerSettings.value?.offerDeclines == 1 }
+        compose.onNodeWithText(str(R.string.detail_reader_offer_title)).assertDoesNotExist()
+        assertEquals(setOf("c1"), vm.readerSettings.value!!.offerDeclinedIds)
+    }
+
+    @Test fun yesToTheOfferChoosesTheReaderAndFollowsTheDownload() {
+        insert { copy(roaster = null, producer = "Hollin Vale", extractionSource = ExtractionSource.NANO, extractionTrail = "nano=read;nanoq=poor") }
+        show()
+        compose.awaitUntil { vm.readerState.value != null && vm.readerSettings.value != null }
+        compose.onNodeWithText(str(R.string.detail_reader_offer_title)).assertIsDisplayed()
+        compose.onNodeWithText("Download (", substring = true).performClick()
+        compose.awaitUntil { vm.readerSettings.value?.preferReader == true }
+        assertEquals(setOf("c1"), vm.readerSettings.value!!.pendingRereads)
+        compose.awaitUntil { runCatching { compose.onNodeWithText(str(R.string.detail_reader_waiting)).assertExists() }.isSuccess }
+        compose.onNodeWithText(str(R.string.detail_reader_offer_title)).assertDoesNotExist()
     }
 }

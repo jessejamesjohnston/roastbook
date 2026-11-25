@@ -42,6 +42,8 @@ data class ExtractionTrail(
     val guessedFields: Int = 0,
     val cloudFailure: CloudFailure? = null,
     val cloudModel: String? = null,
+    /** Nano's reading was kept but was poor (not the JSON asked for, or neither roaster nor coffee). */
+    val nanoPoor: Boolean = false,
 ) {
     operator fun get(tier: Tier): TierOutcome? = outcomes[tier]
 
@@ -54,11 +56,13 @@ data class ExtractionTrail(
         }
         cloudFailure?.let { add("$CLOUD_WHY=${it.name.lowercase()}") }
         cloudModel?.takeIf { MODEL_ID.matches(it) }?.let { add("$CLOUD_MODEL=$it") }
+        if (nanoPoor) add("$NANO_QUALITY=poor")
     }.joinToString(";")
 
     companion object {
         private const val CLOUD_WHY = "cloudwhy"
         private const val CLOUD_MODEL = "cloudmodel"
+        private const val NANO_QUALITY = "nanoq"
         private val MODEL_ID = Regex("[A-Za-z0-9._/-]{1,64}")
 
         fun decode(s: String?): ExtractionTrail {
@@ -66,10 +70,12 @@ data class ExtractionTrail(
             var guessed = 0
             var cloudWhy: CloudFailure? = null
             var cloudModel: String? = null
+            var nanoPoor = false
             val map = linkedMapOf<Tier, TierOutcome>()
             for (part in s.split(';')) {
                 val (k, v) = part.split('=', limit = 2).takeIf { it.size == 2 } ?: continue
                 if (k.trim() == CLOUD_WHY) { cloudWhy = CloudFailure.entries.firstOrNull { it.name.equals(v.trim(), ignoreCase = true) }; continue }
+                if (k.trim() == NANO_QUALITY) { nanoPoor = v.trim() == "poor"; continue }
                 if (k.trim() == CLOUD_MODEL) { cloudModel = v.trim().takeIf { MODEL_ID.matches(it) }; continue }
                 val tier = Tier.entries.firstOrNull { it.key == k.trim() } ?: continue
                 if (tier == Tier.GUESS) {
@@ -79,7 +85,7 @@ data class ExtractionTrail(
                     TierOutcome.entries.firstOrNull { it.name.equals(v.trim(), ignoreCase = true) }?.let { map[tier] = it }
                 }
             }
-            return ExtractionTrail(map, guessed, cloudWhy, cloudModel)
+            return ExtractionTrail(map, guessed, cloudWhy, cloudModel, nanoPoor)
         }
     }
 }

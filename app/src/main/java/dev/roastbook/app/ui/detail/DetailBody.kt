@@ -123,6 +123,19 @@ internal fun DetailBody(
             val nanoFailing by vm.nanoFailing.collectAsState()
             val hasKey by vm.hasCloudKey.collectAsState()
             val noteDismissed by vm.noteDismissed.collectAsState()
+            val readerState by vm.readerState.collectAsState()
+            val readerSettings by vm.readerSettings.collectAsState()
+            val trailNow = dev.roastbook.app.extraction.ExtractionTrail.decode(c.extractionTrail)
+            val rs = readerState
+            if (rs != null) {
+                val waiting = dev.roastbook.app.reader.ReaderNudge.waitingForReader(c.id, rs, readerSettings)
+                if (waiting || dev.roastbook.app.reader.ReaderNudge.shouldOffer(c.id, c.state, c.extractionSource, trailNow, rs, readerSettings)) {
+                    ReaderOfferCard(
+                        rs, waiting = waiting,
+                        onDownload = vm::acceptReaderOffer, onNotNow = vm::declineReaderOffer, onRetry = vm::retryReaderDownload,
+                    )
+                }
+            }
             if (!noteDismissed) {
                 ExtractionStatusCard(
                     c, readerOffered = readerOffered, nanoFailing = nanoFailing, hasKey = hasKey,

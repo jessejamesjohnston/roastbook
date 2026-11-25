@@ -19,11 +19,16 @@ object BagFactsParser {
         "seller_description",
     )
 
-    fun parse(raw: String?): BagFacts? {
+    fun parse(raw: String?): BagFacts? = parseChecked(raw)?.facts
+
+    /** The facts, and whether the answer was a JSON object (as asked) or needed the loose path. */
+    data class Parsed(val facts: BagFacts, val wellFormed: Boolean)
+
+    fun parseChecked(raw: String?): Parsed? {
         if (raw.isNullOrBlank()) return null
         val text = raw.replace("```json", "").replace("```", "").trim()
-        parseJson(text)?.let { return it }
-        return parseLoose(text)
+        parseJson(text)?.let { return Parsed(it, wellFormed = true) }
+        return parseLoose(text)?.let { Parsed(it, wellFormed = false) }
     }
 
     private val json = Json { isLenient = true; ignoreUnknownKeys = true }

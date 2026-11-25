@@ -44,8 +44,10 @@ data class ExtractionOutcome(val source: ExtractionSource, val facts: BagFacts?,
  *          download that never reports back cannot hold the queue.
  *          background blocked → parked until the next foreground; the third miss falls through.
  *          skipped while the person chose the reader in Settings and it is downloaded.
- *          a thin reading (neither roaster nor coffee) is checked against the reader when it is
- *          downloaded, and the reading with more fields is kept (NANO or LOCAL).
+ *          a poor reading (not the JSON asked for, or neither roaster nor coffee) is checked
+ *          against the reader when it is downloaded, and the one with more fields is kept (NANO
+ *          or LOCAL); a poor reading that is kept is marked in the trail (`nanoq=poor`), so the
+ *          card can offer the reader download.
  *     2. the on-device reader (downloaded open model, runs in-process) → LOCAL
  *     3. the user's Gemini key → CLOUD
  *     4. a rule-based guess over the OCR text (fills blank fields only) → OCR
@@ -146,11 +148,11 @@ class Extractor @Inject constructor(
         val afterNano = when (val step = nanoStep(coffeeId, ::images, pages, ocrText, mode)) {
             is NanoStep.Read -> {
                 val note = "nano:${nano.modelName()}"
-                val read = trail.with(Tier.NANO, TierOutcome.READ)
-                // A thin reading (neither roaster nor coffee) gets a second opinion from the on-device
-                // reader when it is downloaded; the reading with more fields is kept.
-                if (step.facts.isThin && localReady()) {
-                    val thin = ModelStep.Next(trail.with(Tier.NANO, TierOutcome.EMPTY), "nano read too little (${step.facts.fieldCount} fields)")
+                val read = trail.with(Tier.NANO, TierOutcome.READ).copy(nanoPoor = step.poor)
+                // A poor reading (not the JSON asked for, or neither roaster nor coffee) gets a second
+                // opinion from the on-device reader when it is downloaded; the one with more fields is kept.
+                if (step.poor && localReady()) {
+                    val thin = ModelStep.Next(trail.with(Tier.NANO, TierOutcome.EMPTY), "nano read poorly (${step.facts.fieldCount} fields)")
                     val second = localStep(coffeeId, ::images, pages, thin)
                     if (second is ModelStep.Read && second.facts.fieldCount > step.facts.fieldCount) {
                         val localNote = "local:${local.modelName()}; after ${second.notes}"
@@ -268,7 +270,8 @@ class Extractor @Inject constructor(
     }
 
     private sealed interface NanoStep {
-        data class Read(val facts: BagFacts) : NanoStep
+        /** [poor]: the answer was not the JSON asked for, or names neither the roaster nor the coffee. */
+        data class Read(val facts: BagFacts, val poor: Boolean = false) : NanoStep
         /** The run ends here: the row was parked for a retry, or left for the foreground. */
         data class Stop(val outcome: ExtractionOutcome) : NanoStep
         data class Fall(val outcome: TierOutcome, val why: String) : NanoStep
@@ -323,7 +326,7 @@ class Extractor @Inject constructor(
         }
         val images = loadImages()
         val attempt = try {
-            withTimeout(timeouts.nanoMs) { modelAttempt("nano", images, pages) { imgs, prompt -> nano.generate(imgs, prompt) } }
+            withTimeout(timeouts.nanoMs) { modelAttemptChecked("nano", images, pages) { imgs, prompt -> nano.generate(imgs, prompt) } }
         } catch (e: TimeoutCancellationException) {
             nanoHealth.recordNano(ok = false, reason = "timed out")
             return NanoStep.Fall(TierOutcome.FAILED, "nano timed out")
@@ -336,9 +339,9 @@ class Extractor @Inject constructor(
             nanoHealth.recordNano(ok = false, reason = "${e::class.simpleName}: ${e.message?.take(120)}")
             return NanoStep.Fall(TierOutcome.FAILED, "nano threw ${e::class.simpleName}: ${e.message?.take(160)}")
         }
-        if (attempt != null && !attempt.isEmpty) {
+        if (attempt != null && !attempt.facts.isEmpty) {
             nanoHealth.recordNano(ok = true)
-            return NanoStep.Read(attempt)
+            return NanoStep.Read(attempt.facts, poor = !attempt.wellFormed || attempt.facts.isThin)
         }
         if (attempt != null) {
             return NanoStep.Fall(TierOutcome.EMPTY, "nano returned no fields (${images.size} images, ${ocrText.length} ocr chars)")
@@ -428,13 +431,18 @@ class Extractor @Inject constructor(
     /** Ask a model tier, parse, and ask once more with a stricter instruction if the answer was not JSON. */
     private suspend fun modelAttempt(
         tier: String, images: List<Bitmap>, pages: List<OcrPage>, generate: suspend (List<Bitmap>, String) -> String,
-    ): BagFacts? {
+    ): BagFacts? = modelAttemptChecked(tier, images, pages, generate)?.facts
+
+    /** As [modelAttempt]; well-formed only when the first answer was a JSON object. */
+    private suspend fun modelAttemptChecked(
+        tier: String, images: List<Bitmap>, pages: List<OcrPage>, generate: suspend (List<Bitmap>, String) -> String,
+    ): BagFactsParser.Parsed? {
         val first = generate(images, ExtractionPrompt.build(pages))
         logAnswer(tier, 1, first)
-        BagFactsParser.parse(first)?.let { return it }
+        BagFactsParser.parseChecked(first)?.let { return it }
         val second = generate(images, ExtractionPrompt.build(pages, strictRetry = true))
         logAnswer(tier, 2, second)
-        return BagFactsParser.parse(second)
+        return BagFactsParser.parseChecked(second)?.copy(wellFormed = false)
     }
 
     /** Model output can echo bag and seller text; only debug builds log its content. */

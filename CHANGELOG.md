@@ -8,14 +8,19 @@ All notable changes to Roastbook are recorded here. The format follows
 
 ### Added
 
+- After a poor reading by the device's built-in AI (an answer that was not the JSON asked for,
+  one with neither roaster nor coffee, or a timeout), a coffee's page offers the downloadable
+  reader in place, with its size, that it runs on the device and that it waits for Wi-Fi.
+  Download makes the reader this device's choice and reads that bag again when it arrives;
+  Not now is remembered for that bag, and after two the offer stops.
 - Settings, On-device reader: shown on every device that can run the downloadable reader, not
   only where the built-in AI is missing. Where the device has its own AI, a switch (off by
   default) has the reader read bags instead, once it is downloaded. Both run on the device.
 
 ### Changed
 
-- A built-in AI reading that names neither the roaster nor the coffee is checked against the
-  downloadable reader when it is on the device, and the reading with more fields is kept.
+- A built-in AI reading that was not the JSON asked for, or that names neither the roaster nor
+  the coffee, is checked against the downloadable reader when it is on the device, and the reading with more fields is kept.
 
 ### Fixed
 
