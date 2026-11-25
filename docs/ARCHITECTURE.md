@@ -99,6 +99,32 @@ Rules the code holds to:
   HTTP Range request, re-requests the published URL each time (the CDN
   redirect is signed and expires), verifies size and SHA-256, then renames.
   A `.verified` stamp avoids re-hashing on every check.
+- **The offer on a coffee's page** (`ReaderNudge`, `ReaderOfferCard`): after
+  Nano reads a bag poorly (not the JSON asked for, or neither roaster nor
+  coffee) or times out, throws or finds nothing, the coffee's page offers the
+  reader with its size and how it downloads. Only where the reader can run
+  and is neither downloaded nor downloading, never twice on the same coffee,
+  and not at all after two "Not now" answers.
+- **Bags that wait for the reader:** Download on the card turns
+  `prefer_reader` on, adds the coffee to `pending_rereads` (device-scoped
+  DataStore under `no_backup/`) and starts the download. A bag Nano reads
+  poorly while that download is on its way joins the list. The card follows
+  the download on each waiting bag's page. When the model is ready,
+  `ReaderRereads` empties the list in one write and reads each of those bags
+  again, also after a restart if the download finished while the app was
+  gone; fields the user edited keep their values.
+- **Pause, Cancel, Delete, Not now:** Pause (in Settings or the
+  notification) stops the job and keeps the partial file for a Range resume;
+  the waiting bags and the switch stay. Cancel download (card or Settings)
+  removes the partial file, and Delete reader (Settings) removes the model,
+  the partial file and the runtime cache. Both empty `pending_rereads`, turn
+  `prefer_reader` off and count the waiting bags as answered. WorkManager
+  records a canceled job as CANCELLED, as it does a paused one, so Cancel and
+  Delete store the ids of the jobs they stop and only other stopped jobs read
+  as paused. On a failed download, the card offers Try again and Not now; Not
+  now only takes that bag off the list. The partial file, the switch and the
+  failure in Settings stay, and Settings keeps Try again and, with part of
+  the file on disk, Cancel download.
 - **Storage:** `no_backup/reader/` (model, partial download, runtime cache).
   Neither backup tier includes it. Settings shows its size and deletes it.
 - **Runtime:** one engine per process, loaded on first use, closed after a
