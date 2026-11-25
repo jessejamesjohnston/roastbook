@@ -592,6 +592,35 @@ class ExtractorTest {
         assertEquals(emptySet<String>(), ExtractionTrail.decode(c.extractionTrail).garbledFields)
     }
 
+    /** A reader answer that was not the JSON asked for is garbled too: it clears nothing. */
+    @Test fun aReaderAnswerThatIsNotJsonKeepsWhatAGarbledAnswerFilled() = runBlocking {
+        val id = seedCoffee()
+        extractor(FakeNano(answers = mutableListOf({ garbledAnswer }, { garbledAnswer })), FakeOcr("x")).run(id)
+        health.preferred = true
+        repo.reextract(id)
+        val loose = "roaster: Signal Roasters\nprocess: Washed"
+        val reader = FakeLocal(answers = mutableListOf({ loose }, { loose }))
+        val out = extractor(FakeNano(), FakeOcr("x"), local = reader).run(id)
+        assertEquals(ExtractionSource.LOCAL, out.source)
+        val c = db.coffeeDao().get(id)!!
+        assertEquals("Signal Roasters", c.roaster)
+        assertEquals("the garbled name stays", "Finca Veleta", c.coffeeName)
+        assertEquals(listOf("Caturra"), c.varietal)
+        assertEquals(
+            setOf("roaster", "coffeeName", "varietal", "tastingNotes", "roastDate", "process"),
+            ExtractionTrail.decode(c.extractionTrail).garbledFields,
+        )
+    }
+
+    @Test fun aSecondOpinionFromTheReaderThatIsNotJsonIsMarkedToo() = runBlocking {
+        val id = seedCoffee()
+        val loose = "roaster: Signal Roasters\nprocess: Washed"
+        val reader = FakeLocal(answers = mutableListOf({ loose }, { loose }))
+        val out = extractor(FakeNano(answers = mutableListOf({ "roaster: Lantern" }, { "roaster: Lantern" })), FakeOcr("x"), local = reader).run(id)
+        assertEquals(ExtractionSource.LOCAL, out.source)
+        assertEquals(setOf("roaster", "process"), ExtractionTrail.decode(db.coffeeDao().get(id)!!.extractionTrail).garbledFields)
+    }
+
     // --- The per-row edit marker closes the window before the run's first read ---
 
     private suspend fun seedLoggedNanoCoffee(): String {

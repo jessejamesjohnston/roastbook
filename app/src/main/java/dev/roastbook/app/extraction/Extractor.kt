@@ -172,7 +172,10 @@ class Extractor @Inject constructor(
                     val second = localStep(coffeeId, ::images, pages, thin)
                     if (second is ModelStep.Read && readerWins(step, second)) {
                         val localNote = "local:${local.modelName()}; after ${second.notes}"
-                        return finish(coffeeId, ExtractionSource.LOCAL, second.facts, ocrText, localNote, second.trail, baseline = coffee)
+                        return finish(
+                            coffeeId, ExtractionSource.LOCAL, second.facts, ocrText, localNote, second.trail,
+                            baseline = coffee, garbled = !second.wellFormed,
+                        )
                     }
                 }
                 return finish(coffeeId, ExtractionSource.NANO, step.facts, ocrText, note, read, baseline = coffee, garbled = !step.wellFormed)
@@ -185,7 +188,9 @@ class Extractor @Inject constructor(
         val afterLocal = when (val step = localStep(coffeeId, ::images, pages, afterNano)) {
             is ModelStep.Read -> {
                 val note = "local:${local.modelName()}; after ${step.notes}"
-                return finish(coffeeId, ExtractionSource.LOCAL, step.facts, ocrText, note, step.trail, baseline = coffee)
+                return finish(
+                    coffeeId, ExtractionSource.LOCAL, step.facts, ocrText, note, step.trail, baseline = coffee, garbled = !step.wellFormed,
+                )
             }
             is ModelStep.Next -> step
         }
@@ -523,7 +528,7 @@ class Extractor @Inject constructor(
             val modelRead = coffee.extractionSource in MODEL_SOURCES
             if (fillBlanksOnly && modelRead) { f = BagFacts(); finalFacts = null }
             val userEdited = mutableListOf<String>()
-            // Fields a garbled built-in answer set, before this read and after it.
+            // Fields a garbled answer (built-in or reader, not the JSON asked for at first) set, before this read and after it.
             val garbledBefore = ExtractionTrail.decode(coffee.extractionTrail).garbledFields
             val garbledAfter = mutableSetOf<String>()
             // A reading that came through as asked: any model's JSON, except a built-in one judged poor.
