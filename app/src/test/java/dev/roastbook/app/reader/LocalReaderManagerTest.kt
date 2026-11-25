@@ -142,6 +142,44 @@ class LocalReaderManagerTest {
         assertTrue(h.prefs.current().preferReader)
     }
 
+    @Test fun aCanceledDownloadIsNotAPausedOne() = runBlocking {
+        // WorkManager leaves a canceled job CANCELLED, exactly as Pause does. Until a new job is
+        // reported, Download on the next bag's offer must read as starting, not as paused.
+        val m = eligibleManager()
+        h.prefs.acceptOffer("c1")
+        m.download()
+        m.cancel()
+        assertTrue(h.jobs().all { it.state == WorkInfo.State.CANCELLED })
+        val s = h.awaitState(m) { it.phase == DownloadPhase.NONE && it.downloadedBytes == 0L }
+        assertFalse("canceled, not paused", s.stopped)
+    }
+
+    @Test fun aDeletedReaderLeavesNoPausedDownload() = runBlocking {
+        val m = eligibleManager()
+        m.download()
+        h.writePart(m, 20)
+        m.delete()
+        assertFalse(h.awaitState(m) { it.phase == DownloadPhase.NONE && it.downloadedBytes == 0L }.stopped)
+    }
+
+    @Test fun aPauseAfterAnEarlierCancelIsAPause() = runBlocking {
+        val m = eligibleManager()
+        m.download()
+        m.cancel()
+        m.download()
+        h.awaitState(m) { it.phase == DownloadPhase.WAITING_FOR_NETWORK }
+        m.pause()
+        assertTrue(h.awaitState(m) { it.phase == DownloadPhase.NONE }.stopped)
+    }
+
+    @Test fun theNotificationsPauseIsAPause() = runBlocking {
+        // The notification's Pause cancels the job by its id, without going through the manager.
+        val m = eligibleManager()
+        m.download()
+        h.workManager.cancelWorkById(h.pendingJob().id).result.get()
+        assertTrue(h.awaitState(m) { it.phase == DownloadPhase.NONE }.stopped)
+    }
+
     @Test fun aDownloadNeverStartedIsNotStopped() = runBlocking {
         assertFalse(h.awaitState(eligibleManager()) { true }.stopped)
     }

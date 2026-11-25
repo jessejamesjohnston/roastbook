@@ -39,7 +39,10 @@ data class ReaderState(
     /** A plain reason for the last failed download, or null. */
     val failure: DownloadFailure?,
     val modelName: String,
-    /** The last download was stopped part-way (Pause), as opposed to never started; only in [DownloadPhase.NONE]. */
+    /**
+     * The last download was stopped part-way (Pause, here or in its notification), as opposed to
+     * never started or canceled; only in [DownloadPhase.NONE].
+     */
     val stopped: Boolean = false,
 )
 
@@ -94,9 +97,9 @@ class LocalReaderManager @Inject constructor(
      * reader stops being this device's choice ([ReaderPrefs.abandonReader]).
      */
     suspend fun cancel() {
-        WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
+        val jobs = stopJobs()
         whenNoWriter { store.part.delete() }
-        prefs.abandonReader()
+        prefs.abandonReader(jobs)
     }
 
     /**
@@ -104,9 +107,18 @@ class LocalReaderManager @Inject constructor(
      * once, and stops being this device's choice ([ReaderPrefs.abandonReader]).
      */
     suspend fun delete() {
-        WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
+        val jobs = stopJobs()
         whenNoWriter { store.deleteAll() }
-        prefs.abandonReader()
+        prefs.abandonReader(jobs)
+    }
+
+    /** Stops the download job for good (Cancel or Delete) and returns its ids, so [state] doesn't call it paused. */
+    private suspend fun stopJobs(): Set<String> {
+        val wm = WorkManager.getInstance(context)
+        wm.cancelUniqueWork(WORK_NAME)
+        return kotlinx.coroutines.withContext(Dispatchers.IO) {
+            runCatching { wm.getWorkInfosForUniqueWork(WORK_NAME).get() }.getOrNull().orEmpty().map { it.id.toString() }.toSet()
+        }
     }
 
     /**
@@ -186,7 +198,8 @@ class LocalReaderManager @Inject constructor(
             nanoFailing = settings.nanoFailing,
             failure = failure,
             modelName = spec.displayName,
-            stopped = phase == DownloadPhase.NONE && info?.state == WorkInfo.State.CANCELLED,
+            stopped = phase == DownloadPhase.NONE && info?.state == WorkInfo.State.CANCELLED &&
+                info.id.toString() !in settings.discardedJobs,
         )
     }.flowOn(Dispatchers.IO)
 

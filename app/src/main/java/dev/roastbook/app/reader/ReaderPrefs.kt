@@ -29,6 +29,11 @@ data class ReaderSettings(
     val offerDeclinedIds: Set<String> = emptySet(),
     /** Coffees to read again with the reader once its download finishes (the offer was accepted). */
     val pendingRereads: Set<String> = emptySet(),
+    /**
+     * The download jobs that were canceled or whose reader was deleted. WorkManager records those
+     * as CANCELLED, the same as a pause, so this is how a stopped job tells the two apart.
+     */
+    val discardedJobs: Set<String> = emptySet(),
 )
 
 /**
@@ -46,6 +51,7 @@ class ReaderPrefs(private val store: DataStore<Preferences>, private val now: ()
         val offerDeclines = intPreferencesKey("offer_declines")
         val offerDeclinedIds = stringSetPreferencesKey("offer_declined_ids")
         val pendingRereads = stringSetPreferencesKey("pending_rereads")
+        val discardedJobs = stringSetPreferencesKey("discarded_jobs")
     }
 
     val settings: Flow<ReaderSettings> = store.data.map { p ->
@@ -58,6 +64,7 @@ class ReaderPrefs(private val store: DataStore<Preferences>, private val now: ()
             offerDeclines = p[K.offerDeclines] ?: 0,
             offerDeclinedIds = p[K.offerDeclinedIds] ?: emptySet(),
             pendingRereads = p[K.pendingRereads] ?: emptySet(),
+            discardedJobs = p[K.discardedJobs] ?: emptySet(),
         )
     }
 
@@ -91,10 +98,12 @@ class ReaderPrefs(private val store: DataStore<Preferences>, private val now: ()
      * The download was canceled or the reader deleted: no bag waits for it any longer, and the
      * switch that has it read in place of the built-in AI goes off, since there is no reader left to
      * choose (a later download starts from the built-in AI again). The bags that were waiting count
-     * as answered, so their pages don't offer the reader again straight away.
+     * as answered, so their pages don't offer the reader again straight away. [discardedJobs] are
+     * the download's job ids, kept so that what they left behind doesn't read as a pause.
      */
-    suspend fun abandonReader() {
+    suspend fun abandonReader(discardedJobs: Set<String> = emptySet()) {
         store.edit { p ->
+            p[K.discardedJobs] = discardedJobs
             val waiting = p[K.pendingRereads] ?: emptySet()
             p.remove(K.pendingRereads)
             p[K.preferReader] = false
