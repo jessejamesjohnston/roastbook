@@ -91,7 +91,7 @@ Rules the code holds to:
   a confident wrong value. Fields the user edited are never touched. A value
   from an earlier clean reading stays unless a garbled reading changed it,
   which lists it like the rest. A reading that is garbled too, or the guess,
-  keeps the listed fields.
+  keeps the listed fields it has nothing for, and they stay listed.
 - `extraction_source` names the tier that produced the retained fields. A
   failed re-read keeps the previous source.
 - The foreground scheduler runs only while the app is visible (Nano refuses

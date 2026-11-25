@@ -45,9 +45,10 @@ data class ExtractionTrail(
     /** Nano's reading was kept but was poor (not the JSON asked for, or neither roaster nor coffee). */
     val nanoPoor: Boolean = false,
     /**
-     * The fields whose value came from a built-in AI answer that was not the JSON asked for
-     * (`garbled=coffeeName,roastDate`), by their [dev.roastbook.app.data.db.CoffeeEntity.userEdited]
-     * names. A later clean reading replaces exactly these, or clears them where it has nothing (see
+     * The fields a garbled answer (the built-in AI's or the reader's, when its first answer was not
+     * the JSON asked for) changed, or repeated while already listed (`garbled=coffeeName,roastDate`),
+     * by their [dev.roastbook.app.data.db.CoffeeEntity.userEdited] names. A later clean reading
+     * replaces exactly these, or clears them where it has nothing (see
      * [dev.roastbook.app.extraction.Extractor]). Unlike the rest of the trail it outlives a Read
      * again ([carriedAcrossReread]), since that is when it is needed.
      */
