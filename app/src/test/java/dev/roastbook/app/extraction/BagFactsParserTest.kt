@@ -225,4 +225,19 @@ class BagFactsParserTest {
         assertEquals("Washed", f.process)
         assertNull(f.bagDescription)
     }
+
+    @Test fun aTextFieldNeverKeepsListSyntax() {
+        // YAML: a key with nothing after it, then the next key.
+        val empty = BagFactsParser.parse("roaster:\nprocess: Washed")!!
+        assertNull(empty.roaster)
+        assertEquals("Washed", empty.process)
+        // Broken JSON whose value came on the next line.
+        val nextLine = BagFactsParser.parse("{\n\"roaster\":\nResident\n\"process\": \"Washed\"\n}")!!
+        assertEquals("Resident", nextLine.roaster)
+        assertEquals("Washed", nextLine.process)
+        // Valid JSON with a list where text belongs.
+        val listed = BagFactsParser.parse("""{"roaster": ["Resident", "Larkmoor"], "process": []}""")!!
+        assertEquals("Resident, Larkmoor", listed.roaster)
+        assertNull(listed.process)
+    }
 }

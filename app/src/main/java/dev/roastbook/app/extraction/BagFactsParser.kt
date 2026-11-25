@@ -178,8 +178,17 @@ object BagFactsParser {
         sellerDescription = str(m["seller_description"]),
     )
 
+    /**
+     * A text field's value. A list where text belongs (an empty `roaster:` whose value came on the
+     * next line, or `"roaster": ["A"]`) gives its items joined, never the list's own brackets.
+     */
     private fun str(v: Any?): String? {
-        val s = when (v) { null -> return null; is String -> v; else -> v.toString() }.trim()
+        val s = when (v) {
+            null -> return null
+            is String -> v
+            is List<*> -> v.mapNotNull { str(it) }.joinToString(", ")
+            else -> v.toString()
+        }.trim()
         return if (s.isEmpty() || s.equals("null", true) || s.equals("unknown", true) || s == "—" || s == "-") null else s
     }
 
