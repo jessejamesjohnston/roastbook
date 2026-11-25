@@ -523,7 +523,7 @@ class Extractor @Inject constructor(
             val modelRead = coffee.extractionSource in MODEL_SOURCES
             if (fillBlanksOnly && modelRead) { f = BagFacts(); finalFacts = null }
             val userEdited = mutableListOf<String>()
-            // Fields a garbled built-in answer filled before this read, and after it.
+            // Fields a garbled built-in answer set, before this read and after it.
             val garbledBefore = ExtractionTrail.decode(coffee.extractionTrail).garbledFields
             val garbledAfter = mutableSetOf<String>()
             // A reading that came through as asked: any model's JSON, except a built-in one judged poor.
@@ -538,7 +538,7 @@ class Extractor @Inject constructor(
                     return current
                 }
                 if (suggested == null) {
-                    // A clean reading with nothing for a field only a garbled answer filled: a blank
+                    // A clean reading with nothing for a field a garbled answer set: a blank
                     // to fill in beats a confident wrong value.
                     if (name in garbledBefore && cleanRead) return cleared
                     if (name in garbledBefore) garbledAfter += name
@@ -551,7 +551,9 @@ class Extractor @Inject constructor(
                 }
                 if (suggested != current) filled++
                 matching++
-                if (garbled) garbledAfter += name
+                // Marked only when the garbled answer changed it or it was marked already, so a value
+                // it merely repeats from an earlier clean reading is not cleared by the next one.
+                if (garbled && (suggested != current || name in garbledBefore)) garbledAfter += name
                 return suggested
             }
             val updated = coffee.copy(

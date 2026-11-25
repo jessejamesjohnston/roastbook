@@ -533,6 +533,65 @@ class ExtractorTest {
         assertEquals(emptySet<String>(), ExtractionTrail.decode(c.extractionTrail).garbledFields)
     }
 
+    /** A garbled answer that only repeats what a clean reading filled leaves those fields unmarked. */
+    @Test fun aGarbledRereadThatRepeatsACleanValueLeavesItForTheNextCleanReading() = runBlocking {
+        val id = seedCoffee()
+        // 1. A clean reading fills the roaster and the coffee's name.
+        extractor(FakeNano(answers = mutableListOf({ """{"roaster":"Lantern Roasters","coffee_name":"Finca Veleta"}""" })), FakeOcr("x")).run(id)
+        // 2. Read again: the built-in AI answers garbled, repeating both and adding three fields.
+        repo.reextract(id)
+        extractor(FakeNano(answers = mutableListOf({ garbledAnswer }, { garbledAnswer })), FakeOcr("x")).run(id)
+        assertEquals(setOf("varietal", "tastingNotes", "roastDate"), ExtractionTrail.decode(db.coffeeDao().get(id)!!.extractionTrail).garbledFields)
+        // 3. The reader reads it again and finds the roaster and the process, but no name.
+        health.preferred = true
+        repo.reextract(id)
+        val reader = FakeLocal(answers = mutableListOf({ """{"roaster":"Lantern Roasters","process":"Washed"}""" }))
+        extractor(FakeNano(), FakeOcr("x"), local = reader).run(id)
+        val c = db.coffeeDao().get(id)!!
+        assertEquals("the earlier clean reading's name stays", "Finca Veleta", c.coffeeName)
+        assertEquals("Washed", c.process)
+        assertEquals(emptyList<String>(), c.varietal)
+        assertNull(c.roastDate)
+        assertEquals(emptySet<String>(), ExtractionTrail.decode(c.extractionTrail).garbledFields)
+    }
+
+    @Test fun aGarbledRereadThatRepeatsAMarkedValueKeepsItMarked() = runBlocking {
+        val id = seedCoffee()
+        extractor(FakeNano(answers = mutableListOf({ garbledAnswer }, { garbledAnswer })), FakeOcr("x")).run(id)
+        repo.reextract(id)
+        extractor(FakeNano(answers = mutableListOf({ garbledAnswer }, { garbledAnswer })), FakeOcr("x")).run(id)
+        assertEquals(
+            setOf("roaster", "coffeeName", "varietal", "tastingNotes", "roastDate"),
+            ExtractionTrail.decode(db.coffeeDao().get(id)!!.extractionTrail).garbledFields,
+        )
+    }
+
+    /**
+     * A garbled answer that changes a clean value is marked like any other field it filled. The
+     * earlier clean value is gone by then: the next clean reading replaces the field, or clears it.
+     */
+    @Test fun aGarbledRereadThatChangesACleanValueIsReplacedOrClearedByTheNextCleanReading() = runBlocking {
+        val id = seedCoffee()
+        // 1. A clean reading fills the roaster and the coffee's name.
+        extractor(FakeNano(answers = mutableListOf({ """{"roaster":"Harbor Roasters","coffee_name":"Lot Nine"}""" })), FakeOcr("x")).run(id)
+        // 2. Read again: the built-in AI answers garbled with a different roaster and name.
+        repo.reextract(id)
+        extractor(FakeNano(answers = mutableListOf({ garbledAnswer }, { garbledAnswer })), FakeOcr("x")).run(id)
+        var c = db.coffeeDao().get(id)!!
+        assertEquals("Finca Veleta", c.coffeeName)
+        assert("roaster" in ExtractionTrail.decode(c.extractionTrail).garbledFields)
+        assert("coffeeName" in ExtractionTrail.decode(c.extractionTrail).garbledFields)
+        // 3. The reader finds a roaster and no name: the roaster is replaced, the name cleared.
+        health.preferred = true
+        repo.reextract(id)
+        val reader = FakeLocal(answers = mutableListOf({ """{"roaster":"Signal Roasters","process":"Washed"}""" }))
+        extractor(FakeNano(), FakeOcr("x"), local = reader).run(id)
+        c = db.coffeeDao().get(id)!!
+        assertEquals("Signal Roasters", c.roaster)
+        assertNull("the earlier clean name does not come back", c.coffeeName)
+        assertEquals(emptySet<String>(), ExtractionTrail.decode(c.extractionTrail).garbledFields)
+    }
+
     // --- The per-row edit marker closes the window before the run's first read ---
 
     private suspend fun seedLoggedNanoCoffee(): String {
