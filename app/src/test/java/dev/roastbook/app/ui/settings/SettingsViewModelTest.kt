@@ -530,6 +530,42 @@ class SettingsViewModelTest {
         }
     }
 
+    @Test fun theLastBackupTimeIsEnglishWhateverThePhonesLanguage() {
+        // The app ships English strings only, so the time must not switch language mid-line.
+        val saved = java.util.Locale.getDefault()
+        val savedZone = java.util.TimeZone.getDefault()
+        val zone = java.time.ZoneId.of("Europe/Berlin")
+        java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone(zone))
+        try {
+            for (locale in listOf(java.util.Locale.GERMANY, java.util.Locale.forLanguageTag("ar-EG"))) {
+                java.util.Locale.setDefault(locale)
+                // Wednesday 2026-11-25, 15:00 local time.
+                val now = java.time.ZonedDateTime.of(2026, 11, 25, 15, 0, 0, 0, zone).toInstant().toEpochMilli()
+                val s = 1000L
+                fun at(ago: Long) = SettingsViewModel.lastBackupWhen(now - ago, now, "just now", "yesterday", zone)
+                assertEquals("$locale", "just now", at(0))
+                assertEquals("$locale", "1 minute ago", at(60 * s))
+                assertEquals("$locale", "2 minutes ago", at(120 * s))
+                assertEquals("$locale", "3 hours ago", at(3 * 3600 * s))
+                assertEquals("$locale", "16 hours ago", at(16 * 3600 * s))
+                assertEquals("$locale", "yesterday", at(26 * 3600 * s))
+                assertEquals("$locale", "2 days ago", at(2 * 86400 * s))
+                assertEquals("$locale", "Nov 17, 2026", at(8 * 86400 * s))
+            }
+        } finally {
+            java.util.Locale.setDefault(saved)
+            java.util.TimeZone.setDefault(savedZone)
+        }
+    }
+
+    @Test fun aBackupADayOldOnTheSameDateCountsHours() {
+        // The night clocks fall back: 00:10 to 23:50 on 2026-11-01 in Los Angeles is 24 h 40 min.
+        val zone = java.time.ZoneId.of("America/Los_Angeles")
+        val last = java.time.ZonedDateTime.of(2026, 11, 1, 0, 10, 0, 0, zone).toInstant().toEpochMilli()
+        val now = java.time.ZonedDateTime.of(2026, 11, 1, 23, 50, 0, 0, zone).toInstant().toEpochMilli()
+        assertEquals("24 hours ago", SettingsViewModel.lastBackupWhen(last, now, "just now", "yesterday", zone))
+    }
+
     @Test fun sizesReadAsBytesKilobytesOrMegabytes() {
         assertEquals("512 B", SettingsViewModel.humanBytes(512))
         assertEquals("2 KB", SettingsViewModel.humanBytes(2048))

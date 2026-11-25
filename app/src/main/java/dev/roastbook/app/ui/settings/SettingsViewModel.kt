@@ -1,6 +1,10 @@
 package dev.roastbook.app.ui.settings
 
 import android.content.Context
+import android.icu.text.RelativeDateTimeFormatter
+import android.icu.text.RelativeDateTimeFormatter.Direction
+import android.icu.text.RelativeDateTimeFormatter.RelativeUnit
+import android.icu.util.ULocale
 import android.content.Intent
 import android.net.Uri
 import android.text.format.DateUtils
@@ -300,18 +304,30 @@ class SettingsViewModel @Inject constructor(
     companion object {
         /**
          * When the last backup ran, as it reads inside "Last backup … · size · coffees": [justNow]
-         * under a minute ago (or when the clock has since moved back), [yesterday] where Android would
-         * say "Yesterday" (capitalized, which reads wrong mid-line), otherwise Android's own
-         * "1 minute ago", "3 hours ago", "2 days ago" or a date.
+         * under a minute ago (or when the clock has since moved back), "1 minute ago" and
+         * "3 hours ago" within a day, [yesterday] on the day before, "3 days ago" within a week,
+         * otherwise a date. Always in English, whatever the phone's language: the app's strings
+         * are English only, and Android's own wording would follow the phone and mix languages
+         * in one line.
          */
         fun lastBackupWhen(
             last: Long, now: Long, justNow: String, yesterday: String, zone: java.time.ZoneId = java.time.ZoneId.systemDefault(),
         ): String {
             val ago = now - last
             if (ago < DateUtils.MINUTE_IN_MILLIS) return justNow
-            fun day(t: Long) = java.time.Instant.ofEpochMilli(t).atZone(zone).toLocalDate()
-            if (ago >= DateUtils.DAY_IN_MILLIS && ago < DateUtils.WEEK_IN_MILLIS && day(last) == day(now).minusDays(1)) return yesterday
-            return DateUtils.getRelativeTimeSpanString(last, now, DateUtils.MINUTE_IN_MILLIS).toString()
+            val lastAt = java.time.Instant.ofEpochMilli(last).atZone(zone)
+            val today = java.time.Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
+            val days = java.time.temporal.ChronoUnit.DAYS.between(lastAt.toLocalDate(), today)
+            val english = RelativeDateTimeFormatter.getInstance(ULocale.ENGLISH)
+            fun ago(n: Long, unit: RelativeUnit) = english.format(n.toDouble(), Direction.LAST, unit)
+            return when {
+                ago < DateUtils.HOUR_IN_MILLIS -> ago(ago / DateUtils.MINUTE_IN_MILLIS, RelativeUnit.MINUTES)
+                // Under a day, or a day or more on the same date (the night clocks fall back).
+                ago < DateUtils.DAY_IN_MILLIS || days < 1 -> ago(ago / DateUtils.HOUR_IN_MILLIS, RelativeUnit.HOURS)
+                days == 1L -> yesterday
+                ago < DateUtils.WEEK_IN_MILLIS -> ago(days, RelativeUnit.DAYS)
+                else -> java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy", java.util.Locale.US).format(lastAt)
+            }
         }
 
         fun humanBytes(b: Long): String = when {
