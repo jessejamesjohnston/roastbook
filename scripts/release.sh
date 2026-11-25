@@ -115,9 +115,11 @@ if [[ -z "${ROASTBOOK_KEYSTORE_PASS:-}" ]]; then
 fi
 [[ -n "$ROASTBOOK_KEYSTORE_PASS" ]] || die "empty keystore password"
 # Fail before Gradle if the password or alias is wrong. keytool reads the password from the
-# environment, and runs in English so its listing can be parsed the same way everywhere.
+# environment, and runs in English so its listing can be parsed the same way everywhere. Only
+# Java's language is set: the locale's character set is left alone, because keytool decodes the
+# password from the environment with it, and a password with non-ASCII characters must survive.
 export ROASTBOOK_KEYSTORE_PASS
-keytool_en() { LC_ALL=C keytool -J-Duser.language=en -J-Duser.country=US "$@"; }
+keytool_en() { keytool -J-Duser.language=en -J-Duser.country=US "$@"; }
 KEYS="$(keytool_en -list -keystore "$STORE" -storepass:env ROASTBOOK_KEYSTORE_PASS 2>/dev/null)" \
     || die "the keystore or its password did not check out"
 # "alias, date, PrivateKeyEntry," per key. Keystores store aliases in lowercase.
