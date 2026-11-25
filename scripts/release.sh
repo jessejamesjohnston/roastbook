@@ -4,6 +4,10 @@
 #   scripts/release.sh v0.4.0            build, sign and verify
 #   scripts/release.sh --verify <apk>    verify an APK only
 #
+# Both need ANDROID_HOME (or ANDROID_SDK_ROOT) pointing at an Android SDK with build-tools 35 or
+# newer, and unzip. A release build also needs readelf (binutils, or llvm-readelf from the NDK);
+# --verify without one skips the ELF alignment check and says so.
+#
 # You supply the key, through the environment:
 #   ROASTBOOK_KEYSTORE_PATH      the keystore file (PKCS12 or JKS). Required to build.
 #   ROASTBOOK_KEYSTORE_KEYALIAS  the key's alias. Optional when the keystore holds one key (it is
@@ -37,7 +41,17 @@ SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
 # zipalign -P (16 KB page alignment) needs build-tools 35 or newer; take the newest installed.
 BUILD_TOOLS="$(ls -d "$SDK"/build-tools/* 2>/dev/null | sort -V | tail -1)"
 for tool in apksigner zipalign; do [[ -x "$BUILD_TOOLS/$tool" ]] || die "no $tool in $BUILD_TOOLS"; done
-command -v readelf >/dev/null || die "readelf not on PATH (binutils)"
+BT_MAJOR="$(basename "$BUILD_TOOLS" | cut -d. -f1)"
+[[ "$BT_MAJOR" =~ ^[0-9]+$ ]] && (( BT_MAJOR >= 35 )) || die "build-tools $(basename "$BUILD_TOOLS") is too old: the 16 KB check (zipalign -P) needs 35 or newer"
+command -v unzip >/dev/null || die "unzip not on PATH"
+# readelf from binutils, else LLVM's (on PATH, or in the newest NDK), which reads ELF the same way.
+READELF="$(command -v readelf || command -v llvm-readelf || true)"
+if [[ -z "$READELF" ]]; then
+    READELF="$( (ls -d "$SDK"/ndk/*/toolchains/llvm/prebuilt/*/bin/llvm-readelf 2>/dev/null || true) | sort -V | tail -1)"
+fi
+[[ -x "$READELF" ]] || READELF=""
+# Set when --verify ran without readelf, so the result says which check it left out.
+SKIPPED=""
 
 # Every check a release APK must pass. Prints what it checked; returns non-zero on any failure.
 verify() {
@@ -77,12 +91,17 @@ verify() {
     # The requirement covers 64-bit code. The 32-bit OCR libraries ML Kit ships are 0x1000 aligned,
     # which is allowed.
     echo "== 16 KB page size: ELF LOAD alignment of 64-bit libraries"
+    if [[ -z "$READELF" ]]; then
+        echo "  skipped: no readelf (install binutils, or the NDK for llvm-readelf)"
+        SKIPPED="the ELF alignment check (no readelf)"
+        return "$fail"
+    fi
     local tmp so align n=0
     tmp=$(mktemp -d)
     unzip -q -o "$apk" 'lib/arm64-v8a/*' 'lib/x86_64/*' -d "$tmp" 2>/dev/null || true
     while IFS= read -r so; do
         n=$((n + 1))
-        align=$(readelf -lW "$so" | awk '$1=="LOAD"{print $NF}' | sort -u | tr '\n' ' ')
+        align=$("$READELF" -lW "$so" | awk '$1=="LOAD"{print $NF}' | sort -u | tr '\n' ' ')
         for a in $align; do
             if (( a < 0x4000 )); then echo "  ${so#"$tmp"/}: LOAD align $a" >&2; fail=1; fi
         done
@@ -95,9 +114,11 @@ verify() {
 
 if [[ "${1:-}" == "--verify" ]]; then
     verify "${2:-}" || die "verification FAILED"
-    echo "release: verified"
+    if [[ -n "$SKIPPED" ]]; then echo "release: verified, except $SKIPPED"; else echo "release: verified"; fi
     exit 0
 fi
+# A release must pass every check, so building needs readelf.
+[[ -n "$READELF" ]] || die "readelf not on PATH (binutils, or llvm-readelf from the NDK)"
 
 TAG="${1:-}"
 [[ -n "$TAG" ]] || { echo "usage: scripts/release.sh <tag> | --verify <apk>" >&2; exit 2; }

@@ -84,7 +84,10 @@ is used whatever the key's alias; if yours holds several, name one with
 
    Only then does it write `dist/roastbook-X.Y.Z.apk`, `dist/SHA256SUMS` and
    `dist/roastbook-X.Y.Z-mapping.txt`. `scripts/release.sh --verify <apk>` runs the checks on any
-   APK.
+   APK. Both need `ANDROID_HOME` (or `ANDROID_SDK_ROOT`) with build-tools 35 or newer, and
+   `unzip`. The ELF check needs `readelf` (binutils, or `llvm-readelf` on the `PATH` or in the
+   SDK's NDK): a build stops without it, and `--verify` skips that one check and says so in its
+   last line.
 
    The mapping file is R8's map from the release build's shortened class and method names back
    to the source names. A crash report from a release install is unreadable without it, and

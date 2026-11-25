@@ -93,9 +93,10 @@ refuses any update not signed with the same key as the copy you have.
 
 Check the download before you install it: `SHA256SUMS` in each release lists the file's hash.
 The easy check of the signature is `scripts/release.sh --verify roastbook-<version>.apk` from a
-clone of this repository. It needs the Android SDK's build-tools but no key, checks the
-signature, compares the signing certificate with Roastbook's, and prints the certificate SHA-256
-in this form:
+clone of this repository. It needs no key, but it does need `ANDROID_HOME` (or `ANDROID_SDK_ROOT`)
+pointing at an Android SDK with build-tools 35 or newer, and `unzip`; it stops and says which is
+missing. It checks the signature, compares the signing certificate with Roastbook's, and prints
+the certificate SHA-256 in this form:
 
 `D8:79:AD:13:90:76:D9:92:D6:37:CF:A9:E3:A4:6C:84:2C:9C:E1:99:0A:AC:2A:B6:5B:0F:D7:6E:97:76:38:E1`
 
