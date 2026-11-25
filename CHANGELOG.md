@@ -15,6 +15,8 @@ The first public release.
 - Photograph a bag (as many photos as you like) and Roastbook reads the label on the device:
   roaster, coffee, origin, region, producer, process, varietal, elevation, roast and tasting
   notes. Every field is a suggestion you can edit, and each coffee says how it was read.
+  Placeholder words and stray JSON punctuation in a model's answer are never saved as a value,
+  and a roast date that isn't a date is left blank.
 - Reading falls back in order: the phone's built-in Gemini Nano, the on-device reader (an open
   model you can download once, 2.6 GB, for phones with 8 GB of memory or more), Gemini with your
   own API key, then a marked guess from the printed text. Both the built-in AI and the on-device
@@ -22,7 +24,10 @@ The first public release.
 - Settings, On-device reader: shown on every device that can run the reader, whether or not it
   has a built-in AI. Where it does, a switch (off by default) has the reader read bags in place
   of the built-in AI, once it is downloaded. Canceling the download or deleting the reader turns
-  the switch off. The download shows a progress bar that fills as it arrives.
+  the switch off. The download says it is starting over a moving bar until the first bytes
+  arrive, then shows a bar that fills as they do. Once the reader has run, its size on disk
+  includes about 1 GB of cache its runtime saves to load faster, and Settings says so; Delete
+  removes it with the model.
 - When the built-in AI reads a bag poorly (an answer that is not the JSON asked for, or one that
   names neither the roaster nor the coffee) and the on-device reader is downloaded, the reader
   reads it too, and the reading with more fields is kept. On a tie, the reader's reading is kept
@@ -31,13 +36,15 @@ The first public release.
   on-device reader in place, with its size, that it runs on the device, and whether it downloads
   over Wi-Fi only or also over mobile data. Download makes the reader this device's choice and
   reads that bag again when it arrives, along with any other bag the built-in AI reads poorly
-  meanwhile. Until then the card follows the download (progress, paused, waiting for Wi-Fi, or
+  meanwhile. Fields the built-in AI filled from an answer that wasn't the JSON asked for are
+  replaced by the reader's reading, or left blank where it has nothing; fields you edited and
+  fields from an earlier clean reading stay. Until then the card follows the download (progress, paused, waiting for Wi-Fi, or
   why it failed) and can cancel it while it runs, waits or is paused. When it failed, the card
   offers Try again, or Not now, which stops that bag waiting and leaves the partial download
   and the switch for Settings to retry or cancel. Not now on the offer is remembered for that
   bag, and after two of those the offer stops.
 - Rate each coffee on aroma, flavor, acidity, body and finish, with an overall score, notes,
-  price and whether you would buy it again. A reminder to rate it, and one second look after
+  price and whether you would buy it again. A rating saves once aroma, flavor, and finish are set. A reminder to rate it, and one second look after
   your first rating.
 - Search, sort and filter the journal; rows tinted with each bag's colors.
 - Backups: Android's backup carries the journal, and a zip with full photos can go to a folder

@@ -73,6 +73,19 @@ Rules the code holds to:
   for it is dropped and the provenance note lists it.
 - The guess fills blank fields only and never touches a coffee a model
   already read. It never guesses the coffee's name.
+- Every tier's reading passes `FieldCleanup` before it is saved (the parser
+  applies it too, so quality checks see clean values): a value made only of
+  placeholder words (`null`, `none`, `n/a`, `unknown`, `undefined`) is empty,
+  quotes, commas, brackets and braces left at either end by a broken answer
+  are trimmed (a quote, bracket or brace only when it has no partner), and a
+  roast date that is not recognizably a date is empty. It only removes.
+- When Nano's answer was not the JSON asked for, the trail lists the fields
+  it filled (`garbled=coffeeName,roastDate`), and Reread keeps that list. A
+  later clean reading (the reader, a Gemini key, or Nano answering as asked)
+  replaces each listed field with its own value, or clears it when it has
+  none. Fields the user edited are never touched, fields an earlier clean
+  reading filled stay, and a reading that is garbled too, or the guess, keeps
+  them.
 - `extraction_source` names the tier that produced the retained fields. A
   failed re-read keeps the previous source.
 - The foreground scheduler runs only while the app is visible (Nano refuses
@@ -131,6 +144,9 @@ Rules the code holds to:
   the file on disk, Cancel download.
 - **Storage:** `no_backup/reader/` (model, partial download, runtime cache).
   Neither backup tier includes it. Settings shows its size and deletes it.
+  The first time the engine loads the model, LiteRT-LM writes about 1 GB of
+  cache in `cache/` there, so the reader then uses about 3.6 GB; Settings'
+  line says how much of the total is that cache.
 - **Runtime:** one engine per process, loaded on first use, closed after a
   minute idle; calls are serialized, and a cancelled read stops the native
   call and waits for it before the engine is reused or closed.
