@@ -21,14 +21,18 @@ The first public release.
   reader run entirely on the device.
 - Settings, On-device reader: shown on every device that can run the reader, whether or not it
   has a built-in AI. Where it does, a switch (off by default) has the reader read bags in place
-  of the built-in AI, once it is downloaded.
+  of the built-in AI, once it is downloaded. Canceling the download or deleting the reader turns
+  the switch off. The download shows a progress bar that fills as it arrives.
 - When the built-in AI reads a bag poorly (an answer that is not the JSON asked for, or one that
   names neither the roaster nor the coffee) and the on-device reader is downloaded, the reader
-  reads it too, and the reading with more fields is kept.
+  reads it too, and the reading with more fields is kept. On a tie, the reader's reading is kept
+  when the built-in answer was not valid JSON.
 - After a poor reading by the built-in AI, or one that times out, a coffee's page offers the
-  on-device reader in place, with its size, that it runs on the device and that it waits for
-  Wi-Fi unless mobile data is allowed. Download makes the reader this device's choice and reads
-  that bag again when it arrives; Not now is remembered for that bag, and after two of those
+  on-device reader in place, with its size, that it runs on the device, and whether it downloads
+  over Wi-Fi only or also over mobile data. Download makes the reader this device's choice and
+  reads that bag again when it arrives, along with any other bag the built-in AI reads poorly
+  meanwhile. Until then the card follows the download (progress, paused, waiting for Wi-Fi, or
+  why it failed) and can cancel it. Not now is remembered for that bag, and after two of those
   the offer stops.
 - Rate each coffee on aroma, flavor, acidity, body and finish, with an overall score, notes,
   price and whether you would buy it again. A reminder to rate it, and one second look after

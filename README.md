@@ -120,8 +120,9 @@ phone's built-in model (Gemini Nano through ML Kit GenAI), then the optional on-
 (Gemma 4 E2B running on [LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM)), then Gemini
 with the user's key if there is one, and falls back to simple rules over the recognized text. A
 built-in reading that is not the JSON asked for, or that names neither the roaster nor the coffee,
-is checked against the on-device reader when it is downloaded, and the reading with more fields is kept; a user can also choose the
-on-device reader outright.
+is checked against the on-device reader when it is downloaded, and the reading with more fields is
+kept (on a tie, the reader's, when the built-in answer was not valid JSON); a user can also choose
+the on-device reader outright.
 Every step has a deadline and every read an attempt cap, and the trail of what each tier did is
 stored with the coffee, so the app can say why a field came from where it did. The state lives in
 Room, so a read survives the app being closed, and reads that don't need the foreground continue
