@@ -19,6 +19,12 @@ All notable changes to Roastbook are recorded here. The format follows
 
 ### Changed
 
+- Wording across the app follows one style: no closing period on a single sentence, an ellipsis
+  only on something in progress, a middle dot or a comma to join two parts, a serial comma in a
+  list, American spelling and natural contractions. Settings hints say what the setting does
+  ("Backs up once a day in the background"), and the button that clears a wrong roaster's links
+  is now Not this roaster. A unit test checks every string against these rules and fails the
+  build on a break.
 - A built-in AI reading that was not the JSON asked for, or that names neither the roaster nor
   the coffee, is checked against the downloadable reader when it is on the device, and the reading with more fields is kept.
 

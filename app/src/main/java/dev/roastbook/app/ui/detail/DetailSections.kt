@@ -231,7 +231,7 @@ internal fun RatingSection(
 
 /**
  * Where to get this coffee again. With a key: grounded suggestions (roaster site, product page,
- * city) and a "Wrong roaster" reset. Without: a web search in a Custom Tab; paste a URL to keep it.
+ * city) and a "Not this roaster" reset. Without: a web search in a Custom Tab; paste a URL to keep it.
  */
 @Composable
 internal fun RoasterLinks(c: CoffeeEntity, tint: Color, vm: DetailViewModel) {

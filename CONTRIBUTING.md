@@ -41,7 +41,10 @@ listed in `app/lint.xml` with the reason, and a suppression in code carries its 
   each coffee records which tier read it.
 - Nothing leaves the device unless the person acts: no account, no analytics, no server of ours.
   A new network call needs a reason a user would agree with, and a line in the privacy policy.
-- All user-facing text lives in `strings.xml`.
+- All user-facing text lives in `strings.xml`, in sentence case. `StringStyleTest` checks the
+  rest on every build: no closing period on a single sentence, an ellipsis only on something in
+  progress, a middle dot or a comma (never a dash or a semicolon) to join two parts, American
+  spelling and natural contractions.
 - Tests read as behavior: a test's name says what the app does. Fixtures use invented roasters
   and coffees, never text copied from a real bag, real accounts or personal data.
 - Comments say why, for a stranger reading the code later.

@@ -143,12 +143,12 @@ catalog, or when the bundled notice files are missing; the notices generator
 (`scripts/third_party_notices.py`) refuses to write a partial file. The 2.6 GB model download is
 pinned to a commit and a SHA-256.
 
-**Tests.** 917 JVM unit tests (Robolectric and Compose UI tests) cover every extraction branch,
+**Tests.** 955 JVM unit tests (Robolectric and Compose UI tests) cover every extraction branch,
 the backup and restore paths, Room migrations across four exported schemas, the tap-only roaster
-lookup, color contrast as numbers, the update check and the screens. CI fails if line coverage
-drops below 95% (`scripts/coverage.py` reports 99.1% today and names each SDK adapter it leaves
-out, with the runtime it needs). The app has been walked on two recent phones from different
-makers and on phone and tablet emulators.
+lookup, color contrast as numbers, the update check, the screens and the wording of every
+string. CI fails if line coverage drops below 95% (`scripts/coverage.py` reports 98.7% today and
+names each SDK adapter it leaves out, with the runtime it needs). The app has been walked on two
+recent phones from different makers and on phone and tablet emulators.
 
 **How this is built.** I'm a product manager who builds. I decide what each app does, how it
 should feel, and what it leaves out. The code is written with AI coding agents that I direct,

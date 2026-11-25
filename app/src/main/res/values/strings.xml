@@ -19,7 +19,7 @@
     <string name="settings_cloud_remove">Remove key</string>
     <string name="settings_cloud_test">Test key</string>
     <string name="settings_cloud_testing">Testing…</string>
-    <string name="settings_cloud_test_ok">The key works with %1$s.</string>
+    <string name="settings_cloud_test_ok">The key works with %1$s</string>
     <string name="settings_cloud_model">Model</string>
     <string name="settings_cloud_model_hint">Google retires model names now and then. If a test says it doesn\'t know this one, enter a newer name.</string>
     <string name="cloud_err_key">Google didn\'t accept this key. Check that you copied all of it.</string>
@@ -34,17 +34,17 @@
     <string name="detail_find_roaster">Find this roaster</string>
     <string name="detail_look_up_roaster">Look up roaster</string>
     <string name="detail_looking_up">Looking up…</string>
-    <string name="detail_lookup_nothing">Nothing found for this roaster.</string>
+    <string name="detail_lookup_nothing">Nothing found for this roaster</string>
     <string name="detail_roaster_links">Where to get it again</string>
-    <string name="detail_links_unverified">Suggested without a web search, so check these before you rely on them.</string>
-    <string name="detail_wrong_roaster">Wrong roaster</string>
-    <string name="detail_links_suggested">Found with a web search. If it\'s the wrong roaster, tap Wrong roaster.</string>
+    <string name="detail_links_unverified">Suggested without a web search, so check these before you rely on them</string>
+    <string name="detail_wrong_roaster">Not this roaster</string>
+    <string name="detail_links_suggested">Found with a web search. If it\'s the wrong roaster, tap Not this roaster.</string>
     <string name="settings_reminders">Reminders</string>
     <string name="settings_reminders_explainer">You pick a reminder for each coffee when you add it. Second look is one more, after you\'ve rated it.</string>
     <string name="settings_second_look">Second look</string>
     <plurals name="settings_second_look_hint">
-        <item quantity="one">One more reminder %1$d day after your first rating. Coffee changes as it ages.</item>
-        <item quantity="other">One more reminder %1$d days after your first rating. Coffee changes as it ages.</item>
+        <item quantity="one">Reminds you again %1$d day after your first rating. Coffee changes as it ages.</item>
+        <item quantity="other">Reminds you again %1$d days after your first rating. Coffee changes as it ages.</item>
     </plurals>
     <plurals name="settings_days">
         <item quantity="one">%1$d day</item>
@@ -52,11 +52,11 @@
     </plurals>
     <string name="settings_photos">Photos</string>
     <string name="settings_save_squares">Save bag photos to your gallery</string>
-    <string name="settings_save_squares_hint">Adds each cropped bag to a Roastbook album.</string>
+    <string name="settings_save_squares_hint">Adds each cropped bag to a Roastbook album</string>
     <string name="settings_about">About</string>
     <string name="settings_licenses">Open-source notices</string>
     <string name="notif_second_look_title">Still a %1$s, %2$s?</string>
-    <string name="notif_second_look_body">Lock it in while it\'s on your tongue.</string>
+    <string name="notif_second_look_body">Lock it in while it\'s on your tongue</string>
     <string name="filter_source">Got it from</string>
     <string name="filter_any">Any</string>
     <string name="filter_none_yet">None yet</string>
@@ -69,13 +69,13 @@
     <string name="onboarding_next">Next</string>
     <string name="onboarding_start">Get started</string>
     <string name="onboarding_1_title">Your personal coffee journal</string>
-    <string name="onboarding_1_body">Roastbook remembers every bag you open: the roaster, the origin, what it tasted like, and whether you\'d buy it again.</string>
+    <string name="onboarding_1_body">Roastbook remembers every bag you open: the roaster, the origin, what it tasted like, and whether you\'d buy it again</string>
     <string name="onboarding_2_title">Photograph the bag, front and back</string>
     <string name="onboarding_2_body">Roastbook reads it for you: roaster, origin, process, tasting notes. You can edit anything it gets wrong. Reading happens on this device unless you add your own Gemini key.</string>
     <string name="onboarding_3_title">Rate it once you\'ve tried it</string>
     <string name="onboarding_3_body">Pick a reminder when you add a bag. Choose a backup folder in Settings so a new device can get everything back.</string>
     <string name="settings_backup">Backup</string>
-    <string name="settings_backup_explainer">Roastbook saves a backup file of your coffees and photos to a folder you choose. Folders on this device, an SD card or Drive work; some other storage apps may not.</string>
+    <string name="settings_backup_explainer">Roastbook saves a backup file of your coffees and photos to a folder you choose. Folders on this device, an SD card, or Drive work. Some other storage apps may not.</string>
     <string name="settings_backup_folder">Backup folder</string>
     <string name="settings_backup_folder_none">None chosen</string>
     <string name="settings_backup_folder_unnamed">The folder you chose (its storage app isn\'t answering right now)</string>
@@ -89,19 +89,19 @@
     <string name="settings_last_backup_never">No backup yet</string>
     <string name="settings_last_backup_failed">Last backup failed: %1$s</string>
     <plurals name="settings_backup_keeps">
-        <item quantity="one">Keeps the newest %1$d backup in the folder.</item>
-        <item quantity="other">Keeps the newest %1$d backups in the folder.</item>
+        <item quantity="one">Keeps the newest %1$d backup in the folder</item>
+        <item quantity="other">Keeps the newest %1$d backups in the folder</item>
     </plurals>
-    <string name="settings_backup_done">Backed up %1$s (%2$s).</string>
+    <string name="settings_backup_done">Backed up %1$s (%2$s)</string>
     <string name="settings_backup_failed">Couldn\'t back up. %1$s</string>
-    <string name="settings_restore">Restore from a backup…</string>
+    <string name="settings_restore">Restore from a backup</string>
     <string name="settings_restore_title">Replace everything on this device?</string>
     <string name="settings_restore_body">This backup is from %1$s and has %2$s with %3$s. It replaces every coffee and photo in Roastbook now.</string>
     <string name="settings_restore_yes">Replace and restore</string>
     <string name="settings_restoring">Restoring…</string>
-    <string name="settings_restore_done">Restored %1$s.</string>
+    <string name="settings_restore_done">Restored %1$s</string>
     <string name="settings_restore_failed">Couldn\'t restore. %1$s</string>
-    <string name="error_backup_bad_archive">That file isn\'t a Roastbook backup.</string>
+    <string name="error_backup_bad_archive">That file isn\'t a Roastbook backup. Pick another file.</string>
     <string name="error_backup_newer">That backup was made by a newer Roastbook. Update the app first.</string>
     <string name="error_backup_corrupt">This backup is damaged and can\'t be restored. Try an older one.</string>
     <string name="error_backup_unsafe">This file holds something Roastbook didn\'t write, so it won\'t restore it. Try another backup.</string>
@@ -119,7 +119,7 @@
     <string name="about_contact_no_app">No email app on this device. Write to hello@merrimentlabs.com from any device.</string>
     <string name="about_privacy_hint">No account and no ads. Your coffees stay on this device and in the backups you choose. Roastbook sends bag photos to Google only if you add your own Gemini key.</string>
     <string name="about_licenses_hint">The open-source software Roastbook is built with</string>
-    <string name="about_no_browser">No browser on this device can open %1$s.</string>
+    <string name="about_no_browser">No browser on this device can open %1$s</string>
     <string name="support_url" translatable="false">https://merrimentlabs.com/support/roastbook</string>
     <string name="about_maker">Merriment Labs</string>
     <string name="about_maker_hint">Made by Jesse Johnston</string>
@@ -136,21 +136,21 @@
     <string name="update_checking">Checking GitHub…</string>
     <string name="update_available">Roastbook %1$s is available</string>
     <string name="update_available_hint">Roastbook %1$s is available. Opening the release page.</string>
-    <string name="update_latest">You have the latest version.</string>
-    <string name="update_no_release">No release is published yet.</string>
+    <string name="update_latest">You have the latest version</string>
+    <string name="update_no_release">No release is published yet</string>
     <string name="update_offline">Couldn\'t reach GitHub. Check your connection and try again.</string>
     <string name="update_failed">GitHub didn\'t answer with a release. Try again later.</string>
     <string name="update_weekly">Check weekly</string>
-    <string name="update_weekly_hint">Once a week, ask GitHub for a newer version and tell me in a notification. Nothing about you or this device is sent.</string>
+    <string name="update_weekly_hint">Asks GitHub once a week and notifies you when a newer version is out. Sends nothing about you or this device.</string>
     <string name="update_notif_channel">App updates</string>
-    <string name="update_notif_text">Tap to open the release page on GitHub.</string>
+    <string name="update_notif_text">Tap to open the release page on GitHub</string>
 
     <!-- History -->
     <string name="history_count_to_rate">%1$s · %2$d to rate</string>
     <string name="history_search_hint">Search coffees, roasters, notes</string>
-    <string name="history_empty_title">Nothing in the book yet.</string>
+    <string name="history_empty_title">Nothing in the book yet</string>
     <string name="history_no_matches">No coffees match. Clear the filter or try another search.</string>
-    <string name="history_empty_subtitle">Open a bag, take two photos, we\'ll do the reading.</string>
+    <string name="history_empty_subtitle">Open a bag and take two photos. We\'ll do the reading.</string>
     <string name="history_filters">Filters</string>
     <string name="history_settings">Settings</string>
     <string name="filter_title">Show only</string>
@@ -183,8 +183,8 @@
     <string name="banner_no_folder">Your coffees aren\'t backed up yet</string>
     <string name="banner_backup_off">Backups are off. Choose a folder to turn them back on.</string>
     <string name="settings_daily_backup">Back up daily</string>
-    <string name="settings_daily_backup_hint">Once a day, in the background.</string>
-    <string name="settings_daily_backup_needs_folder">Choose a folder to turn this on.</string>
+    <string name="settings_daily_backup_hint">Backs up once a day in the background</string>
+    <string name="settings_daily_backup_needs_folder">Choose a folder to turn this on</string>
     <string name="banner_back_up">Back up</string>
 
     <!-- Add -->
@@ -195,7 +195,7 @@
     <string name="add_save_failed">Couldn\'t save these photos. Tap Done to try again.</string>
     <string name="add_capture_failed">Couldn\'t take that photo. Try again.</string>
     <string name="add_camera_failed">The camera couldn\'t start. You can still add photos from your library.</string>
-    <string name="add_camera_why">Roastbook uses the camera to photograph your coffee bags.</string>
+    <string name="add_camera_why">Roastbook uses the camera to photograph your coffee bags</string>
     <string name="add_camera_permission">The camera is off for Roastbook. Allow it to photograph bags, or add photos from your library.</string>
     <string name="add_camera_permission_button">Allow camera</string>
     <string name="permission_continue">Continue</string>
@@ -239,7 +239,7 @@
     <string name="profile_body_full">Full</string>
     <string name="notif_channel_reminders">Reminders</string>
     <string name="notif_remind_title">Tried %1$s yet?</string>
-    <string name="notif_remind_body">Rate it while it\'s fresh on your tongue.</string>
+    <string name="notif_remind_body">Rate it while it\'s fresh on your tongue</string>
     <string name="rate_overall">Overall</string>
     <string name="rate_buy_again">Would buy again</string>
     <string name="rate_notes_hint">Your notes</string>
@@ -250,8 +250,8 @@
     <!-- A score on a fixed scale, not a count of things: the same words for every number. -->
     <string name="rate_value" tools:ignore="PluralsCandidate">%1$d out of 5</string>
     <string name="detail_delete_confirm">Delete this coffee and its photos?</string>
-    <string name="detail_delete_body">Its rating, notes and photos are deleted from Roastbook. Backups you already made still have it.</string>
-    <string name="detail_delete_body_gallery">Its rating, notes and photos are deleted from Roastbook. Backups you already made still have it, and photos saved to your gallery stay there.</string>
+    <string name="detail_delete_body">Its rating, notes, and photos are deleted from Roastbook. Backups you already made still have it.</string>
+    <string name="detail_delete_body_gallery">Its rating, notes, and photos are deleted from Roastbook. Backups you already made still have it, and photos saved to your gallery stay there.</string>
     <string name="detail_delete_yes">Delete</string>
     <string name="detail_cancel">Cancel</string>
     <string name="detail_save">Save</string>
@@ -299,7 +299,7 @@
         <item>Accompanist||Apache License 2.0|Apache License 2.0</item>
         <item>OkHttp|4.12.0|Apache License 2.0, with the Public Suffix List under Mozilla Public License 2.0|Mozilla Public License 2.0;Apache License 2.0</item>
         <item>Okio||Apache License 2.0|Apache License 2.0</item>
-        <item>Guava, Gson, AutoValue, Error Prone, J2ObjC and JSR 305 annotations, JSpecify, JetBrains annotations||Apache License 2.0|Apache License 2.0</item>
+        <item>Guava, Gson, AutoValue, Error Prone, JSpecify, and the J2ObjC, JSR 305, and JetBrains annotations||Apache License 2.0|Apache License 2.0</item>
         <item>Firebase components and Android data transport (used by ML Kit)||Apache License 2.0|Apache License 2.0</item>
         <item>Checker Framework qualifiers||MIT License|MIT License</item>
         <item>Reactive Streams||CC0 1.0|CC0 1.0 Universal</item>
@@ -331,13 +331,13 @@
     <string name="settings_theme_system">System</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
-    <string name="settings_theme_hint">System matches your device\'s light or dark setting.</string>
+    <string name="settings_theme_hint">System matches your device\'s light or dark setting</string>
     <string name="settings_high_contrast">High contrast</string>
     <string name="settings_high_contrast_hint">Plainer backgrounds and stronger text. Coffee cards drop their bag colors.</string>
     <string name="settings_language">Language</string>
     <string name="settings_language_device">Device language</string>
     <string name="settings_language_change">change language</string>
-    <string name="settings_language_only_english">Roastbook is only in English so far.</string>
+    <string name="settings_language_only_english">Roastbook is only in English so far</string>
     <string name="onboarding_page_position">Page %1$d of %2$d</string>
     <string name="rate_state_unset">Not rated</string>
     <string name="rate_range">from %1$s to %2$s</string>
@@ -349,11 +349,11 @@
     <string name="detail_open_link">open link</string>
     <string name="edit_discard">Discard</string>
     <string name="edit_discard_title">Discard your changes?</string>
-    <string name="edit_discard_body">What you changed on this card won\'t be saved.</string>
+    <string name="edit_discard_body">What you changed on this card won\'t be saved</string>
     <string name="edit_keep_editing">Keep editing</string>
-    <string name="edit_rating_incomplete">Rate aroma, flavor and finish to save.</string>
+    <string name="edit_rating_incomplete">Rate aroma, flavor, and finish to save</string>
     <string name="pane_pick_title">Pick a coffee</string>
-    <string name="pane_pick_body">Tap any coffee in your list and its page opens here.</string>
+    <string name="pane_pick_body">Tap any coffee in your list and its page opens here</string>
     <string name="pane_empty_title">Your coffees will show up here</string>
     <string name="pane_empty_body">Add your first bag with the + button. Once it\'s in your list, tap it to see its page here.</string>
     <string name="row_rating_description">rated %1$s out of 5</string>
@@ -376,7 +376,7 @@
     <string name="row_preparing">Getting the built-in AI ready…</string>
     <string name="row_preparing_subtitle">Android is downloading it. This can take a few minutes the first time.</string>
     <string name="row_preparing_retry_at">Android is still downloading it. Trying again at %1$s.</string>
-    <string name="what_ocr_generic">Read from the label text only.</string>
+    <string name="what_ocr_generic">Read from the label text only</string>
     <string name="what_ocr_nano_unsupported">Read from the label text only. This device has no built-in AI for reading bags.</string>
     <string name="what_ocr_nano_failed">Read from the label text only. The built-in AI couldn\'t read this one.</string>
     <string name="what_ocr_nano_not_ready">Read from the label text only. The built-in AI wasn\'t ready in time.</string>
@@ -388,21 +388,21 @@
     <string name="what_ocr_cloud_limit">Read from the label text only. Your Gemini key has reached its usage limit. Read again later.</string>
     <string name="what_ocr_cloud_unusable">Read from the label text only. The saved Gemini key has characters a key can\'t have. Paste it again in Settings.</string>
     <string name="what_ocr_cloud_network">Read from the label text only. Couldn\'t reach Google. Read again when you\'re online.</string>
-    <string name="what_guess_filled">The filled-in fields are a guess from the label text, so give them a glance.</string>
+    <string name="what_guess_filled">The filled-in fields are a guess from the label text, so give them a glance</string>
     <string name="what_guess_none">Nothing on the label matched a field. Add the details when you have a sec.</string>
-    <string name="what_nothing_readable">Roastbook couldn\'t find any text in these photos.</string>
-    <string name="what_hint_download">The on-device reader in Settings can read bags like this one.</string>
-    <string name="what_hint_key">A Gemini key in Settings can read bags like this one.</string>
-    <string name="what_local_read">Read by the on-device reader.</string>
+    <string name="what_nothing_readable">Roastbook couldn\'t find any text in these photos</string>
+    <string name="what_hint_download">The on-device reader in Settings can read bags like this one</string>
+    <string name="what_hint_key">A Gemini key in Settings can read bags like this one</string>
+    <string name="what_local_read">Read by the on-device reader</string>
     <string name="what_cloud_read">Read with your Gemini key. The built-in AI wasn\'t available for this one.</string>
-    <string name="what_kept_earlier">Reading it again found nothing new, so the earlier details stay.</string>
+    <string name="what_kept_earlier">Reading it again found nothing new, so the earlier details stay</string>
     <string name="what_reread">Read again</string>
-    <string name="detail_poor_read">This bag didn\'t read well.</string>
+    <string name="detail_poor_read">This bag didn\'t read well</string>
     <string name="detail_dismiss_note">Close this note</string>
     <string name="what_reread_description">Read again. Fields you edited stay as they are.</string>
     <string name="reader_title">On-device reader</string>
     <string name="reader_explainer">Reads bags with an AI model that runs on this device. It\'s a one-time download of %1$s from Hugging Face. After that, it works without a connection.</string>
-    <string name="reader_model_credit">Model: Gemma 4 E2B by Google, Apache License 2.0.</string>
+    <string name="reader_model_credit">Model: Gemma 4 E2B by Google, Apache License 2.0</string>
     <string name="reader_speed_note">About half a minute per bag. Reads can finish after you leave the app.</string>
     <string name="reader_download">Download (%1$s)</string>
     <string name="reader_waiting_wifi">Waiting for Wi-Fi…</string>
@@ -410,7 +410,7 @@
     <string name="reader_downloading">Downloading: %1$s of %2$s</string>
     <string name="reader_verifying">Checking the download…</string>
     <string name="reader_ready">Ready. Uses %1$s on this device.</string>
-    <string name="reader_partial">Paused at %1$s of %2$s.</string>
+    <string name="reader_partial">Paused at %1$s of %2$s</string>
     <string name="reader_resume">Resume</string>
     <string name="reader_pause">Pause</string>
     <string name="reader_waiting_wifi_at">Waiting for Wi-Fi: %1$s of %2$s</string>
@@ -421,10 +421,10 @@
     <string name="reader_delete_confirm">Bags already read keep their details. New bags are read by this device\'s built-in AI if it has one, otherwise with your Gemini key if you have one, or by a guess from the label text.</string>
     <string name="reader_delete_yes">Delete</string>
     <string name="reader_allow_mobile">Download over mobile data</string>
-    <string name="reader_allow_mobile_hint">When off, the download waits for Wi-Fi.</string>
+    <string name="reader_allow_mobile_hint">The download doesn\'t wait for Wi-Fi</string>
     <string name="reader_failed_space">Not enough free space. The reader needs %1$s.</string>
     <string name="reader_failed_checksum">The download came through damaged, so Roastbook deleted it. Try again.</string>
-    <string name="reader_failed_server">Couldn\'t finish the download.</string>
+    <string name="reader_failed_server">Couldn\'t finish the download</string>
     <string name="reader_retry">Try again</string>
     <string name="reader_cant_title">This device can\'t run the on-device reader</string>
     <string name="reader_cant_memory">It needs 8 GB of memory, and this device has %1$s. To have bags read online, add a Gemini key under Cloud AI. Without one, Roastbook still reads the label text and fills in what it can.</string>
@@ -433,9 +433,9 @@
     <string name="detail_reader_offer_title">Read this bag with the on-device reader?</string>
     <string name="detail_reader_offer_body">This device\'s built-in AI didn\'t read this bag well. The on-device reader is a one-time download of %1$s from Hugging Face, over Wi-Fi. It runs on this device, so your photos stay here. When it\'s ready, Roastbook reads this bag again with it and uses it for new bags. You can change that in Settings.</string>
     <string name="detail_reader_offer_not_now">Not now</string>
-    <string name="detail_reader_waiting">Roastbook reads this bag again when the reader is ready.</string>
+    <string name="detail_reader_waiting">Roastbook reads this bag again when the reader is ready</string>
     <string name="reader_prefer">Use instead of the built-in AI</string>
-    <string name="reader_prefer_hint">Once the reader is downloaded, it reads your bags in place of this device\'s built-in AI. It is slower, and like the built-in AI it keeps your photos on this device.</string>
+    <string name="reader_prefer_hint">Once the reader is downloaded, it reads your bags in place of this device\'s built-in AI. It\'s slower, and like the built-in AI it keeps your photos on this device.</string>
     <string name="reader_notif_channel">On-device reader download</string>
     <string name="reader_notif_downloading">Downloading the on-device reader</string>
     <string name="reader_notif_verifying">Checking the download</string>
@@ -444,7 +444,7 @@
     <string name="onboarding_reader_download">This device has no built-in AI for reading bags. In Settings you can download a reader that runs on the device (%1$s, one time).</string>
     <string name="onboarding_reader_cloud">This device has no built-in AI for reading bags. Add a Gemini key in Settings to have them read online. Without one, Roastbook fills in what it can from the label text.</string>
     <!-- ==== end on-device reader block ==== -->
-    <string name="reader_notif_denied">Notifications are off, so the download\'s progress shows only here.</string>
+    <string name="reader_notif_denied">Notifications are off, so the download\'s progress shows only here</string>
     <string name="settings_privacy_policy">Privacy</string>
     <string name="privacy_policy_url" translatable="false">https://merrimentlabs.com/privacy/roastbook</string>
     <plurals name="add_photos_removed">

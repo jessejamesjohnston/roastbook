@@ -28,7 +28,7 @@ data class Enrichment(val roasterUrl: String?, val productUrl: String?, val roas
  * "Look up roaster": with a key, Gemini with Google Search grounding is asked for the roaster's
  * homepage, this coffee's product page, and the roaster's city. Tap-only: [lookUp] is called from
  * the button on Detail and nowhere else, so no roaster or coffee name leaves the device unless the
- * user asks. "Wrong roaster" clears the suggestions so the button comes back.
+ * user asks. "Not this roaster" clears the suggestions so the button comes back.
  */
 @Singleton
 class Enricher @Inject constructor(
@@ -103,7 +103,7 @@ class Enricher @Inject constructor(
         }
     }
 
-    /** "Wrong roaster": forget the suggestions and let the next lookup start clean. */
+    /** "Not this roaster": forget the suggestions and let the next lookup start clean. */
     suspend fun reset(coffeeId: String) = dao.setEnrichment(coffeeId, null, null, null, null)
 
     private fun prompt(roaster: String, coffee: String?, grounded: Boolean = true) = buildString {
