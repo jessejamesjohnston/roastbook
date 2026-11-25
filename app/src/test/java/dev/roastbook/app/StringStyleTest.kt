@@ -25,12 +25,12 @@ import org.w3c.dom.Element
  *   tell a list from a phrase that happens to contain "and".
  *
  * Entries marked translatable="false" (URLs, the copyright line, the license list's data) are
- * skipped. Sentence case and plain wording are left to review. An entry may break a rule only
- * through [ALLOWED], and every entry there says why.
+ * checked too: a person still reads them. Sentence case and plain wording are left to review. An
+ * entry may break a rule only through [ALLOWED], and every entry there says why.
  */
 class StringStyleTest {
 
-    /** One translatable piece of text: a <string>, or one item of a <plurals> or <string-array>. */
+    /** One piece of text: a <string>, or one item of a <plurals> or <string-array>. */
     data class Entry(val name: String, val text: String)
 
     private enum class Rule { SINGLE_SENTENCE_PERIOD, ELLIPSIS, DASH_OR_SEMICOLON_JOIN, UK_SPELLING, UNCONTRACTED }
@@ -87,14 +87,13 @@ class StringStyleTest {
         return out.toString()
     }
 
-    /** Every translatable entry in a strings file, decoded. XML entities are decoded by the parser. */
+    /** Every entry in a strings file, decoded. XML entities are decoded by the parser. */
     private fun entries(file: File): List<Entry> {
         val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
         val out = mutableListOf<Entry>()
         val children = doc.documentElement.childNodes
         for (i in 0 until children.length) {
             val el = children.item(i) as? Element ?: continue
-            if (el.getAttribute("translatable") == "false") continue
             val name = el.getAttribute("name")
             when (el.tagName) {
                 "string" -> out += Entry(name, decodeAndroid(el.textContent))
@@ -151,6 +150,8 @@ class StringStyleTest {
         assertTrue("reactions.xml is read", all.any { it.name.startsWith("rating_react_5[") })
         assertTrue("plurals items are read", all.any { it.name.startsWith("coffees[") })
         assertTrue("string-array items are read", all.any { it.name.startsWith("sources_seed[") })
+        assertTrue("translatable=\"false\" strings are read", all.any { it.name == "settings_copyright" })
+        assertTrue("translatable=\"false\" arrays are read", all.any { it.name.startsWith("license_components[") })
 
         val problems = mutableListOf<String>()
         val used = mutableSetOf<Pair<Rule, String>>()
