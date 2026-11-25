@@ -113,6 +113,26 @@ class DetailScreenPaneTest : DetailScreenTestBase() {
         assertEquals(listOf(4, 4, 5), listOf(row()!!.aroma, row()!!.flavor, row()!!.finish))
     }
 
+    @Test fun aRatingDialogWithNothingSetHasNothingToSave() {
+        northwind()
+        show(inPane = true)
+        compose.onNodeWithText(str(R.string.detail_rate_cta)).performClick()
+        // Save that would close the dialog and leave the coffee unrated is not offered.
+        save().assertIsNotEnabled()
+        compose.onNodeWithText(str(R.string.edit_rating_incomplete)).assertIsDisplayed()
+        // Cancel still closes it, writing nothing.
+        compose.onNodeWithText(str(R.string.detail_cancel)).performClick()
+        compose.awaitUntil { sessions.session.value == null }
+        assertNull(row()!!.overall)
+    }
+
+    @Test fun aRatedCoffeesDialogCanSaveAsItOpens() {
+        insert { copy(roaster = "Northwind", aroma = 4, flavor = 3, finish = 5, overall = 4f, state = dev.roastbook.app.data.db.CoffeeState.RATED) }
+        show(inPane = true)
+        compose.onNodeWithContentDescription(str(R.string.detail_edit_section, str(R.string.detail_ratings))).performClick()
+        save().assertIsEnabled()
+    }
+
     @Test fun theDescriptionsDialogIsTitledForItsCard() {
         northwind()
         show(inPane = true)

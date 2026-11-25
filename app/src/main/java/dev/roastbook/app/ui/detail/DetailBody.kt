@@ -314,7 +314,9 @@ internal fun DetailEditDialog(
             RATING -> session.rating != null && session.rating != RatingDraft.from(c)
             else -> fields.any { userChanged(session, it.key, it.value) }
         }
-        val canSave = !cantSaveRating(session, c)
+        // A rating saves once aroma, flavor, and finish are in, as the rating sheet's Save does; an
+        // untouched, unrated draft has nothing to save (closing it is Cancel's job).
+        val canSave = if (session.section == RATING) (session.rating ?: RatingDraft.from(c)).complete else true
         EditDialog(
             title = sectionTitle, tint = tint.tint, dirty = dirty, canSave = canSave,
             saveHint = if (!canSave) stringResource(R.string.edit_rating_incomplete) else null,
