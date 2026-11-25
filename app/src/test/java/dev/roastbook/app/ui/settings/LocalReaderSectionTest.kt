@@ -325,7 +325,7 @@ class LocalReaderSectionTest {
         assertFalse(m.store.root.exists())
     }
 
-    @Test fun eachFailedDownloadSaysWhyAndOffersTryAgain() {
+    @Test fun eachFailedDownloadSaysWhyAndOffersTryAgainAndCancelOnceThereIsAPart() {
         grantNotifications()
         val m = manager()
         val table = listOf(
@@ -346,6 +346,16 @@ class LocalReaderSectionTest {
             waitFor(row.second)
             assertTrue(shown(str(R.string.reader_retry)))
         }
+        // Nothing on disk, nothing to throw away.
+        assertFalse(shown(str(R.string.reader_cancel)))
+        // With part of the file on disk, Cancel download removes it and the failure with it.
+        h.writePart(m, 20)
+        m.onDiskChanged()
+        waitFor(str(R.string.reader_cancel))
+        click(str(R.string.reader_cancel))
+        waitFor(str(R.string.reader_download, size(total)))
+        assertFalse(m.store.part.exists())
+        assertFalse(shown(table.last().second))
     }
 
     @Test fun aFailingBuiltInAiIsNamedAsTheReasonForTheOffer() = runBlocking {
