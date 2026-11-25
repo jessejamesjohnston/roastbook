@@ -367,6 +367,21 @@ class LocalReaderManagerTest {
         assertEquals(DownloadPhase.WAITING_FOR_NETWORK, h.awaitState(m) { it.phase == DownloadPhase.WAITING_FOR_NETWORK }.phase)
     }
 
+    @Test fun aNewDownloadThatFailsAfterAnAcceptedOfferShowsItsOwnReason() = runBlocking {
+        val m = eligibleManager()
+        val failed = failedDownload(m, 20)
+        h.prefs.declineOffer("c1")
+        h.worker = { c, p -> ScriptedWorker(c, p) { Result.failure(workDataOf(ModelDownloadWorker.KEY_FAILURE to "NO_SPACE")) } }
+        m.acceptOffer("c2")
+        val next = h.pendingJob().id
+        assertNotEquals(failed, next)
+        h.runJob()
+        val s = h.awaitState(m) { it.phase == DownloadPhase.FAILED && it.failure == DownloadFailure.NO_SPACE }
+        assertEquals(DownloadFailure.NO_SPACE, s.failure)
+        assertFalse("the new failure is not set aside", next.toString() in h.prefs.current().discardedJobs)
+        assertEquals("the old record is gone, not piling up", listOf(next), h.jobs().map { it.id })
+    }
+
     @Test fun theStateCarriesTheDevicesPrefsAndTheModelName() = runBlocking {
         val m = eligibleManager()
         h.prefs.recordNano(ok = false, reason = "no model")
