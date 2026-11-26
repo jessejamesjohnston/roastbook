@@ -199,7 +199,9 @@ class Extractor @Inject constructor(
         val afterCloud = when (val step = cloudStep(::images, pages, afterLocal)) {
             is ModelStep.Read -> {
                 val note = "cloud:${cloud.modelName()}; after ${step.notes}"
-                return finish(coffeeId, ExtractionSource.CLOUD, step.facts, ocrText, note, step.trail, baseline = coffee)
+                return finish(
+                    coffeeId, ExtractionSource.CLOUD, step.facts, ocrText, note, step.trail, baseline = coffee, garbled = !step.wellFormed,
+                )
             }
             is ModelStep.Next -> step
         }
@@ -283,7 +285,7 @@ class Extractor @Inject constructor(
         var trail = before.trail
         var notes = before.notes
         val attempt = try {
-            withTimeout(timeouts.cloudMs) { modelAttempt("cloud", loadImages(), pages) { imgs, prompt -> cloud.generate(imgs, prompt) } }
+            withTimeout(timeouts.cloudMs) { modelAttemptChecked("cloud", loadImages(), pages) { imgs, prompt -> cloud.generate(imgs, prompt) } }
         } catch (e: TimeoutCancellationException) {
             notes += "; cloud timed out"; null
         } catch (e: CancellationException) {
@@ -299,7 +301,9 @@ class Extractor @Inject constructor(
             trail = trail.copy(cloudFailure = kind, cloudModel = model)
             null
         }
-        if (attempt != null && !attempt.isEmpty) return ModelStep.Read(attempt, trail.with(Tier.CLOUD, TierOutcome.READ), notes)
+        if (attempt != null && !attempt.facts.isEmpty) {
+            return ModelStep.Read(attempt.facts, trail.with(Tier.CLOUD, TierOutcome.READ), notes, attempt.wellFormed)
+        }
         trail = trail.with(Tier.CLOUD, if (attempt != null) TierOutcome.EMPTY else TierOutcome.FAILED)
         if (attempt != null) notes += "; cloud returned no fields"
         return ModelStep.Next(trail, notes)
@@ -464,12 +468,10 @@ class Extractor @Inject constructor(
         return finish(coffeeId, ExtractionSource.OCR, facts, ocrText, "ocr-guess; $why", trail, baseline, fillBlanksOnly = true)
     }
 
-    /** Ask a model tier, parse, and ask once more with a stricter instruction if the answer was not JSON. */
-    private suspend fun modelAttempt(
-        tier: String, images: List<Bitmap>, pages: List<OcrPage>, generate: suspend (List<Bitmap>, String) -> String,
-    ): BagFacts? = modelAttemptChecked(tier, images, pages, generate)?.facts
-
-    /** As [modelAttempt]; well-formed only when the first answer was a JSON object. */
+    /**
+     * Ask a model tier, parse, and ask once more with a stricter instruction if the answer was not
+     * JSON. Well-formed only when the first answer was a JSON object.
+     */
     private suspend fun modelAttemptChecked(
         tier: String, images: List<Bitmap>, pages: List<OcrPage>, generate: suspend (List<Bitmap>, String) -> String,
     ): BagFactsParser.Parsed? {
@@ -528,10 +530,10 @@ class Extractor @Inject constructor(
             val modelRead = coffee.extractionSource in MODEL_SOURCES
             if (fillBlanksOnly && modelRead) { f = BagFacts(); finalFacts = null }
             val userEdited = mutableListOf<String>()
-            // Fields a garbled answer (built-in or reader, not the JSON asked for at first) set, before this read and after it.
+            // Fields a garbled answer (any model's, not the JSON asked for at first) set, before this read and after it.
             val garbledBefore = ExtractionTrail.decode(coffee.extractionTrail).garbledFields
             val garbledAfter = mutableSetOf<String>()
-            // A reading that came through as asked: any model's JSON, except a built-in one judged poor.
+            // A reading that came through as asked: any model's JSON (built-in, reader or Gemini), except a built-in one judged poor.
             val cleanRead = source in MODEL_SOURCES && !garbled && !trail.nanoPoor && !fillBlanksOnly
             var filled = 0
             // Fields whose final value is this read's suggestion (for a guess: how many fields are a guess).

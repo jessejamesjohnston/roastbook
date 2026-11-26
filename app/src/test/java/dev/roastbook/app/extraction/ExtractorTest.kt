@@ -621,6 +621,37 @@ class ExtractorTest {
         assertEquals(setOf("roaster", "process"), ExtractionTrail.decode(db.coffeeDao().get(id)!!.extractionTrail).garbledFields)
     }
 
+    /** A Gemini answer that was not the JSON asked for is garbled like any model's: it clears nothing. */
+    @Test fun aGeminiAnswerThatIsNotJsonKeepsWhatAGarbledAnswerFilled() = runBlocking {
+        val id = seedCoffee()
+        extractor(FakeNano(answers = mutableListOf({ garbledAnswer }, { garbledAnswer })), FakeOcr("x")).run(id)
+        repo.reextract(id)
+        val loose = "roaster: Signal Roasters\nprocess: Washed"
+        val cloud = FakeCloud(mutableListOf(loose, loose))
+        val out = extractor(FakeNano(status = NanoStatus.UNAVAILABLE), FakeOcr("x"), cloud).run(id)
+        assertEquals(ExtractionSource.CLOUD, out.source)
+        val c = db.coffeeDao().get(id)!!
+        assertEquals("Signal Roasters", c.roaster)
+        assertEquals("the garbled name stays", "Finca Veleta", c.coffeeName)
+        assertEquals(
+            setOf("roaster", "coffeeName", "varietal", "tastingNotes", "roastDate", "process"),
+            ExtractionTrail.decode(c.extractionTrail).garbledFields,
+        )
+    }
+
+    /** A Gemini answer that came back as asked still counts as clean and replaces what a garbled one filled. */
+    @Test fun aGeminiAnswerThatIsJsonReplacesOrClearsWhatAGarbledAnswerFilled() = runBlocking {
+        val id = seedCoffee()
+        extractor(FakeNano(answers = mutableListOf({ garbledAnswer }, { garbledAnswer })), FakeOcr("x")).run(id)
+        repo.reextract(id)
+        val cloud = FakeCloud(mutableListOf("""{"roaster":"Signal Roasters","process":"Washed"}"""))
+        extractor(FakeNano(status = NanoStatus.UNAVAILABLE), FakeOcr("x"), cloud).run(id)
+        val c = db.coffeeDao().get(id)!!
+        assertEquals("Signal Roasters", c.roaster)
+        assertNull("a garbled name Gemini didn't confirm is cleared", c.coffeeName)
+        assertEquals(emptySet<String>(), ExtractionTrail.decode(c.extractionTrail).garbledFields)
+    }
+
     // --- The per-row edit marker closes the window before the run's first read ---
 
     private suspend fun seedLoggedNanoCoffee(): String {

@@ -81,11 +81,11 @@ Rules the code holds to:
   roast date with no digit at all is empty. Any other roast date is kept as
   written, whatever its style (`03NOV26`, `KW 45`): nothing parses it, it is
   shown and edited as text. It only removes.
-- A reading by Nano or the reader is garbled when its first answer was not
-  the JSON asked for. The trail lists each field a garbled reading changed
-  (`garbled=coffeeName,roastDate`), plus any listed field it repeats, and
-  Reread keeps that list. A later reading that is not garbled (a Gemini
-  key's never is) replaces each listed field it has a value for. Unless it
+- A model's reading (Nano, the reader or a Gemini key) is garbled when its
+  first answer was not the JSON asked for. The trail lists each field a
+  garbled reading changed (`garbled=coffeeName,roastDate`), plus any listed
+  field it repeats, and Reread keeps that list. A later reading that is not
+  garbled replaces each listed field it has a value for. Unless it
   is a poor Nano reading (one naming neither the roaster nor the coffee), it
   also clears each listed field it has nothing for: a blank to fill in beats
   a confident wrong value. Fields the user edited are never touched. A value
