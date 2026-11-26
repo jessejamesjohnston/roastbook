@@ -201,7 +201,8 @@ class OcrGuessTest {
         assertNull(OcrGuess.bagSize("20 lb"))
     }
 
-    @Test fun anImplausibleGramFigureFallsThroughToTheOunceFigure() {
-        assertEquals(340, OcrGuess.bagSize("Lot 12 g / 12 oz"))
+    /** A pair whose sides disagree (one reads outside what a bag holds) names no weight to trust. */
+    @Test fun aPairWithAnImplausibleSideNamesNoWeight() {
+        assertNull(OcrGuess.bagSize("Lot 12 g / 12 oz"))
     }
 }

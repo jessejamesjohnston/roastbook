@@ -87,12 +87,18 @@ Rules the code holds to:
   shown and edited as text. A tasting note that repeats a process of more
   than one word is dropped (a one-word process such as "Honey" can be a
   note too). It only removes.
-- `NetWeight` checks a model's bag size against the weight the label text
-  states, reading the usual recognition slips ("2Ooz", "120z" for "12oz",
-  "(3409)" for "(340g)"). When the label clearly names the bag's weight (on
-  a "net" line, or two or more printed weights agreeing) and the model's figure
-  is more than 5% off it, the label's weight is kept. It never fills a
-  blank.
+- `NetWeight` reads the label's net weight as one quantity: whole numbers,
+  decimals, fractions ("1/2 lb", "½"), mixed numbers, pounds-and-ounces, and
+  pairs in both unit systems ("12 oz (340 g)"), which must agree. Only a real
+  unit token counts, so lot codes, prices and dates are never read as weights.
+  Inside an amount, a letter that is only ever a misread digit (O, I, l, S, B,
+  Z) is read as that digit. A model's bag size gives way to the net line only
+  when the line reads unambiguously inside 50 to 2500 g and the pair agreed,
+  or the model's own figure is outside that band (a gram figure whose "g" was
+  read as a 9, such as 3409 for a 12 oz bag). A digit misread as another digit
+  ("70 oz") can't be seen on a single unit, so a single unit never replaces a
+  plausible figure. It never fills a blank or touches a hand edit; the
+  label-text guess uses the same reading.
 - A model's reading (Nano, the reader or a Gemini key) is garbled when its
   first answer was not the JSON asked for. The trail lists each field a
   garbled reading changed (`garbled=coffeeName,roastDate`), plus any listed

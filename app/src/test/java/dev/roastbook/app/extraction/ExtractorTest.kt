@@ -670,6 +670,18 @@ class ExtractorTest {
         assertEquals(340, db.coffeeDao().get(id)!!.bagSizeG)
     }
 
+    /** A bag size typed by hand is never corrected, whatever the label says. */
+    @Test fun aHandEditedBagSizeIsNeverCorrectedByTheLabel() = runBlocking {
+        val id = seedCoffee()
+        val first = FakeNano(answers = mutableListOf({ """{"roaster":"Lantern Roasters"}""" }))
+        extractor(first, FakeOcr("x")).run(id)
+        repo.edit(id) { it.copy(bagSizeG = 3409) }
+        repo.reextract(id)
+        val nano = FakeNano(answers = mutableListOf({ """{"roaster":"Lantern Roasters","bag_size_g":3409}""" }))
+        extractor(nano, FakeOcr("LANTERN ROASTERS\nNet wt. 12 oz (340 g)")).run(id)
+        assertEquals(3409, db.coffeeDao().get(id)!!.bagSizeG)
+    }
+
     /** The process, repeated as a tasting note by the model, is not a tasting note. */
     @Test fun theProcessRepeatedAsATastingNoteIsDropped() = runBlocking {
         val id = seedCoffee()

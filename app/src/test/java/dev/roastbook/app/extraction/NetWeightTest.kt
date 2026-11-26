@@ -6,79 +6,175 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
- * A model's bag size against the net weight the label text states. Generated both ways: misreads
- * the printed weight must correct, and realistic readings it must leave alone.
+ * The printed net weight, read as one quantity, and when it may replace a model's bag size. The
+ * tables are generated in both directions: label lines that must read to the right grams, lines that
+ * must be refused, and every single-character recognition slip of a good line, which must read to
+ * the right grams or be refused, and must never turn a right bag size into a wrong one.
  */
 class NetWeightTest {
-    private fun oz(n: Int) = (n * 28.35).roundToInt()
-    private fun lb(n: Int) = (n * 453.6).roundToInt()
+    private fun oz(n: Double) = (n * 28.35).roundToInt()
+    private fun lb(n: Double) = (n * 453.6).roundToInt()
 
-    /** How text recognition prints "N oz": clean, spaced, capitals, and with a letter O for the zero. */
-    private fun ozSpellings(n: Int): List<String> = buildList {
-        add("${n}oz"); add("$n oz"); add("${n}OZ"); add("$n Oz"); add("$n ounces")
-        if ('0' in n.toString()) add(n.toString().replace('0', 'O') + "oz") // a zero read as the letter O
-        add("${n}0z") // the letter o of "oz" read as a zero
+    /** A net line and the grams it states; [dual] when both unit systems are printed. */
+    private data class Line(val text: String, val grams: Int, val dual: Boolean)
+
+    private fun fmt(n: Double) = if (n % 1.0 == 0.0) n.toInt().toString() else n.toString()
+
+    /** Realistic US and metric net lines, each with the weight a person reads from it. */
+    private val good: List<Line> = buildList {
+        for (n in listOf(2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 16.0, 18.0, 20.0, 24.0, 28.0, 32.0, 40.0, 64.0, 80.0)) {
+            val g = oz(n)
+            val o = fmt(n)
+            add(Line("NET WT $o OZ", g, false))
+            add(Line("Net Wt. ${o}oz", g, false))
+            add(Line("NET WT $o OZ ($g g)", g, true))
+            add(Line("Net wt. ${o}oz (${g}g) | Whole bean", g, true))
+            add(Line("NET WT ${o}OZ / ${g}G", g, true))
+            add(Line("Net weight $g g / $o oz", g, true))
+            add(Line("NET WEIGHT: $o ounces ($g grams)", g, true))
+        }
+        for (n in listOf(1.0, 2.0, 2.5, 3.0, 5.0)) {
+            val g = lb(n)
+            add(Line("NET WT ${fmt(n)} LB", g, false))
+            add(Line("Net Wt ${fmt(n)} lbs ($g g)", g, true))
+            add(Line("NET WT ${fmt(n)} POUNDS", g, false))
+        }
+        for ((text, n) in listOf("1/4" to 0.25, "1/2" to 0.5, "3/4" to 0.75, "½" to 0.5, "¾" to 0.75, "1 1/2" to 1.5, "1½" to 1.5, "2 1/2" to 2.5)) {
+            val g = lb(n)
+            add(Line("NET WT $text LB", g, false))
+            add(Line("Net Wt. $text lb ($g g)", g, true))
+        }
+        for ((l, o) in listOf(1 to 4, 1 to 8, 2 to 0, 2 to 8, 1 to 12)) {
+            val g = lb(l.toDouble()) + oz(o.toDouble())
+            add(Line("NET WT $l LB $o OZ", g, false))
+            add(Line("NET WT $l LB $o OZ ($g g)", g, true))
+            add(Line("Net wt $l lb, $o oz", g, false))
+        }
+        for (g in listOf(100, 125, 200, 227, 250, 300, 340, 350, 454, 500, 750, 1000)) {
+            add(Line("Net weight $g g", g, false))
+            add(Line("NET ${g}G", g, false))
+            add(Line("Net wt. ${g}g · whole bean", g, false))
+            add(Line("Nett $g grams", g, false))
+        }
+        for ((text, g) in listOf("0.5" to 500, "0,5" to 500, "1" to 1000, "1.5" to 1500, "1,5" to 1500, "2" to 2000, "2.268" to 2268, "2,5" to 2500)) {
+            add(Line("Net weight $text kg", g, false))
+            add(Line("NET WT $text KG", g, false))
+        }
+        add(Line("NET WT 5 LB (2,268 g)", 2268, true))
+        add(Line("NET WT 5 LB (2.268 g)", 2268, true))
+        add(Line("Net 1,000 g", 1000, false))
+        add(Line("Net weight 1 kg / 2.2 lb", 1000, true))
+        add(Line("NET WT 2.2 LB (1 KG)", 1000, true))
+        add(Line("Net 500 g (1.1 lb)", 500, true))
     }
 
-    @Test fun aMisreadBagSizeGivesWayToTheWeightPrintedOnTheLabel() {
+    @Test fun everyRealisticNetLineReadsToTheWeightAPersonReads() {
+        assert(good.size > 250) { "only ${good.size} lines" }
+        for (l in good) {
+            assertEquals(l.text, NetWeight.Printed(l.grams, l.dual), NetWeight.printed(l.text, netLinesOnly = true))
+            assertEquals(l.text, l.grams, NetWeight.fromLabel(l.text))
+        }
+    }
+
+    @Test fun linesThatNameNoTrustworthyWeightAreRefused() {
+        val refused = listOf(
+            // No net weight at all.
+            "Net zero carbon roastery", "Net price $12.99", "Lot 120Z net", "Net wt. Lot 1202", "Roast no. 12 net",
+            "Net wt roasted 03/11/26", "Net: 1200 Grand Ave", "NET WT 120Z",
+            // A pair that disagrees.
+            "NET WT 12 OZ (284 g)", "NET WT 10 OZ (340 g)", "Net 340 g / 10 oz", "NET WT 1 LB (340 g)",
+            // Two weights in one unit system.
+            "NET WT 12 OZ 8 OZ", "Net 250 g 500 g",
+            // Outside what a retail bag holds.
+            "Net wt 9 kg", "NET WT 10 g", "Net wt 1 oz", "NET WT 20 LB", "NET WT 3 kg",
+            // A side that reads outside the band.
+            "Net 12 g / 12 oz",
+        )
+        for (t in refused) assertNull(t, NetWeight.printed(t, netLinesOnly = true))
+        // Lines without "net" don't count toward a correction at all.
+        assertNull(NetWeight.printed("12 oz (340 g)", netLinesOnly = true))
+    }
+
+    /** Single-character recognition slips: a digit read as a look-alike letter, or as another digit. */
+    private val slips = listOf('0' to 'O', '0' to 'o', '1' to 'I', '1' to 'l', '5' to 'S', '8' to 'B', '2' to 'Z', '7' to '1', '1' to '7')
+    private val letterSlips = slips.filter { !it.second.isDigit() }
+
+    private fun mutations(text: String): List<Pair<String, Pair<Char, Char>>> = buildList {
+        text.forEachIndexed { i, c ->
+            for (s in slips) if (s.first == c) add(text.substring(0, i) + s.second + text.substring(i + 1) to s)
+        }
+    }
+
+    @Test fun aSlipOnADualLineReadsRightOrIsRefused() {
         var checked = 0
-        for (n in listOf(8, 10, 12, 16, 20, 32)) {
-            val grams = oz(n)
-            for (spelled in ozSpellings(n)) {
-                // The gram figure beside it, read cleanly, with its "g" read as a 9, or missing.
-                for (companion in listOf(" ($grams g)", " (${grams}9)", "")) {
-                    val label = "SINGLE ORIGIN\nNet wt. $spelled$companion | Whole bean\nRoasted in small batches"
-                    for (misread in listOf(grams * 10 + 9, 78, grams / 3, grams * 2 + 50)) {
-                        assertEquals("$misread on \"$label\"", grams, NetWeight.reconcile(misread, label))
-                        checked++
-                    }
-                }
-            }
+        for (l in good.filter { it.dual }) for ((m, _) in mutations(l.text)) {
+            val read = NetWeight.printed(m, netLinesOnly = true)
+            assert(read == null || read.grams == l.grams) { "\"$m\" (from \"${l.text}\") read as $read" }
+            checked++
         }
-        for (n in listOf(1, 2, 5)) {
-            for (spelled in listOf("$n lb", "${n}LB", "$n lbs", "$n pounds")) {
-                assertEquals(spelled, lb(n), NetWeight.reconcile(lb(n) * 10 + 9, "NET WEIGHT $spelled"))
-                checked++
-            }
+        assert(checked > 500) { "only $checked slips" }
+    }
+
+    @Test fun aLetterSlipOnASingleUnitLineReadsRightOrIsRefused() {
+        for (l in good.filter { !it.dual }) for ((m, s) in mutations(l.text)) {
+            if (s !in letterSlips) continue
+            val read = NetWeight.printed(m, netLinesOnly = true)
+            assert(read == null || read.grams == l.grams) { "\"$m\" (from \"${l.text}\") read as $read" }
         }
-        assertEquals(1000, NetWeight.reconcile(100, "Net 1 kg whole bean"))
-        // No net line, but the label prints the weight twice and both agree.
-        assertEquals(340, NetWeight.reconcile(3409, "12 oz (340 g)"))
-        assert(checked > 200) { "only $checked cases generated" }
+    }
+
+    /**
+     * A digit read as another digit on a single-unit line ("70 OZ" for "10 OZ") reads as a different
+     * weight that can't be told from a real one. Those lines never override a bag size that is itself
+     * plausible, so no slip of any kind can turn a right bag size into a wrong one.
+     */
+    @Test fun noSlipEverTurnsARightBagSizeIntoAWrongOne() {
+        var checked = 0
+        for (l in good) for ((m, _) in mutations(l.text) + (l.text to ('-' to '-'))) {
+            assertEquals("\"$m\" (from \"${l.text}\")", l.grams, NetWeight.reconcile(l.grams, m))
+            checked++
+        }
+        assert(checked > 1000) { "only $checked cases" }
+    }
+
+    @Test fun aMisreadBagSizeGivesWayToANetLineThatCanBeTrusted() {
+        for (l in good) {
+            // A gram figure with its "g" read as a 9 is outside the band: any trustworthy net line corrects it.
+            val misread = l.grams * 10 + 9
+            if (misread !in NetWeight.BAND) assertEquals(l.text, l.grams, NetWeight.reconcile(misread, l.text))
+            // A plausible wrong figure gives way only to an agreeing pair.
+            val plausibleWrong = if (l.grams > 1000) l.grams / 2 else l.grams * 2
+            assertEquals(l.text, if (l.dual) l.grams else plausibleWrong, NetWeight.reconcile(plausibleWrong, l.text))
+        }
+    }
+
+    /** Correct readings on common US labels that the first version of the rule overwrote. */
+    @Test fun aCorrectBagSizeOnAFractionOrCompoundLabelIsKept() {
+        val rows = listOf(
+            227 to "NET WT 1/2 LB", 227 to "NET WT 1/2 LB (2279)", 340 to "NET WT 3/4 LB",
+            567 to "NET WT 1 LB 4 OZ", 567 to "NET WT 1 LB 4 OZ (5679)", 340 to "NET WT I2 OZ",
+            284 to "NET WT 70 OZ", 227 to "NET WT 6 OZ", 227 to "Brew 2 oz (57 g) per cup\nBag holds 8 oz",
+        )
+        for ((model, label) in rows) assertEquals("$model on \"$label\"", model, NetWeight.reconcile(model, label))
     }
 
     @Test fun aBagSizeThatAgreesWithTheLabelOrHasNothingToCheckAgainstIsKept() {
-        val cases = buildList {
-            for (n in listOf(8, 10, 12, 16)) {
-                add(oz(n) to "Net wt. $n oz (${oz(n)} g)")
-                add(oz(n) + 3 to "NET WT ${n}OZ")
-                add(oz(n) - 4 to "Net wt. ${n}oz")
-            }
-            add(250 to "250g")
-            add(250 to "Net weight 250 g · whole bean")
-            add(1000 to "1kg bag")
-            add(907 to "2 lb")
-            // The label says nothing about weight.
-            add(340 to "Washed Caturra, notes of plum and cocoa")
-            add(340 to "")
-            // Two different weights and no net line: nothing to say which one is this bag.
-            add(340 to "Also in 5 lb bags\nTry our 8 oz sampler")
-            // A lone weight off a net line is a recipe or a shot, not the bag.
-            add(340 to "Brew 20g coffee with 300g water")
-            add(340 to "Pulls a 2 oz shot")
-            add(340 to "Best as a 250 g pour over")
-        }
+        val cases = listOf(
+            344 to "Net wt. 12 oz (340 g)", 340 to "Washed Caturra, notes of plum and cocoa", 340 to "",
+            340 to "Also in 5 lb bags\nTry our 8 oz sampler", 340 to "Brew 20g coffee with 300g water",
+            340 to "Pulls a 2 oz shot", 340 to "Best as a 250 g pour over", 340 to "Lot 120Z", 340 to "Brazil 1O0z blend",
+        )
         for ((model, label) in cases) assertEquals("$model on \"$label\"", model, NetWeight.reconcile(model, label))
     }
 
-    @Test fun aBlankBagSizeIsNeverFilledFromTheLabel() {
+    @Test fun aBlankBagSizeIsNeverFilledByTheCorrection() {
         assertNull(NetWeight.reconcile(null, "Net wt. 12 oz (340 g)"))
     }
 
-    @Test fun theLabelGuessReadsTheSameSlips() {
-        assertEquals(oz(20), NetWeight.fromLabel("Net wt. 2Ooz"))
-        assertEquals(oz(12), NetWeight.fromLabel("NET WT 12OZ"))
-        assertEquals(340, NetWeight.fromLabel("NET WT 12 OZ (340 g)"))
-        assertNull(NetWeight.fromLabel("1 oz"))
+    @Test fun theGuessReadsAWeightAnywhereWhenNoNetLineStatesOne() {
+        assertEquals(oz(12.0), NetWeight.fromLabel("Whole bean\n12 oz (340 g)"))
+        assertEquals(oz(20.0), NetWeight.fromLabel("Net wt. 2Ooz"))
+        assertNull(NetWeight.fromLabel("Mix 20 0z ice"))
+        assertNull("two disagreeing weights", NetWeight.fromLabel("Brew 20g coffee with 300g water"))
     }
 }
