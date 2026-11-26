@@ -246,6 +246,10 @@ private fun DetailCards(
                 Spacer(Modifier.height(6.dp))
                 Text(sourceLine, style = MaterialTheme.typography.labelSmall, color = secondary)
             }
+            guessedFieldsLine(c)?.takeIf { !extracting }?.let {
+                Spacer(Modifier.height(2.dp))
+                Text(it, style = MaterialTheme.typography.labelSmall, color = secondary)
+            }
         }
 
         RoasterLinks(c, tint.tint, vm)

@@ -20,6 +20,10 @@ All notable changes to Roastbook are recorded here. The format follows
   Roastbook keeps trying for about 15 minutes instead of 11 before reading the label text, and
   says Android is getting it ready rather than that it is downloading.
 
+- When a reader leaves a field blank that the label text names (country, process, varietal,
+  elevation and the like), Roastbook fills it with its guess from the label text and says which
+  fields are guesses. It never replaces a value the reader or you set.
+
 ### Fixed
 
 - A bag size that can't be right (often a misread gram figure, such as 3409 g for a 12 oz bag)

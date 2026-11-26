@@ -377,6 +377,7 @@
     <string name="source_line_local">Read by the on-device reader</string>
     <string name="source_line_cloud">Read with your Gemini key</string>
     <string name="source_line_ocr">Read from the label text</string>
+    <string name="source_guess_fields">%1$s guessed from the label text</string>
     <string name="row_preparing">Getting the built-in AI ready…</string>
     <string name="row_preparing_subtitle">Android is getting it ready. This can take several minutes after a download or a system update.</string>
     <string name="row_busy_retry_at">The built-in AI needs a short break after reading several bags. Trying again at %1$s.</string>

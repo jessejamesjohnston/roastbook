@@ -90,6 +90,12 @@ Rules the code holds to:
   shown and edited as text. A tasting note that repeats a process of more
   than one word is dropped (a one-word process such as "Honey" can be a
   note too). It only removes.
+- A model's reading that leaves a field blank gets the label-text guess for
+  it (country, region, producer, process, varietal, elevation, roast level,
+  bag size, tasting notes; never the roaster or the coffee's name). The trail
+  lists those fields (`guessed=…`), the page names them under the facts, and
+  the list outlives a Read again. A value the model or the person set is never
+  replaced by a guess, and a field the person cleared stays blank.
 - `NetWeight` reads the label's net weight as one quantity: whole numbers,
   decimals, fractions ("1/2 lb", "½"), mixed numbers, pounds-and-ounces, and
   pairs in both unit systems ("12 oz (340 g)"), which must agree. Only a real

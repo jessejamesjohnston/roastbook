@@ -706,6 +706,47 @@ class ExtractorTest {
         assertEquals(3409, db.coffeeDao().get(id)!!.bagSizeG)
     }
 
+    // --- Blanks a model left are filled from the label text, as guesses ---
+
+    private val labelText = "LANTERN ROASTERS\nFinca Veleta\nOrigin: Colombia\nProcess: Washed\nVarietal: Caturra\n1,650 masl"
+
+    @Test fun aFieldTheModelLeftBlankIsFilledFromTheLabelTextAndMarkedAsAGuess() = runBlocking {
+        val id = seedCoffee()
+        val answer = """{"roaster":"Lantern Roasters","coffee_name":"Finca Veleta","process":"Natural"}"""
+        val out = extractor(FakeNano(answers = mutableListOf({ answer })), FakeOcr(labelText)).run(id)
+        assertEquals(ExtractionSource.NANO, out.source)
+        val c = db.coffeeDao().get(id)!!
+        assertEquals("the model's own value stays", "Natural", c.process)
+        assertEquals("Colombia", c.originCountry)
+        assertEquals(listOf("Caturra"), c.varietal)
+        assertEquals(1650, c.elevationM)
+        assertEquals(setOf("originCountry", "varietal", "elevationM"), ExtractionTrail.decode(c.extractionTrail).guessedNames)
+        assertEquals("the source still names the model", ExtractionSource.NANO, c.extractionSource)
+    }
+
+    @Test fun aFieldThePersonClearedOrSetIsNeverFilledFromTheLabelText() = runBlocking {
+        val id = seedCoffee()
+        extractor(FakeNano(answers = mutableListOf({ """{"roaster":"Lantern Roasters"}""" })), FakeOcr(labelText)).run(id)
+        repo.edit(id) { it.copy(originCountry = null, varietal = listOf("Gesha")) }
+        repo.reextract(id)
+        extractor(FakeNano(answers = mutableListOf({ """{"roaster":"Lantern Roasters"}""" })), FakeOcr(labelText)).run(id)
+        val c = db.coffeeDao().get(id)!!
+        assertNull("cleared by hand, stays blank", c.originCountry)
+        assertEquals(listOf("Gesha"), c.varietal)
+        assertEquals(setOf("process", "elevationM"), ExtractionTrail.decode(c.extractionTrail).guessedNames)
+    }
+
+    @Test fun aLaterReadingReplacesAGuessAndAGuessIsKeptAcrossARereadThatHasNothing() = runBlocking {
+        val id = seedCoffee()
+        extractor(FakeNano(answers = mutableListOf({ """{"roaster":"Lantern Roasters"}""" })), FakeOcr(labelText)).run(id)
+        repo.reextract(id)
+        extractor(FakeNano(answers = mutableListOf({ """{"roaster":"Lantern Roasters","process":"Honey"}""" })), FakeOcr(labelText)).run(id)
+        val c = db.coffeeDao().get(id)!!
+        assertEquals("Honey", c.process)
+        assertEquals("Colombia", c.originCountry)
+        assertEquals(setOf("originCountry", "varietal", "elevationM"), ExtractionTrail.decode(c.extractionTrail).guessedNames)
+    }
+
     /** The process, repeated as a tasting note by the model, is not a tasting note. */
     @Test fun theProcessRepeatedAsATastingNoteIsDropped() = runBlocking {
         val id = seedCoffee()

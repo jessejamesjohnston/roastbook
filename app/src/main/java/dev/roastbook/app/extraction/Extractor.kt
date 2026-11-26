@@ -563,13 +563,19 @@ class Extractor @Inject constructor(
             // Fields a garbled answer (any model's, not the JSON asked for at first) set, before this read and after it.
             val garbledBefore = ExtractionTrail.decode(coffee.extractionTrail).garbledFields
             val garbledAfter = mutableSetOf<String>()
+            // A model's reading leaves blanks the label text may fill, as marked guesses: never the
+            // roaster (its guess is the least sure, and it drives the roaster lookup), never a field
+            // the model or the person set. The list carries across reads that have nothing for them.
+            val labelGuess = if (source in MODEL_SOURCES && !fillBlanksOnly) OcrGuess.guess(ocrText.ifBlank { coffee.ocrText }) else null
+            val guessedBefore = ExtractionTrail.decode(coffee.extractionTrail).guessedNames
+            val guessedAfter = mutableSetOf<String>()
             // A reading that came through as asked: any model's JSON (built-in, reader or Gemini), except a built-in one judged poor.
             val cleanRead = source in MODEL_SOURCES && !garbled && !trail.nanoPoor && !fillBlanksOnly
             var filled = 0
             // Fields whose final value is this read's suggestion (for a guess: how many fields are a guess).
             var matching = 0
             fun blank(v: Any?) = v == null || (v is String && v.isBlank()) || (v is List<*> && v.isEmpty())
-            fun <T> merge(name: String, current: T, base: T?, suggested: T?, cleared: T): T {
+            fun <T> merge(name: String, current: T, base: T?, suggested: T?, cleared: T, guess: T? = null): T {
                 if (name in coffee.userEdited || (baseline != null && current != base)) {
                     if (suggested != null) userEdited += name
                     return current
@@ -577,9 +583,10 @@ class Extractor @Inject constructor(
                 if (suggested == null) {
                     // A clean reading with nothing for a field a garbled answer set: a blank
                     // to fill in beats a confident wrong value.
-                    if (name in garbledBefore && cleanRead) return cleared
-                    if (name in garbledBefore) garbledAfter += name
-                    return current
+                    val kept = if (name in garbledBefore && cleanRead) cleared else current.also { if (name in garbledBefore) garbledAfter += name }
+                    if (guess != null && !blank(guess) && (blank(kept) || name in guessedBefore)) { guessedAfter += name; return guess }
+                    if (name in guessedBefore && !blank(kept)) guessedAfter += name
+                    return kept
                 }
                 if (fillBlanksOnly && !blank(current)) {
                     if (current == suggested) matching++
@@ -598,20 +605,32 @@ class Extractor @Inject constructor(
                 state = if (coffee.overall != null) CoffeeState.RATED else CoffeeState.LOGGED,
                 roaster = merge("roaster", coffee.roaster, baseline?.roaster, TextCase.title(f.roaster), null),
                 coffeeName = merge("coffeeName", coffee.coffeeName, baseline?.coffeeName, TextCase.title(f.coffeeName), null),
-                originCountry = merge("originCountry", coffee.originCountry, baseline?.originCountry, TextCase.title(f.originCountry), null),
-                region = merge("region", coffee.region, baseline?.region, TextCase.title(f.region), null),
-                producer = merge("producer", coffee.producer, baseline?.producer, TextCase.title(f.producer), null),
-                process = merge("process", coffee.process, baseline?.process, TextCase.sentence(f.process), null),
+                originCountry = merge(
+                    "originCountry", coffee.originCountry, baseline?.originCountry, TextCase.title(f.originCountry), null,
+                    labelGuess?.originCountry?.let(TextCase::title),
+                ),
+                region = merge("region", coffee.region, baseline?.region, TextCase.title(f.region), null, labelGuess?.region?.let(TextCase::title)),
+                producer = merge(
+                    "producer", coffee.producer, baseline?.producer, TextCase.title(f.producer), null, labelGuess?.producer?.let(TextCase::title),
+                ),
+                process = merge(
+                    "process", coffee.process, baseline?.process, TextCase.sentence(f.process), null, labelGuess?.process?.let(TextCase::sentence),
+                ),
                 varietal = merge(
                     "varietal", coffee.varietal, baseline?.varietal, TextCase.titleList(f.varietal).takeIf { it.isNotEmpty() }, emptyList(),
+                    labelGuess?.varietal?.let(TextCase::titleList)?.takeIf { it.isNotEmpty() },
                 ),
-                elevationM = merge("elevationM", coffee.elevationM, baseline?.elevationM, f.elevationM, null),
-                roastLevel = merge("roastLevel", coffee.roastLevel, baseline?.roastLevel, TextCase.sentence(f.roastLevel), null),
+                elevationM = merge("elevationM", coffee.elevationM, baseline?.elevationM, f.elevationM, null, labelGuess?.elevationM),
+                roastLevel = merge(
+                    "roastLevel", coffee.roastLevel, baseline?.roastLevel, TextCase.sentence(f.roastLevel), null,
+                    labelGuess?.roastLevel?.let(TextCase::sentence),
+                ),
                 roastDate = merge("roastDate", coffee.roastDate, baseline?.roastDate, f.roastDate, null),
-                bagSizeG = merge("bagSizeG", coffee.bagSizeG, baseline?.bagSizeG, f.bagSizeG, null),
+                bagSizeG = merge("bagSizeG", coffee.bagSizeG, baseline?.bagSizeG, f.bagSizeG, null, labelGuess?.bagSizeG),
                 tastingNotes = merge(
                     "tastingNotes", coffee.tastingNotes, baseline?.tastingNotes,
                     TextCase.titleList(f.tastingNotes).takeIf { it.isNotEmpty() }, emptyList(),
+                    labelGuess?.tastingNotes?.let(TextCase::titleList)?.takeIf { it.isNotEmpty() },
                 ),
                 bagDescription = merge(
                     "bagDescription", coffee.bagDescription, baseline?.bagDescription, TextCase.sentence(f.bagDescription), null,
@@ -639,7 +658,7 @@ class Extractor @Inject constructor(
             val isGuess = source == ExtractionSource.OCR
             val guessOutcome = if (matching > 0) TierOutcome.READ else TierOutcome.EMPTY
             val t = (if (isGuess) trail.copy(guessedFields = matching).with(Tier.GUESS, guessOutcome) else trail)
-                .copy(garbledFields = garbledAfter)
+                .copy(garbledFields = garbledAfter, guessedNames = guessedAfter)
             val meta = updated.extractionMeta!!
             val withNote = if (isGuess) meta.replaceFirst("ocr-guess;", "ocr-guess ($filled fields);") else meta
             finalNote = withNote

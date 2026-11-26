@@ -93,6 +93,33 @@ fun extractionSourceLabel(c: CoffeeEntity): String? {
     return stringResource(line)
 }
 
+/** The facts a model left blank that the label text may fill, in display order, with their labels. */
+private val GUESSABLE = listOf(
+    "originCountry" to R.string.field_origin_country, "region" to R.string.field_region, "producer" to R.string.field_producer,
+    "process" to R.string.field_process, "varietal" to R.string.field_varietal, "elevationM" to R.string.field_elevation,
+    "roastLevel" to R.string.field_roast_level, "bagSizeG" to R.string.field_bag_size, "tastingNotes" to R.string.field_tasting_notes,
+)
+
+/**
+ * "Country and varietal guessed from the label text" under the facts: the fields a model's reading
+ * left blank that hold the label text's guess, minus any the person has edited since. Null when
+ * there are none.
+ */
+@Composable
+fun guessedFieldsLine(c: CoffeeEntity): String? {
+    val names = ExtractionTrail.decode(c.extractionTrail).guessedNames - c.userEdited.toSet()
+    val labels = GUESSABLE.filter { it.first in names }.map { stringResource(it.second) }
+    if (labels.isEmpty()) return null
+    // Sentence case: the first label keeps its capital, the rest read in lowercase.
+    val words = labels.mapIndexed { i, l -> if (i == 0) l else l.lowercase() }
+    val list = when (words.size) {
+        1 -> words[0]
+        2 -> "${words[0]} and ${words[1]}"
+        else -> words.dropLast(1).joinToString(", ") + ", and " + words.last()
+    }
+    return stringResource(R.string.source_guess_fields, list)
+}
+
 /**
  * The calm "what happened" card, shown once a read fell back: after a poor read a headline saying
  * so, then one line on why, one on whether the fields are a guess, a pointer to what would read

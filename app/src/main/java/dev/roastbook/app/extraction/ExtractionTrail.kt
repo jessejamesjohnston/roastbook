@@ -57,9 +57,14 @@ data class ExtractionTrail(
     val garbledFields: Set<String> = emptySet(),
     /** Which of the built-in AI's usage limits refused this read (`nanolimit=reads`), when one did. */
     val nanoLimit: NanoLimits.Kind? = null,
+    /**
+     * Fields a model left blank that hold the label text's guess instead (`guessed=originCountry`).
+     * The page names them as guesses; like [garbledFields] the list outlives a Read again.
+     */
+    val guessedNames: Set<String> = emptySet(),
 ) {
     /** What a Read again keeps of the last read's trail: only which fields a garbled answer filled. */
-    fun carriedAcrossReread(): ExtractionTrail = ExtractionTrail(garbledFields = garbledFields)
+    fun carriedAcrossReread(): ExtractionTrail = ExtractionTrail(garbledFields = garbledFields, guessedNames = guessedNames)
 
     operator fun get(tier: Tier): TierOutcome? = outcomes[tier]
 
@@ -75,6 +80,7 @@ data class ExtractionTrail(
         if (nanoPoor) add("$NANO_QUALITY=poor")
         garbledFields.filter { FIELD.matches(it) }.sorted().takeIf { it.isNotEmpty() }?.let { add("$GARBLED=${it.joinToString(",")}") }
         nanoLimit?.let { add("$NANO_LIMIT=${it.name.lowercase()}") }
+        guessedNames.filter { FIELD.matches(it) }.sorted().takeIf { it.isNotEmpty() }?.let { add("$GUESSED=${it.joinToString(",")}") }
     }.joinToString(";")
 
     companion object {
@@ -83,6 +89,7 @@ data class ExtractionTrail(
         private const val NANO_QUALITY = "nanoq"
         private const val GARBLED = "garbled"
         private const val NANO_LIMIT = "nanolimit"
+        private const val GUESSED = "guessed"
         private val FIELD = Regex("[A-Za-z]{1,32}")
         private val MODEL_ID = Regex("[A-Za-z0-9._/-]{1,64}")
 
@@ -94,11 +101,13 @@ data class ExtractionTrail(
             var nanoPoor = false
             var garbled = emptySet<String>()
             var nanoLimit: NanoLimits.Kind? = null
+            var guessedNames = emptySet<String>()
             val map = linkedMapOf<Tier, TierOutcome>()
             for (part in s.split(';')) {
                 val (k, v) = part.split('=', limit = 2).takeIf { it.size == 2 } ?: continue
                 if (k.trim() == CLOUD_WHY) { cloudWhy = CloudFailure.entries.firstOrNull { it.name.equals(v.trim(), ignoreCase = true) }; continue }
                 if (k.trim() == NANO_QUALITY) { nanoPoor = v.trim() == "poor"; continue }
+                if (k.trim() == GUESSED) { guessedNames = v.split(',').map { it.trim() }.filter { FIELD.matches(it) }.toSet(); continue }
                 if (k.trim() == NANO_LIMIT) { nanoLimit = NanoLimits.Kind.entries.firstOrNull { it.name.equals(v.trim(), ignoreCase = true) }; continue }
                 if (k.trim() == GARBLED) { garbled = v.split(',').map { it.trim() }.filter { FIELD.matches(it) }.toSet(); continue }
                 if (k.trim() == CLOUD_MODEL) { cloudModel = v.trim().takeIf { MODEL_ID.matches(it) }; continue }
@@ -110,7 +119,7 @@ data class ExtractionTrail(
                     TierOutcome.entries.firstOrNull { it.name.equals(v.trim(), ignoreCase = true) }?.let { map[tier] = it }
                 }
             }
-            return ExtractionTrail(map, guessed, cloudWhy, cloudModel, nanoPoor, garbled, nanoLimit)
+            return ExtractionTrail(map, guessed, cloudWhy, cloudModel, nanoPoor, garbled, nanoLimit, guessedNames)
         }
     }
 }

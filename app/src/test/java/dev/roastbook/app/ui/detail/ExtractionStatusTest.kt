@@ -209,6 +209,29 @@ class ExtractionStatusTest {
         return out
     }
 
+    /** Blanks a model left and the label text filled are named as guesses, unless the person has since edited them. */
+    @Test fun fieldsFilledFromTheLabelTextAreNamedAsGuesses() {
+        var out: List<String?> = emptyList()
+        val base = coffee(ExtractionSource.NANO, trail = "nano=read;guessed=elevationM,originCountry,varietal")
+        compose.setContent {
+            out = listOf(
+                guessedFieldsLine(base),
+                guessedFieldsLine(base.copy(userEdited = listOf("originCountry", "elevationM"))),
+                guessedFieldsLine(base.copy(userEdited = listOf("originCountry", "elevationM", "varietal"))),
+                guessedFieldsLine(coffee(ExtractionSource.NANO, trail = "nano=read")),
+            )
+        }
+        compose.waitForIdle()
+        assertEquals(
+            listOf(
+                str(R.string.source_guess_fields, "Country, varietal, and elevation"),
+                str(R.string.source_guess_fields, "Varietal"),
+                null, null,
+            ),
+            out,
+        )
+    }
+
     @Test fun eachReaderIsNamedUnderTheFacts() {
         assertEquals(
             listOf(R.string.source_line_nano, R.string.source_line_local, R.string.source_line_cloud, R.string.source_line_ocr).map { str(it) },
