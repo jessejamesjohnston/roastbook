@@ -307,6 +307,29 @@ class ExtractorTest {
         assertEquals(now + 150_000L, db.coffeeDao().get(id)!!.nextAttemptAt)
     }
 
+    /** A wait longer than a few minutes is not waited out: the bag reads what it can now and says why. */
+    @Test fun aUsageLimitThatNamesAnHoursLongWaitReadsWhatItCanNow() = runBlocking {
+        val id = seedCoffee()
+        val out = extractor(FakeNano(answers = mutableListOf({ throw quotaRefusal(java.time.Duration.ofHours(2)) })), FakeOcr("ROAST DATE 03NOV26")).run(id)
+        assertEquals(ExtractionSource.OCR, out.source)
+        val c = db.coffeeDao().get(id)!!
+        assertEquals(CoffeeState.LOGGED, c.state)
+        val trail = ExtractionTrail.decode(c.extractionTrail)
+        assertEquals(TierOutcome.NOT_READY, trail[Tier.NANO])
+        assertEquals(NanoLimits.Kind.READS, trail.nanoLimit)
+        assertFalse(health.failing)
+    }
+
+    /** The battery limit is recorded as such, so the card can say what really happened. */
+    @Test fun theBatteryLimitIsRecordedAsTheBatteryLimit() = runBlocking {
+        val id = seedCoffee()
+        val battery = com.google.mlkit.genai.common.GenAiException("battery", null, 27)
+        extractor(FakeNano(answers = mutableListOf({ throw battery })), FakeOcr("text")).run(id)
+        val trail = ExtractionTrail.decode(db.coffeeDao().get(id)!!.extractionTrail)
+        assertEquals(TierOutcome.BUSY, trail[Tier.NANO])
+        assertEquals(NanoLimits.Kind.BATTERY, trail.nanoLimit)
+    }
+
     @Test fun aSecondRefusalWaitsLongerAndTheThirdReadsWhatItCanWithoutTheBuiltInAi() = runBlocking {
         val id = seedCoffee()
         extractor(FakeNano(answers = mutableListOf({ throw quotaRefusal() })), FakeOcr("text")).run(id)
@@ -319,6 +342,7 @@ class ExtractorTest {
         val c = db.coffeeDao().get(id)!!
         assertEquals(CoffeeState.LOGGED, c.state)
         assertEquals(TierOutcome.NOT_READY, ExtractionTrail.decode(c.extractionTrail)[Tier.NANO])
+        assertEquals(NanoLimits.Kind.READS, ExtractionTrail.decode(c.extractionTrail).nanoLimit)
         assertFalse(health.failing)
     }
 

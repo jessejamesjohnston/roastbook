@@ -39,6 +39,7 @@ import dev.roastbook.app.data.db.CoffeeEntity
 import dev.roastbook.app.data.db.CoffeeState
 import dev.roastbook.app.data.db.ExtractionSource
 import dev.roastbook.app.extraction.ExtractionTrail
+import dev.roastbook.app.extraction.NanoLimits
 import dev.roastbook.app.extraction.Tier
 import dev.roastbook.app.extraction.TierOutcome
 import dev.roastbook.app.extraction.WhatHappenedRules
@@ -54,10 +55,15 @@ fun isPreparingReader(state: CoffeeState, trail: String?): Boolean =
  */
 @Composable
 fun extractingLines(trail: String?, nextAttemptAt: Long?): Pair<String, String> {
-    val nano = ExtractionTrail.decode(trail)[Tier.NANO]
+    val decoded = ExtractionTrail.decode(trail)
+    val nano = decoded[Tier.NANO]
     val retryAt = nextAttemptAt?.takeIf { it > System.currentTimeMillis() }
     if (nano == TierOutcome.BUSY) {
-        val sub = if (retryAt != null) stringResource(R.string.row_busy_retry_at, English.clock(retryAt)) else stringResource(R.string.row_busy_subtitle)
+        val battery = decoded.nanoLimit == NanoLimits.Kind.BATTERY
+        val sub = when {
+            retryAt != null -> stringResource(if (battery) R.string.row_battery_retry_at else R.string.row_busy_retry_at, English.clock(retryAt))
+            else -> stringResource(if (battery) R.string.row_battery_subtitle else R.string.row_busy_subtitle)
+        }
         return stringResource(R.string.row_extracting) to sub
     }
     if (nano != TierOutcome.PREPARING) {

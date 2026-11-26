@@ -183,7 +183,7 @@ class Extractor @Inject constructor(
                 return finish(coffeeId, ExtractionSource.NANO, step.facts, ocrText, note, read, baseline = coffee, garbled = !step.wellFormed)
             }
             is NanoStep.Stop -> return step.outcome
-            is NanoStep.Fall -> ModelStep.Next(trail.with(Tier.NANO, step.outcome), step.why)
+            is NanoStep.Fall -> ModelStep.Next(trail.with(Tier.NANO, step.outcome).copy(nanoLimit = step.limit), step.why)
         }
 
         // 3. The on-device reader, if this device has it.
@@ -316,7 +316,8 @@ class Extractor @Inject constructor(
         data class Read(val facts: BagFacts, val poor: Boolean = false, val wellFormed: Boolean = true) : NanoStep
         /** The run ends here: the row was parked for a retry, or left for the foreground. */
         data class Stop(val outcome: ExtractionOutcome) : NanoStep
-        data class Fall(val outcome: TierOutcome, val why: String) : NanoStep
+        /** [limit]: the usage limit that ended Nano's turn, when one did, so the card can name it. */
+        data class Fall(val outcome: TierOutcome, val why: String, val limit: NanoLimits.Kind? = null) : NanoStep
     }
 
     private suspend fun nanoStep(
@@ -377,7 +378,7 @@ class Extractor @Inject constructor(
         } catch (e: TransientExtractionException) {
             return park(coffeeId, pages, ocrText, "transient: ${e.message}", delayed = false)
         } catch (e: Exception) {
-            NanoLimits.waitMs(e)?.let { wait -> return park(coffeeId, pages, ocrText, "nano usage limit", delayed = false, limitWaitMs = wait) }
+            NanoLimits.refusal(e)?.let { refused -> return park(coffeeId, pages, ocrText, "nano usage limit", delayed = false, limit = refused) }
             Log.w(TAG, "nano failed", e)
             nanoHealth.recordNano(ok = false, reason = "${e::class.simpleName}: ${e.message?.take(120)}")
             return NanoStep.Fall(TierOutcome.FAILED, "nano threw ${e::class.simpleName}: ${e.message?.take(160)}")
@@ -408,31 +409,38 @@ class Extractor @Inject constructor(
 
     /**
      * Nano could not answer yet, for a reason that may clear. Count it and leave the row EXTRACTING
-     * (a download waits 3, then 5 minutes; a usage limit [limitWaitMs] waits 1, then 2 minutes, or
-     * longer when AICore named a longer wait; a background block waits for the next foreground).
-     * The last allowed attempt falls through to the other tiers instead, so a row never spins
-     * forever. A usage limit never marks Nano as failing on this device.
+     * (a download waits 3, then 5 minutes; a usage [limit] waits 1, then 2 minutes, or longer when
+     * AICore named a longer wait; a background block waits for the next foreground). The last
+     * allowed attempt falls through to the other tiers instead, so a row never spins forever, and so
+     * does a usage limit that names a wait over [MAX_LIMIT_WAIT_MS]: a bag never sits on "Reading
+     * the bag…" for long. A usage limit never marks Nano as failing on this device.
      */
     private suspend fun park(
-        coffeeId: String, pages: List<OcrPage>, ocrText: String, note: String, delayed: Boolean, limitWaitMs: Long? = null,
+        coffeeId: String, pages: List<OcrPage>, ocrText: String, note: String, delayed: Boolean, limit: NanoLimits.Refusal? = null,
     ): NanoStep {
         val attempts = (dao.get(coffeeId)?.extractionAttempts ?: 0) + 1
-        val limited = limitWaitMs != null
-        if (attempts >= MAX_ATTEMPTS) {
+        val limited = limit != null
+        if (attempts >= MAX_ATTEMPTS || (limit != null && limit.waitMs > MAX_LIMIT_WAIT_MS)) {
             Log.w(TAG, "nano: giving up on $coffeeId after $attempts attempts: $note")
             if (!limited) nanoHealth.recordNano(ok = false, reason = note)
-            return NanoStep.Fall(if (delayed || limited) TierOutcome.NOT_READY else TierOutcome.FAILED, "nano gave up after $attempts attempts: $note")
+            return NanoStep.Fall(
+                if (delayed || limited) TierOutcome.NOT_READY else TierOutcome.FAILED, "nano gave up after $attempts attempts: $note", limit?.kind,
+            )
         }
         val step = (attempts - 1).coerceAtLeast(0)
         val at = when {
-            limitWaitMs != null -> clock.now() + maxOf(limitWaitMs, LIMIT_DELAYS_MS[step.coerceAtMost(LIMIT_DELAYS_MS.lastIndex)])
+            limit != null -> clock.now() + maxOf(limit.waitMs, LIMIT_DELAYS_MS[step.coerceAtMost(LIMIT_DELAYS_MS.lastIndex)])
             delayed -> clock.now() + RETRY_DELAYS_MS[step.coerceAtMost(RETRY_DELAYS_MS.lastIndex)]
             else -> null
         }
         db.withTransaction {
             dao.get(coffeeId)?.let {
                 val trail = ExtractionTrail.decode(it.extractionTrail)
-                    .let { t -> if (delayed) t.with(Tier.NANO, TierOutcome.PREPARING) else if (limited) t.with(Tier.NANO, TierOutcome.BUSY) else t }
+                    .let { t ->
+                        if (delayed) t.with(Tier.NANO, TierOutcome.PREPARING)
+                        else if (limit != null) t.with(Tier.NANO, TierOutcome.BUSY).copy(nanoLimit = limit.kind)
+                        else t
+                    }
                 dao.update(
                     it.copy(extractionAttempts = attempts, extractionMeta = note, nextAttemptAt = at, extractionTrail = trail.encode()),
                 )
@@ -510,6 +518,8 @@ class Extractor @Inject constructor(
         val RETRY_DELAYS_MS = longArrayOf(3 * 60_000L, 5 * 60_000L)
         /** Parked retries after the built-in AI's usage limit refused a read: +1 minute, then +2; the third refusal falls through. */
         val LIMIT_DELAYS_MS = longArrayOf(60_000L, 2 * 60_000L)
+        /** The longest usage-limit wait a bag sits out; a longer one is not waited for, and the bag reads what it can now. */
+        const val MAX_LIMIT_WAIT_MS = 5 * 60_000L
         /** After an unexpected error the row is tried again after this times its attempt count. */
         const val FAILURE_RETRY_MS = 60_000L
         /** Images a model tier is given; the on-device reader's engine takes at most this many (LiteRtLocalReader). */

@@ -117,6 +117,17 @@ class WhatHappenedTest {
         assertEquals(R.string.what_ocr_nano_failed, explain(ExtractionSource.OCR, "nano=failed;local=unsupported;cloud=off;guess=1")!!.line)
     }
 
+    /** After the built-in AI's usage limit, the card says which limit, not that it wasn't ready. */
+    @Test fun aReadAfterAUsageLimitNamesTheLimit() {
+        val reads = explain(ExtractionSource.OCR, "nano=not_ready;nanolimit=reads;local=unsupported;cloud=off;guess=1")!!
+        assertEquals(R.string.what_ocr_nano_busy, reads.line)
+        assert(reads.poor && reads.offerReread)
+        assertEquals(R.string.what_ocr_nano_battery, explain(ExtractionSource.OCR, "nano=not_ready;nanolimit=battery;guess=1")!!.line)
+        val trail = ExtractionTrail().with(Tier.NANO, TierOutcome.BUSY).copy(nanoLimit = NanoLimits.Kind.BATTERY)
+        assertEquals("nano=busy;nanolimit=battery", trail.encode())
+        assertEquals(trail, ExtractionTrail.decode(trail.encode()))
+    }
+
     @Test fun nothingGuessedSaysSo() {
         assertEquals(R.string.what_guess_none, explain(ExtractionSource.OCR, "nano=unsupported;cloud=off;guess=0")!!.guess)
     }

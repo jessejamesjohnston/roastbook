@@ -11,9 +11,10 @@ All notable changes to Roastbook are recorded here. The format follows
 - On a Chromebook or Googlebook, links that leave the app (About, a roaster's site) open in your
   browser as a normal tab. Phones and tablets keep the in-app browser tab, or use the browser when
   none is available.
-- When the built-in AI needs a break after reading several bags in a row, the bag keeps reading:
-  it says so and when it will try again (after a minute, then two). It no longer falls back to the
-  label text at once or reports the built-in AI as failing.
+- When the built-in AI needs a break after reading several bags in a row, or Android pauses it to
+  save battery, the bag keeps reading: it says which, and when it will try again (after a minute,
+  then two, never longer than five). It no longer falls back to the label text at once or reports
+  the built-in AI as failing.
 
 ### Fixed
 

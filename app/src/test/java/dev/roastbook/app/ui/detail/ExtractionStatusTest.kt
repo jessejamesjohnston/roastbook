@@ -154,6 +154,15 @@ class ExtractionStatusTest {
         )
     }
 
+    /** The battery limit has its own sentence: "after reading several bags" would be false there. */
+    @Test fun aReadWaitingOutTheBatteryLimitSaysSo() {
+        val at = System.currentTimeMillis() + 90_000
+        assertEquals(
+            listOf(str(R.string.row_extracting) to str(R.string.row_battery_retry_at, englishTime(at)), str(R.string.row_extracting) to str(R.string.row_battery_subtitle)),
+            lines("nano=busy;nanolimit=battery" to at, "nano=busy;nanolimit=battery" to null),
+        )
+    }
+
     @Test fun anOrdinaryReadSaysItIsReadingTheBag() {
         assertEquals(listOf(str(R.string.row_extracting) to str(R.string.row_extracting_subtitle)), lines(null to null))
     }
