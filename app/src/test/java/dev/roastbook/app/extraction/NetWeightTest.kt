@@ -206,6 +206,41 @@ class NetWeightTest {
         }
     }
 
+    /** Off a net line a weight must look like a bag (50 g or more) and not like a recipe, serving, dose, scoop or "per" amount. */
+    @Test fun aRecipeServingOrSmallWeightOffANetLineIsNeverTheBagsWeight() {
+        for (t in listOf("Use 30 g per liter of water", "Serving size 30 g", "Scoop 28 g", "1 sachet = 28 g", "Each drip bag 25 g",
+            "Brew 60 g per liter", "Dose 18 g", "40 g", "Recipe: 250 g of water", "Pour 300 g water")) {
+            assertNull(t, NetWeight.fromLabel(t))
+        }
+        assertEquals(28, NetWeight.fromLabel("NET WT 1 OZ (28 G)"))
+        assertEquals(30, NetWeight.fromLabel("NET WT 30 g"))
+        assertEquals(340, NetWeight.fromLabel("340 g"))
+    }
+
+    /** A pair whose sides disagree beyond the precise side's rounding isn't trusted at all. */
+    @Test fun aSmallPairThatDisagreesByTwoGramsIsNotTrusted() {
+        assertNull(NetWeight.printed("NET WT 1 OZ (26 G)", netLinesOnly = true))
+        assertEquals(28, NetWeight.reconcile(28, "NET WT 1 OZ (26 G)"))
+        assertEquals(NetWeight.Printed(28, true), NetWeight.printed("NET WT 1 OZ (28 G)", netLinesOnly = true))
+    }
+
+    @Test fun eachPartOfTheRuleHoldsOnItsOwnLine() {
+        // A pound followed by a pound or more of ounces is neither one weight nor a sum.
+        assertNull(NetWeight.printed("NET WT 1 LB (18 OZ)", netLinesOnly = true))
+        // Two net lines that disagree.
+        assertNull(NetWeight.printed("NET WT 12 OZ\nNet weight 250 g", netLinesOnly = true))
+        // "NT WT" and the estimated-weight mark are read, exactly.
+        assertEquals(NetWeight.Printed(340, true), NetWeight.printed("NT WT 12 OZ (340 g)", netLinesOnly = true))
+        assertEquals(NetWeight.Printed(340, true), NetWeight.printed("NET WT 340 g e (12 oz)", netLinesOnly = true))
+        assertEquals(NetWeight.Printed(340, true), NetWeight.printed("NET WT 340 g ℮ 12 oz", netLinesOnly = true))
+        // "0Z" is ounces only after the net words, never in a code that happens to share a line with "net".
+        assertNull(NetWeight.fromLabel("Lot 12 0Z net"))
+        assertNull(NetWeight.fromLabel("Model 2 0Z net 4"))
+        // Both printings coarse: the guess follows the metric side, or there is none.
+        assert(NetWeight.fromLabel("NET WT 0.2 kg (0.4 lb)") in setOf(200, null))
+        assert(NetWeight.fromLabel("NET WT 0.3 kg (0.7 lb)") in setOf(300, null))
+    }
+
     @Test fun aBlankBagSizeIsNeverFilledByTheCorrection() {
         assertNull(NetWeight.reconcile(null, "Net wt. 12 oz (340 g)"))
     }

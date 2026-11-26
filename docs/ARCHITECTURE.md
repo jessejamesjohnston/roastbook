@@ -104,9 +104,13 @@ Rules the code holds to:
   each other ("12 oz (340 g)", "1 lb (16 oz)"; "0.4 lb (179 g)" is too coarse
   to confirm); one printed unit replaces only a figure outside that band; a
   blank is guessed only from an unambiguous reading; anything ambiguous leaves
-  things as they are. It reads whole numbers, decimals, fractions, mixed
+  things as they are. Off a net line a weight must be 50 g or more and not
+  sit on a recipe, serving, dose, scoop or "per" line; a pair whose sides
+  differ by more than rounding (2%, 1 to 2 g, plus decimal places) is not
+  trusted at all, and a pair of two coarse printings takes the metric side.
+  It reads whole numbers, decimals, fractions, mixed
   numbers, pounds-and-ounces, the same weight restated in brackets in either
-  order, a period between tokens, and "0Z" for "oz" on a net line. Lot codes,
+  order, a period between tokens, and "0Z" for "oz" after a line's net words. Lot codes,
   prices, dates, multipacks, ranges and space-split numbers are never read as
   the bag's weight. A digit misread as another digit on a single unit ("7 oz"
   on a 1 oz sample) can't be seen; it can only reach a blank or a figure that

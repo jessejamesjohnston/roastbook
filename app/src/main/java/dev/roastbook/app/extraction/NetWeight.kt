@@ -36,6 +36,15 @@ object NetWeight {
     /** Grams a retail coffee bag can hold: from a 1 oz sample to a 2.5 kg bag. */
     val BAND = 25..2500
 
+    /** The smallest weight read from a line that doesn't say "net" (a 2 oz bag is 57 g). */
+    private const val OFF_NET_FLOOR = 50
+
+    /** Words of a recipe, a serving, a dose, a scoop or a "per" amount: such a line never states the bag's weight. */
+    private val NOT_THE_BAG = Regex(
+        """\b(?:per|serving|servings|dose|doses|scoop|scoops|sachet|sachets|recipe|brew|brewing|use|pour|ratio|each|cup|cups|portion|water)\b""",
+        RegexOption.IGNORE_CASE,
+    )
+
     /** How close the coarser of two printings must be to confirm the other (2.2 lb for 1 kg is 2.3%). */
     private const val CONFIRMS = 0.03
 
@@ -126,8 +135,9 @@ object NetWeight {
      * multipack, a range or a split number, has no readings, which refuses the line.
      */
     private fun quantities(line: String): List<Quantity> = QUANTITY.findAll(line).filter { m ->
-        // "0Z" counts as ounces only on a line that says "net", where nothing else is likely to follow a number.
-        m.groupValues[3].isEmpty() || NET_LINE.containsMatchIn(line)
+        // "0Z" counts as ounces only after a line's net words ("NET WT 12 0Z"), never in a code that
+        // merely shares a line with "net" ("Lot 12 0Z net").
+        m.groupValues[3].isEmpty() || NET_LINE.find(line)?.let { it.range.first < m.range.first } == true
     }.map { m ->
         val unit = unitOf(m.groupValues[2].ifEmpty { "oz" })
         val untrusted = BEFORE_UNTRUSTED.containsMatchIn(line.substring(0, m.range.first)) ||
@@ -145,7 +155,7 @@ object NetWeight {
      * "16 OZ (1 LB)") becomes one restated quantity; pounds followed by ounces under a pound ("1 LB 4
      * OZ") become their sum. Anything else is left as two quantities, which refuses the line.
      */
-    private fun imperialPairs(line: String, qs: List<Quantity>): List<Quantity> {
+    private fun imperialPairs(line: String, qs: List<Quantity>, floor: Int): List<Quantity> {
         val out = mutableListOf<Quantity>()
         var i = 0
         while (i < qs.size) {
@@ -154,7 +164,7 @@ object NetWeight {
             if (next != null && !q.metric && !next.metric && q.unit != next.unit && joined(line, q, next) &&
                 q.grams.isNotEmpty() && next.grams.isNotEmpty()
             ) {
-                val restated = precise(q, next)
+                val restated = precise(q, next, floor)
                 if (restated != null) {
                     out += restated
                     i += 2
@@ -179,12 +189,14 @@ object NetWeight {
      * other) only when the coarser printing is itself within [CONFIRMS] of the weight: "0.4 lb (179 g)"
      * agrees, but 0.4 lb covers 159 to 204 g, so it can't tell 179 from a misread 170.
      */
-    private fun precise(a: Quantity, b: Quantity): Quantity? {
-        val x = inBand(a) ?: return null
-        val y = inBand(b) ?: return null
+    private fun precise(a: Quantity, b: Quantity, floor: Int): Quantity? {
+        val x = inBand(a, floor) ?: return null
+        val y = inBand(b, floor) ?: return null
         if (!agree(x, y, minOf(a.slack, b.slack))) return null
         val confirms = maxOf(a.slack, b.slack) <= CONFIRMS * maxOf(x, y)
         val first = when {
+            // Two coarse printings ("0.2 kg (0.4 lb)") pin nothing down: the bag's metric figure stands.
+            !confirms && a.metric != b.metric -> a.metric
             a.slack < b.slack -> true
             b.slack < a.slack -> false
             else -> a.metric || !b.metric
@@ -195,29 +207,35 @@ object NetWeight {
 
     /**
      * Two printings of one weight: labels round a conversion to the gram (8 oz as 227 g, 5 lb as 2268
-     * or 2270 g), so whole amounts differ by 2 g at most; an amount with decimals may also be off by
-     * half its last place ("2.2 lb" for 1 kg). A digit misread as another digit moves a figure by 6
-     * or more, so a pair it touches stops agreeing.
+     * or 2270 g), so they may differ by 2% of the weight, at least 1 g and at most 2 g; an amount
+     * with decimals may also be off by half its last place ("2.2 lb" for 1 kg). On a small bag that
+     * keeps a misread digit out: 1 oz is 28 g, so "1 OZ (26 G)" doesn't agree. A digit misread as
+     * another digit moves a larger figure by 6 or more.
      */
-    private fun agree(a: Int, b: Int, slack: Double = 0.0) = abs(a - b) <= 2.0 + slack
+    private fun agree(a: Int, b: Int, slack: Double = 0.0) = abs(a - b) <= (0.02 * maxOf(a, b)).coerceIn(1.0, 2.0) + slack
 
-    /** The single in-band reading of [q], or null when there is none or more than one. */
-    private fun inBand(q: Quantity): Int? = q.grams.filter { it in BAND }.distinct().singleOrNull()
+    /** The single reading of [q] from [floor] to the band's top, or null when there is none or more than one. */
+    private fun inBand(q: Quantity, floor: Int): Int? = q.grams.filter { it in floor..BAND.last }.distinct().singleOrNull()
 
     private fun readLine(line: String): LineReading? {
+        val netLine = NET_LINE.containsMatchIn(line)
+        // Off a net line, a recipe, serving, dose, scoop or "per" amount is never the bag's weight.
+        if (!netLine && NOT_THE_BAG.containsMatchIn(line)) return null
+        // A 1 oz sample states its weight on a net line; elsewhere a weight that small is a dose.
+        val floor = if (netLine) BAND.first else OFF_NET_FLOOR
         val found = quantities(line)
         if (found.isEmpty()) return null
         // A weight with an amount that can't be read makes the whole line untrustworthy: reading only
         // the rest of it ("4 OZ" out of "I LB 4 OZ") would name the wrong weight.
         if (found.any { it.grams.isEmpty() }) return LineReading.Refused
-        val qs = imperialPairs(line, found)
+        val qs = imperialPairs(line, found, floor)
         if (qs.size == 1) {
             // A weight smaller than any bag (a serving size, "Net Carbs 0g", "Suite 5G") is not the bag's.
-            if (qs[0].grams.all { it < BAND.first }) return null
-            return inBand(qs[0])?.let { LineReading.Weight(it, dual = qs[0].restated) } ?: LineReading.Refused
+            if (qs[0].grams.all { it < floor }) return null
+            return inBand(qs[0], floor)?.let { LineReading.Weight(it, dual = qs[0].restated) } ?: LineReading.Refused
         }
         if (qs.size == 2 && qs[0].metric != qs[1].metric && joined(line, qs[0], qs[1])) {
-            val one = precise(qs[0], qs[1]) ?: return LineReading.Refused
+            val one = precise(qs[0], qs[1], floor) ?: return LineReading.Refused
             return LineReading.Weight(one.grams.single(), dual = one.restated)
         }
         return LineReading.Refused
