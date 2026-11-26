@@ -5,7 +5,6 @@ import android.content.Intent
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -62,6 +61,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import dev.roastbook.app.R
+import dev.roastbook.app.util.ExternalLinks
 import dev.roastbook.app.ui.components.NOTIFICATION_PERMISSION
 import dev.roastbook.app.ui.components.PermissionAsk
 import dev.roastbook.app.ui.components.rememberPermissionAsk
@@ -90,7 +90,7 @@ internal fun AboutCard(
     var aboutMessage by remember { mutableStateOf<Pair<Int, String>?>(null) }
     fun openPage(url: String) {
         aboutMessage = null
-        val opened = runCatching { CustomTabsIntent.Builder().build().launchUrl(context, url.toUri()) }.isSuccess
+        val opened = ExternalLinks.open(context, url.toUri())
         if (!opened) aboutMessage = R.string.about_no_browser to url
     }
     // Turning on the weekly check asks for the notification permission it needs to tell anyone

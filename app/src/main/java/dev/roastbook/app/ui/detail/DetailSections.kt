@@ -1,6 +1,5 @@
 package dev.roastbook.app.ui.detail
 
-import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -56,6 +55,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import dev.roastbook.app.R
+import dev.roastbook.app.util.ExternalLinks
 import dev.roastbook.app.cloud.Enricher
 import dev.roastbook.app.cloud.LookupResult
 import dev.roastbook.app.data.db.CoffeeEntity
@@ -243,7 +243,7 @@ internal fun RoasterLinks(c: CoffeeEntity, tint: Color, vm: DetailViewModel) {
     val query = listOfNotNull(c.roaster, c.coffeeName, "coffee").joinToString(" ")
     fun open(url: String) {
         val uri = WebLinks.uri(url) ?: return
-        runCatching { CustomTabsIntent.Builder().build().launchUrl(context, uri) }
+        ExternalLinks.open(context, uri)
     }
     if (c.roaster.isNullOrBlank() && c.roasterUrl == null) return
     CardFrame(tint) {

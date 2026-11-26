@@ -534,6 +534,16 @@ class SettingsScreenTest {
         assertEquals(str(R.string.privacy_policy_url), shadowOf(compose.activity).nextStartedActivity.dataString)
     }
 
+    /** On a laptop-class device a page opens as a normal browser tab, never inside the app. */
+    @Test fun onALaptopHelpOpensAsANormalBrowserTab() {
+        shadowOf(context.packageManager).setSystemFeature(android.content.pm.PackageManager.FEATURE_PC, true)
+        show()
+        aboutRow(R.string.about_help, R.string.about_help_hint, R.string.about_opens_browser).performClick()
+        val help = shadowOf(compose.activity).nextStartedActivity
+        assertEquals(str(R.string.support_url), help.dataString)
+        assertFalse(help.hasExtra(androidx.browser.customtabs.CustomTabsIntent.EXTRA_SESSION))
+    }
+
     @Test fun withNoBrowserTheRowSaysWhichPageCouldNotOpen() {
         shadowOf(RuntimeEnvironment.getApplication()).checkActivities(true)
         show()
