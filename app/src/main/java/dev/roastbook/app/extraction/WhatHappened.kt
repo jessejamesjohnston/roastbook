@@ -57,6 +57,8 @@ object WhatHappenedRules {
             // The reader's own card is on the page, offering it or following its download: one next step is enough.
             readerCardShown -> null
             readerOffered && (trail[Tier.NANO] == TierOutcome.UNSUPPORTED || nanoFailing) -> R.string.what_hint_download
+            // After a usage limit the key is never used, so it isn't suggested; Read again is the next step.
+            trail.nanoLimit != null -> null
             !hasKey -> R.string.what_hint_key
             else -> null
         }

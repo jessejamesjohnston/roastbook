@@ -134,6 +134,15 @@ class WhatHappenedTest {
         assertEquals(R.string.what_local_after_battery, explain(ExtractionSource.LOCAL, "nano=not_ready;nanolimit=battery;local=read")!!.line)
     }
 
+    /** A Gemini key is never used after a usage limit, so the card doesn't suggest adding one there. */
+    @Test fun noKeyHintAfterAUsageLimit() {
+        for (kind in listOf("reads", "battery")) {
+            val w = explain(ExtractionSource.OCR, "nano=not_ready;nanolimit=$kind;local=absent;cloud=skipped;guess=1")!!
+            assertEquals(null, w.hint)
+            assert(w.offerReread)
+        }
+    }
+
     @Test fun nothingGuessedSaysSo() {
         assertEquals(R.string.what_guess_none, explain(ExtractionSource.OCR, "nano=unsupported;cloud=off;guess=0")!!.guess)
     }
