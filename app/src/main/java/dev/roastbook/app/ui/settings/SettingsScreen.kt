@@ -1,6 +1,5 @@
 package dev.roastbook.app.ui.settings
 
-import android.text.format.DateUtils
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -90,10 +89,7 @@ fun SettingsScreen(
     }
 
     ui.pendingRestore?.let { p ->
-        val date = DateUtils.formatDateTime(
-            context, p.manifest.createdAt,
-            DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_YEAR or DateUtils.FORMAT_SHOW_TIME,
-        )
+        val date = SettingsViewModel.backupMadeAt(p.manifest.createdAt)
         val coffees = pluralStringResource(R.plurals.coffees, p.manifest.coffees, p.manifest.coffees)
         val photos = pluralStringResource(R.plurals.photos, p.manifest.photos, p.manifest.photos)
         AlertDialog(

@@ -530,6 +530,22 @@ class SettingsViewModelTest {
         }
     }
 
+    @Test fun aBackupsDateIsEnglishWhateverThePhonesLanguage() {
+        val saved = java.util.Locale.getDefault()
+        val zone = java.time.ZoneId.of("Europe/Berlin")
+        try {
+            for (locale in listOf(java.util.Locale.US, java.util.Locale.GERMANY, java.util.Locale.forLanguageTag("ar-EG"), java.util.Locale.JAPAN)) {
+                java.util.Locale.setDefault(locale)
+                val afternoon = java.time.ZonedDateTime.of(2026, 3, 9, 15, 4, 0, 0, zone).toInstant().toEpochMilli()
+                val morning = java.time.ZonedDateTime.of(2026, 12, 31, 0, 30, 0, 0, zone).toInstant().toEpochMilli()
+                assertEquals("$locale", "Mar 9, 2026 at 3:04 PM", SettingsViewModel.backupMadeAt(afternoon, zone))
+                assertEquals("$locale", "Dec 31, 2026 at 12:30 AM", SettingsViewModel.backupMadeAt(morning, zone))
+            }
+        } finally {
+            java.util.Locale.setDefault(saved)
+        }
+    }
+
     @Test fun theLastBackupTimeIsEnglishWhateverThePhonesLanguage() {
         // The app ships English strings only, so the time must not switch language mid-line.
         val saved = java.util.Locale.getDefault()

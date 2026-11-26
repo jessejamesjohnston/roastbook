@@ -323,11 +323,39 @@ class SettingsScreenTest {
         pickBackup(n = 2)
         waitForText(str(R.string.settings_restore_title))
         val p = rig.vm.ui.value.pendingRestore!!
-        val date = DateUtils.formatDateTime(context, p.manifest.createdAt, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_YEAR or DateUtils.FORMAT_SHOW_TIME)
+        val date = SettingsViewModel.backupMadeAt(p.manifest.createdAt)
         text(
             R.string.settings_restore_body, date,
             context.resources.getQuantityString(R.plurals.coffees, 2, 2), context.resources.getQuantityString(R.plurals.photos, 0, 0),
         ).assertExists()
+    }
+
+    /** The app's strings are English only, so the backup's date inside the sentence is English too. */
+    @Test @Config(qualifiers = "de")
+    fun theRestoreQuestionDatesTheBackupInEnglishOnAGermanDevice() = restoreDateIsEnglish()
+
+    @Test @Config(qualifiers = "ar")
+    fun theRestoreQuestionDatesTheBackupInEnglishOnAnArabicDevice() {
+        // Only the date is checked here: the counts come from plurals, formatted by Android.
+        val english = restoreQuestionShown()
+        compose.onNode(hasText(english, substring = true)).assertExists()
+    }
+
+    private fun restoreDateIsEnglish() {
+        val english = restoreQuestionShown()
+        text(
+            R.string.settings_restore_body, english,
+            context.resources.getQuantityString(R.plurals.coffees, 2, 2), context.resources.getQuantityString(R.plurals.photos, 0, 0),
+        ).assertExists()
+    }
+
+    /** Opens the restore question for a two-coffee backup; returns its date as an English reader expects it. */
+    private fun restoreQuestionShown(): String {
+        pickBackup(n = 2)
+        waitForText(str(R.string.settings_restore_title))
+        val created = rig.vm.ui.value.pendingRestore!!.manifest.createdAt
+        return java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy 'at' h:mm a", java.util.Locale.US)
+            .format(java.time.Instant.ofEpochMilli(created).atZone(java.time.ZoneId.systemDefault()))
     }
 
     @Test fun confirmingTheRestoreReplacesTheLibraryAndSaysSo() {

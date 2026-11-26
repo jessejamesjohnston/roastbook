@@ -330,6 +330,15 @@ class SettingsViewModel @Inject constructor(
             }
         }
 
+        /**
+         * When a backup was made, as it reads inside the restore question ("This backup is from Nov
+         * 26, 2026 at 3:04 PM and has …"). English whatever the phone's language, for the same reason
+         * as [lastBackupWhen].
+         */
+        fun backupMadeAt(at: Long, zone: java.time.ZoneId = java.time.ZoneId.systemDefault()): String =
+            java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy 'at' h:mm a", java.util.Locale.US)
+                .format(java.time.Instant.ofEpochMilli(at).atZone(zone))
+
         fun humanBytes(b: Long): String = when {
             b >= 1L shl 20 -> "%.1f MB".format(java.util.Locale.US, b / (1024f * 1024f))
             b >= 1L shl 10 -> "%d KB".format(java.util.Locale.US, b / 1024)
