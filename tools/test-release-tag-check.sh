@@ -180,23 +180,30 @@ run_case "annotated, unsigned" refuse "has no SSH signature" "${PREFIX}_TAG_KEY=
 # 8. OpenPGP-signed with a valid key in this keyring; refused before gpg is ever run.
 retag; g -c gpg.format=openpgp -c user.signingkey="$GPG_KEY" tag -s "$TAG" -m "$APP $VERSION" "$COMMIT_A"
 run_case "OpenPGP-signed (gpg never called)" refuse "carries an OpenPGP or X.509 signature" "${PREFIX}_TAG_KEY=$OWNER_FP"
-# 9. Signed by a key the file does not list.
+# 9. A correctly SSH-signed tag with an OpenPGP block appended, written as its own object: git
+#    would treat the last block as the signature and run gpg on it.
+retag; g tag -s "$TAG" -m "$APP $VERSION" "$COMMIT_A"
+CRAFTED="$( { g cat-file tag "$TAG"; printf -- '-----BEGIN PGP MESSAGE-----\n\nAAAA\n-----END PGP MESSAGE-----\n'; } \
+    | g hash-object -t tag -w --stdin)"
+g update-ref "refs/tags/$TAG" "$CRAFTED"
+run_case "SSH-signed with an OpenPGP block appended (gpg never called)" refuse "carries an OpenPGP or X.509 signature" "${PREFIX}_TAG_KEY=$OWNER_FP"
+# 10. Signed by a key the file does not list.
 retag; g -c user.signingkey="$HOME/.ssh/stranger" tag -s "$TAG" -m "$APP $VERSION" "$COMMIT_A"
 run_case "unlisted SSH key" refuse "does not verify against" "${PREFIX}_TAG_KEY=$OWNER_FP"
-# 10. Signed by a key the file lists, but not the pinned one.
+# 11. Signed by a key the file lists, but not the pinned one.
 retag; g -c user.signingkey="$HOME/.ssh/other" tag -s "$TAG" -m "$APP $VERSION" "$COMMIT_A"
 run_case "listed key that is not the pinned key" refuse "signed by $OTHER_FP (other@example.org), not by the release-tag key" "${PREFIX}_TAG_KEY=$OWNER_FP"
-# 11. A correctly signed tag object made for another version, placed under this tag's name.
+# 12. A correctly signed tag object made for another version, placed under this tag's name.
 retag; g tag -s v0.9.0 -m "$APP 0.9.0"
 g update-ref "refs/tags/$TAG" "$(g rev-parse v0.9.0)"
 run_case "renamed tag object" refuse "was made for another name (v0.9.0)" "${PREFIX}_TAG_KEY=$OWNER_FP"
 g tag -d v0.9.0 >/dev/null
-# 12. Moved during the build to another correctly signed tag of the same name, on a later commit.
+# 13. Moved during the build to another correctly signed tag of the same name, on a later commit.
 retag; g tag -s "$TAG" -m "$APP $VERSION" "$COMMIT_B"; MOVED="$(g rev-parse "$TAG")"
 retag; g tag -s "$TAG" -m "$APP $VERSION" "$COMMIT_A"
 run_case "tag moved after the first check" refuse "moved during the build" "${PREFIX}_TAG_KEY=$OWNER_FP" TEST_MOVE_TAG_TO="$MOVED"
 [[ "$(cat "$WORK/build.log" 2>/dev/null)" == built ]] || { FAILED=1; ROWS+=("WRONG | tag moved after the first check | the stub build never ran |"); }
-# 13. --check-tag runs the check alone.
+# 14. --check-tag runs the check alone.
 retag; g tag -s "$TAG" -m "$APP $VERSION" "$COMMIT_A"
 rc=0; out="$(env "${PREFIX}_TAG_KEY=$OWNER_FP" PATH="$WORK/shim:$WORK/bin:$PATH" ANDROID_HOME="$SDK" \
     "$REPO/scripts/release.sh" --check-tag "$TAG" 2>&1)" || rc=$?
