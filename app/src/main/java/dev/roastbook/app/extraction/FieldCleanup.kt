@@ -13,7 +13,7 @@ package dev.roastbook.app.extraction
  *   bracketed on purpose keeps its marks, and apostrophes and periods are never touched.
  * - A roast date with no digit at all is empty; any other date is kept as written (see [date]).
  * - A tasting note that only repeats the process is dropped when the process is more than one word
- *   ("Mango osmotic dehydration" is how the coffee was made, not a flavor). A one-word process stays
+ *   ("Lychee carbonic maceration" is how the coffee was made, not a flavor). A one-word process stays
  *   as a note too: "Honey" can be both.
  *
  * Every rule only removes; nothing is invented or reworded. Running it twice changes nothing.

@@ -19,7 +19,7 @@ All notable changes to Roastbook are recorded here. The format follows
 
 - A bag size the label's own weight contradicts (often a misread gram figure, such as 3409 g for a
   12 oz bag) now gives way to that weight.
-- A tasting note that only repeats the process (such as "Mango osmotic dehydration") is dropped.
+- A tasting note that only repeats the process (such as "Lychee carbonic maceration") is dropped.
 - A reading from your own Gemini key that wasn't the JSON asked for no longer clears values an
   earlier reading filled, as with the other readers.
 - The restore question dates the backup in English, like the rest of the app, whatever the

@@ -88,9 +88,9 @@ Rules the code holds to:
   than one word is dropped (a one-word process such as "Honey" can be a
   note too). It only removes.
 - `NetWeight` checks a model's bag size against the weight the label text
-  states, reading the usual recognition slips ("1Ooz", "100z" for "10oz",
-  "(2849)" for "(284g)"). When the label clearly names the bag's weight (on
-  a "net" line, or every weight it prints agreeing) and the model's figure
+  states, reading the usual recognition slips ("2Ooz", "120z" for "12oz",
+  "(3409)" for "(340g)"). When the label clearly names the bag's weight (on
+  a "net" line, or two or more printed weights agreeing) and the model's figure
   is more than 5% off it, the label's weight is kept. It never fills a
   blank.
 - A model's reading (Nano, the reader or a Gemini key) is garbled when its

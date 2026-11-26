@@ -42,6 +42,8 @@ class NetWeightTest {
             }
         }
         assertEquals(1000, NetWeight.reconcile(100, "Net 1 kg whole bean"))
+        // No net line, but the label prints the weight twice and both agree.
+        assertEquals(340, NetWeight.reconcile(3409, "12 oz (340 g)"))
         assert(checked > 200) { "only $checked cases generated" }
     }
 
@@ -61,6 +63,10 @@ class NetWeightTest {
             add(340 to "")
             // Two different weights and no net line: nothing to say which one is this bag.
             add(340 to "Also in 5 lb bags\nTry our 8 oz sampler")
+            // A lone weight off a net line is a recipe or a shot, not the bag.
+            add(340 to "Brew 20g coffee with 300g water")
+            add(340 to "Pulls a 2 oz shot")
+            add(340 to "Best as a 250 g pour over")
         }
         for ((model, label) in cases) assertEquals("$model on \"$label\"", model, NetWeight.reconcile(model, label))
     }
@@ -70,7 +76,7 @@ class NetWeightTest {
     }
 
     @Test fun theLabelGuessReadsTheSameSlips() {
-        assertEquals(oz(10), NetWeight.fromLabel("Net wt. 1Ooz"))
+        assertEquals(oz(20), NetWeight.fromLabel("Net wt. 2Ooz"))
         assertEquals(oz(12), NetWeight.fromLabel("NET WT 12OZ"))
         assertEquals(340, NetWeight.fromLabel("NET WT 12 OZ (340 g)"))
         assertNull(NetWeight.fromLabel("1 oz"))

@@ -102,7 +102,7 @@ class FieldCleanupTest {
     }
 
     private val multiWordProcesses = listOf(
-        "Mango osmotic dehydration", "Lychee carbonic maceration", "Double anaerobic natural", "Red honey",
+        "Yeast inoculated washed", "Lychee carbonic maceration", "Double anaerobic natural", "Red honey",
         "Black honey", "Wet hulled", "Semi washed", "Pulped natural", "Anaerobic washed", "Thermal shock",
     )
 
