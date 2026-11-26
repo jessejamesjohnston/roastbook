@@ -24,6 +24,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -65,6 +67,35 @@ fun CoffeeRowCard(
     val extracting = row.state == CoffeeState.EXTRACTING
     val hc = LocalHighContrast.current
     val ratingLabel = row.overall?.let { stringResource(R.string.row_rating_description, English.score(it)) }
+    // At large text the rating or rate button would squeeze the name into a sliver where words break
+    // letter by letter; there it moves under the text, and the name keeps the card's width.
+    val stacked = LocalDensity.current.fontScale >= LARGE_TEXT
+    val trailing: @Composable () -> Unit = {
+        when {
+            extracting -> CircularProgressIndicator(Modifier.size(22.dp), color = tint.accent, strokeWidth = 2.5.dp)
+            row.overall != null -> Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    modifier = Modifier.clearAndSetSemantics { contentDescription = ratingLabel ?: "" },
+                ) {
+                    Text(English.score(row.overall), style = RatingStyle, color = MaterialTheme.colorScheme.onSurface)
+                    RatingDots(row.overall, tint.accent)
+                }
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, Modifier.size(20.dp), tint = secondary)
+            }
+            row.state == CoffeeState.LOGGED -> Button(
+                onClick = onRate, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                modifier = Modifier.heightIn(min = 32.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            ) {
+                Text(stringResource(R.string.row_unrated_cta), style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1, softWrap = false)
+            }
+            else -> Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, Modifier.size(20.dp), tint = secondary)
+        }
+    }
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
@@ -113,34 +144,18 @@ fun CoffeeRowCard(
                             style = MaterialTheme.typography.labelSmall, color = secondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
-            }
-            Spacer(Modifier.width(8.dp))
-            Box(Modifier.widthIn(min = 64.dp), contentAlignment = Alignment.CenterEnd) {
-                when {
-                    extracting -> CircularProgressIndicator(Modifier.size(22.dp), color = tint.accent, strokeWidth = 2.5.dp)
-                    row.overall != null -> Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(
-                            horizontalAlignment = Alignment.End,
-                            modifier = Modifier.clearAndSetSemantics { contentDescription = ratingLabel ?: "" },
-                        ) {
-                            Text(English.score(row.overall), style = RatingStyle, color = MaterialTheme.colorScheme.onSurface)
-                            RatingDots(row.overall, tint.accent)
-                        }
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, Modifier.size(20.dp), tint = secondary)
-                    }
-                    row.state == CoffeeState.LOGGED -> Button(
-                        onClick = onRate, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
-                        modifier = Modifier.height(32.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
-                    ) {
-                        Text(stringResource(R.string.row_unrated_cta), style = MaterialTheme.typography.labelSmall,
-                            maxLines = 1, softWrap = false)
-                    }
-                    else -> Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, Modifier.size(20.dp), tint = secondary)
+                if (stacked) {
+                    Spacer(Modifier.height(6.dp))
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) { trailing() }
                 }
+            }
+            if (!stacked) {
+                Spacer(Modifier.width(8.dp))
+                Box(Modifier.widthIn(min = 64.dp), contentAlignment = Alignment.CenterEnd) { trailing() }
             }
         }
     }
 }
+
+/** Text scaled this far or more (Android's 150%) stacks a row's rating or rate button under its text. */
+private const val LARGE_TEXT = 1.5f

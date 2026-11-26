@@ -31,6 +31,8 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,7 +67,11 @@ fun HistoryHeader(
 ) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium,
+            // One word on one line: at large text on a narrow phone it shrinks to fit rather than
+            // breaking mid-word.
+            val title = MaterialTheme.typography.headlineMedium
+            Text(stringResource(R.string.app_name), style = title, maxLines = 1, softWrap = false,
+                autoSize = TextAutoSize.StepBased(minFontSize = 16.sp, maxFontSize = title.fontSize),
                 modifier = Modifier.semantics { heading() })
             CounterOrFilterLine(filter, sources, count, unrated, onClearFilters)
         }
