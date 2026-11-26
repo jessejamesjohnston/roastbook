@@ -196,7 +196,7 @@ class OcrGuessTest {
 
     @Test fun aWeightOutsideABagsRangeIsNotGuessed() {
         assertNull(OcrGuess.bagSize("10 g sample"))
-        assertNull(OcrGuess.bagSize("1 oz"))
+        assertNull(OcrGuess.bagSize("0.5 oz"))
         assertNull(OcrGuess.bagSize("9 kg"))
         assertNull(OcrGuess.bagSize("20 lb"))
     }

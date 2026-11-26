@@ -65,7 +65,8 @@ class NetWeightTest {
         add(Line("Net 1,000 g", 1000, false))
         add(Line("Net weight 1 kg / 2.2 lb", 1000, true))
         add(Line("NET WT 2.2 LB (1 KG)", 1000, true))
-        add(Line("Net 500 g (1.1 lb)", 500, true))
+        // 1.1 lb covers 476 to 522 g: it agrees with 500 g but is too coarse to confirm it.
+        add(Line("Net 500 g (1.1 lb)", 500, false))
     }
 
     @Test fun everyRealisticNetLineReadsToTheWeightAPersonReads() {
@@ -86,7 +87,7 @@ class NetWeightTest {
             // Two weights in one unit system.
             "NET WT 12 OZ 8 OZ", "Net 250 g 500 g",
             // Outside what a retail bag holds.
-            "Net wt 9 kg", "NET WT 10 g", "Net wt 1 oz", "NET WT 20 LB", "NET WT 3 kg",
+            "Net wt 9 kg", "NET WT 10 g", "Net wt 0.5 oz", "NET WT 20 LB", "NET WT 3 kg",
             // A side that reads outside the band.
             "Net 12 g / 12 oz",
         )
@@ -165,6 +166,44 @@ class NetWeightTest {
             340 to "Pulls a 2 oz shot", 340 to "Best as a 250 g pour over", 340 to "Lot 120Z", 340 to "Brazil 1O0z blend",
         )
         for ((model, label) in cases) assertEquals("$model on \"$label\"", model, NetWeight.reconcile(model, label))
+    }
+
+    /** The same weight printed twice in pounds and ounces, in either order, is one weight, never a sum. */
+    @Test fun aRestatedPoundAndOunceWeightIsOneWeight() {
+        for ((pounds, ounces) in listOf("1/2" to "8", "3/4" to "12", "1" to "16", "2" to "32", "1 1/2" to "24")) {
+            val grams = lb(eval(pounds))
+            for (t in listOf("NET WT $pounds LB ($ounces OZ)", "NET WT $ounces OZ ($pounds LB)", "Net Wt. $pounds lb / $ounces oz", "NET WT $pounds LB ($ounces OZ) $grams g")) {
+                assertEquals(t, NetWeight.Printed(grams, true), NetWeight.printed(t, netLinesOnly = true))
+            }
+        }
+    }
+
+    private fun eval(s: String): Double = s.split(' ').sumOf { part -> part.split('/').let { if (it.size == 2) it[0].toDouble() / it[1].toDouble() else it[0].toDouble() } }
+
+    @Test fun aPeriodBetweenTokensAndAZeroForTheOOfOzStillRead() {
+        assertEquals(oz(12.0), NetWeight.fromLabel("NET WT. 12 OZ. (340g)"))
+        assertEquals(oz(12.0), NetWeight.fromLabel("NET WT 12 OZ."))
+        assertEquals(oz(12.0), NetWeight.fromLabel("NET WT 12 0Z"))
+        assertEquals(340, NetWeight.fromLabel("NT WT. 12 0Z || 340 G"))
+        // Off a net line, or with no space before it, "0Z" stays unread.
+        assertNull(NetWeight.fromLabel("Mix 20 0z ice"))
+        assertNull(NetWeight.fromLabel("NET WT 120Z"))
+        assertNull(NetWeight.fromLabel("Lot 120Z net"))
+    }
+
+    /** A pair whose coarser side can't pin the weight down never overrides a plausible figure. */
+    @Test fun aCoarsePairNeverReplacesAPlausibleFigure() {
+        assertEquals(250, NetWeight.reconcile(250, "Net weight 0,2 kg (8.8 oz)"))
+        assertEquals(170, NetWeight.reconcile(170, "NET WT 0.4 LB (179 G)"))
+        assertEquals(200, NetWeight.reconcile(200, "Net weight 0.2 kg (0.4 lb)"))
+        assertEquals(227, NetWeight.reconcile(227, "NET WT 0.5 LB (207 G)"))
+        assertEquals("a 1 oz sample is a bag", 28, NetWeight.reconcile(28, "NET WT 7 OZ"))
+    }
+
+    @Test fun aMultipackARangeOrASplitNumberNamesNoWeight() {
+        for (t in listOf("NET WT 2 x 250 g", "NET WT 250g x 2", "NET WT 12 OZ (340 g) x 2", "Pack of 3 x 340g", "NET WT 250-300 g", "Net weight 2 500 g")) {
+            assertNull(t, NetWeight.printed(t, netLinesOnly = false))
+        }
     }
 
     @Test fun aBlankBagSizeIsNeverFilledByTheCorrection() {

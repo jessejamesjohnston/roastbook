@@ -98,18 +98,19 @@ Rules the code holds to:
   lists those fields (`guessed=…`), the page names them under the facts, and
   the list outlives a Read again. A value the model or the person set is never
   replaced by a guess, and a field the person cleared stays blank.
-- `NetWeight` reads the label's net weight as one quantity: whole numbers,
-  decimals, fractions ("1/2 lb", "½"), mixed numbers, pounds-and-ounces, and
-  pairs in both unit systems ("12 oz (340 g)"), which must agree. Only a real
-  unit token counts, so lot codes, prices and dates are never read as weights.
-  Inside an amount, a letter that is only ever a misread digit (O, I, l, S, B,
-  Z) is read as that digit. A model's bag size gives way to the net line only
-  when the line reads unambiguously inside 50 to 2500 g and the pair agreed,
-  or the model's own figure is outside that band (a gram figure whose "g" was
-  read as a 9, such as 3409 for a 12 oz bag). A digit misread as another digit
-  ("70 oz") can't be seen on a single unit, so a single unit never replaces a
-  plausible figure. It never fills a blank or touches a hand edit; the
-  label-text guess uses the same reading.
+- `NetWeight` reads the label's net weight as one quantity, under one rule:
+  a typed bag size is never changed; a model's figure inside 25 to 2500 g
+  gives way only to two printed units that agree with each other and confirm
+  each other ("12 oz (340 g)", "1 lb (16 oz)"; "0.4 lb (179 g)" is too coarse
+  to confirm); one printed unit replaces only a figure outside that band; a
+  blank is guessed only from an unambiguous reading; anything ambiguous leaves
+  things as they are. It reads whole numbers, decimals, fractions, mixed
+  numbers, pounds-and-ounces, the same weight restated in brackets in either
+  order, a period between tokens, and "0Z" for "oz" on a net line. Lot codes,
+  prices, dates, multipacks, ranges and space-split numbers are never read as
+  the bag's weight. A digit misread as another digit on a single unit ("7 oz"
+  on a 1 oz sample) can't be seen; it can only reach a blank or a figure that
+  was already outside the band. The label-text guess uses the same reading.
 - A model's reading (Nano, the reader or a Gemini key) is garbled when its
   first answer was not the JSON asked for. The trail lists each field a
   garbled reading changed (`garbled=coffeeName,roastDate`), plus any listed
