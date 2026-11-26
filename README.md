@@ -158,7 +158,9 @@ the backup and restore paths, Room migrations across four exported schemas, the 
 lookup, color contrast as numbers, the update check, the screens and the wording of every
 string. CI fails if line coverage drops below 95% (`scripts/coverage.py` reports 99.0% today and
 names each SDK adapter it leaves out, with the runtime it needs). The app has been walked on two
-recent phones from different makers and on phone and tablet emulators.
+recent phones from different makers and on phone and tablet emulators. It also runs on a Googlebook,
+on-device reading included, though that isn't a device it's made for: photographing a bag of coffee
+with a laptop is as awkward as it sounds.
 
 **How this is built.** I'm a product manager who builds. I decide what each app does, how it
 should feel, and what it leaves out. The code is written with AI coding agents that I direct,
