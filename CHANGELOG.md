@@ -13,8 +13,9 @@ All notable changes to Roastbook are recorded here. The format follows
   none is available.
 - When the built-in AI needs a break after reading several bags in a row, or Android pauses it to
   save battery, the bag keeps reading: it says which, and when it will try again (after a minute,
-  then two, never longer than five). It no longer falls back to the label text at once or reports
-  the built-in AI as failing.
+  then two, never longer than five). With the on-device reader downloaded, the reader reads the
+  bag at once instead, and the page says so. Your Gemini key is never used just because the
+  built-in AI is resting. It no longer reports the built-in AI as failing.
 
 - When the built-in AI isn't ready yet (its first download, or just after a system update),
   Roastbook keeps trying for about 15 minutes instead of 11 before reading the label text, and

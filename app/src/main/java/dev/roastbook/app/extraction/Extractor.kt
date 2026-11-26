@@ -44,8 +44,9 @@ data class ExtractionOutcome(val source: ExtractionSource, val facts: BagFacts?,
  *          10 minutes; the third miss falls through. prepare() and every call are time-bounded, so a
  *          download that never reports back cannot hold the queue.
  *          background blocked → parked until the next foreground; the third miss falls through.
- *          usage limit (AICore refuses an app's reads for a while) → parked 1, then 2 minutes; the
- *          third refusal falls through. It never marks Nano as failing here ([NanoLimits]).
+ *          usage limit (AICore refuses an app's reads for a while) → the downloaded reader reads it
+ *          now; without one, parked 1, then 2 minutes, and the third refusal falls through, past
+ *          the Gemini key. It never marks Nano as failing here ([NanoLimits]).
  *          skipped while the person chose the reader in Settings and it is downloaded.
  *          a poor reading (not the JSON asked for, or neither roaster nor coffee) is checked
  *          against the reader when it is downloaded, and the one with more fields is kept (NANO
@@ -197,8 +198,13 @@ class Extractor @Inject constructor(
             is ModelStep.Next -> step
         }
 
-        // 4. The user's own Gemini key, if any: same prompt, same parser, a real network call.
-        val afterCloud = when (val step = cloudStep(::images, pages, afterLocal)) {
+        // 4. The user's own Gemini key, if any: same prompt, same parser, a real network call. Not
+        // after the built-in AI's usage limit: a short wait is no reason to spend the person's key.
+        val afterCloud = when (
+            val step = if (afterLocal.trail.nanoLimit != null) {
+                ModelStep.Next(afterLocal.trail.with(Tier.CLOUD, TierOutcome.SKIPPED), "${afterLocal.notes}; cloud skipped (usage limit)")
+            } else cloudStep(::images, pages, afterLocal)
+        ) {
             is ModelStep.Read -> {
                 val note = "cloud:${cloud.modelName()}; after ${step.notes}"
                 return finish(
@@ -378,7 +384,11 @@ class Extractor @Inject constructor(
         } catch (e: TransientExtractionException) {
             return park(coffeeId, pages, ocrText, "transient: ${e.message}", delayed = false)
         } catch (e: Exception) {
-            NanoLimits.refusal(e)?.let { refused -> return park(coffeeId, pages, ocrText, "nano usage limit", delayed = false, limit = refused) }
+            NanoLimits.refusal(e)?.let { refused ->
+                // The downloaded on-device reader takes the bag now rather than have it wait.
+                if (localReady()) return NanoStep.Fall(TierOutcome.NOT_READY, "nano usage limit; the reader reads it", refused.kind)
+                return park(coffeeId, pages, ocrText, "nano usage limit", delayed = false, limit = refused)
+            }
             Log.w(TAG, "nano failed", e)
             nanoHealth.recordNano(ok = false, reason = "${e::class.simpleName}: ${e.message?.take(120)}")
             return NanoStep.Fall(TierOutcome.FAILED, "nano threw ${e::class.simpleName}: ${e.message?.take(160)}")

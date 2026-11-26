@@ -405,6 +405,8 @@
     <string name="what_hint_download">The on-device reader in Settings can read bags like this one</string>
     <string name="what_hint_key">A Gemini key in Settings can read bags like this one</string>
     <string name="what_local_read">Read by the on-device reader</string>
+    <string name="what_local_after_busy">Read by the on-device reader. The built-in AI needed a break after reading several bags.</string>
+    <string name="what_local_after_battery">Read by the on-device reader. Android paused the built-in AI for Roastbook to save battery.</string>
     <string name="what_cloud_read">Read with your Gemini key. The built-in AI wasn\'t available for this one.</string>
     <string name="what_kept_earlier">Reading it again found nothing new, so the earlier details stay</string>
     <string name="what_reread">Read again</string>

@@ -72,7 +72,14 @@ object WhatHappenedRules {
         val unknownModel = trail.cloudModel?.takeIf { hasKey && trail[Tier.CLOUD] == TierOutcome.FAILED && trail.cloudFailure == CloudFailure.MODEL }
         return when (source) {
             ExtractionSource.NANO -> null
-            ExtractionSource.LOCAL -> WhatHappened(R.string.what_local_read, offerReread = false)
+            ExtractionSource.LOCAL -> WhatHappened(
+                when (trail.nanoLimit) {
+                    NanoLimits.Kind.READS -> R.string.what_local_after_busy
+                    NanoLimits.Kind.BATTERY -> R.string.what_local_after_battery
+                    null -> R.string.what_local_read
+                },
+                offerReread = false,
+            )
             ExtractionSource.CLOUD -> if (nanoMissed) WhatHappened(R.string.what_cloud_read, offerReread = false) else null
             ExtractionSource.OCR -> WhatHappened(
                 line = when {

@@ -128,6 +128,12 @@ class WhatHappenedTest {
         assertEquals(trail, ExtractionTrail.decode(trail.encode()))
     }
 
+    /** A bag the reader read while the built-in AI was resting says so, naming which limit. */
+    @Test fun aReaderReadDuringAUsageLimitSaysWhy() {
+        assertEquals(R.string.what_local_after_busy, explain(ExtractionSource.LOCAL, "nano=not_ready;nanolimit=reads;local=read")!!.line)
+        assertEquals(R.string.what_local_after_battery, explain(ExtractionSource.LOCAL, "nano=not_ready;nanolimit=battery;local=read")!!.line)
+    }
+
     @Test fun nothingGuessedSaysSo() {
         assertEquals(R.string.what_guess_none, explain(ExtractionSource.OCR, "nano=unsupported;cloud=off;guess=0")!!.guess)
     }

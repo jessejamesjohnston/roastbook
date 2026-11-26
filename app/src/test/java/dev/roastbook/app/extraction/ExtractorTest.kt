@@ -320,6 +320,31 @@ class ExtractorTest {
         assertFalse(health.failing)
     }
 
+    /** With the on-device reader downloaded, a usage limit isn't waited out: the reader reads the bag now. */
+    @Test fun aUsageLimitHandsTheBagToTheDownloadedReaderAtOnce() = runBlocking {
+        val id = seedCoffee()
+        val reader = FakeLocal(answers = mutableListOf({ """{"roaster":"Signal Roasters","process":"Washed"}""" }))
+        val cloud = FakeCloud(mutableListOf("""{"roaster":"Not Asked"}"""))
+        val out = extractor(FakeNano(answers = mutableListOf({ throw quotaRefusal() })), FakeOcr("text"), cloud, reader).run(id)
+        assertEquals(ExtractionSource.LOCAL, out.source)
+        val c = db.coffeeDao().get(id)!!
+        assertEquals(CoffeeState.LOGGED, c.state)
+        assertEquals("Signal Roasters", c.roaster)
+        assertEquals(NanoLimits.Kind.READS, ExtractionTrail.decode(c.extractionTrail).nanoLimit)
+        assertEquals(0, cloud.calls)
+        assertFalse(health.failing)
+    }
+
+    /** A usage limit never spends the person's Gemini key: without the reader, the bag reads what it can on the device. */
+    @Test fun aUsageLimitNeverFallsBackToTheGeminiKey() = runBlocking {
+        val id = seedCoffee()
+        val cloud = FakeCloud(mutableListOf("""{"roaster":"Not Asked"}"""))
+        val out = extractor(FakeNano(answers = mutableListOf({ throw quotaRefusal(java.time.Duration.ofHours(2)) })), FakeOcr("ROAST DATE 03NOV26"), cloud).run(id)
+        assertEquals(ExtractionSource.OCR, out.source)
+        assertEquals(0, cloud.calls)
+        assertEquals(TierOutcome.SKIPPED, ExtractionTrail.decode(db.coffeeDao().get(id)!!.extractionTrail)[Tier.CLOUD])
+    }
+
     /** The battery limit is recorded as such, so the card can say what really happened. */
     @Test fun theBatteryLimitIsRecordedAsTheBatteryLimit() = runBlocking {
         val id = seedCoffee()
