@@ -24,6 +24,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.Alignment
@@ -67,9 +70,15 @@ fun CoffeeRowCard(
     val extracting = row.state == CoffeeState.EXTRACTING
     val hc = LocalHighContrast.current
     val ratingLabel = row.overall?.let { stringResource(R.string.row_rating_description, English.score(it)) }
-    // At large text the rating or rate button would squeeze the name into a sliver where words break
-    // letter by letter; there it moves under the text, and the name keeps the card's width.
-    val stacked = LocalDensity.current.fontScale >= LARGE_TEXT
+    val title = when {
+        extracting -> extractingLines(row.extractionTrail, row.nextAttemptAt).first
+        row.extractionSource == ExtractionSource.NONE && row.coffeeName == null -> stringResource(R.string.row_extract_failed)
+        else -> row.coffeeName ?: row.roaster ?: stringResource(R.string.detail_untitled)
+    }
+    val rateLabel = stringResource(R.string.row_unrated_cta)
+    val measurer = rememberTextMeasurer()
+    val titleStyle = MaterialTheme.typography.titleMedium
+    val buttonStyle = MaterialTheme.typography.labelSmall
     val trailing: @Composable () -> Unit = {
         when {
             extracting -> CircularProgressIndicator(Modifier.size(22.dp), color = tint.accent, strokeWidth = 2.5.dp)
@@ -109,6 +118,23 @@ fun CoffeeRowCard(
         // Only the coffee open beside the list says "Selected"; on a phone every card said "Not selected".
         modifier = Modifier.fillMaxWidth().then(if (selected) Modifier.semantics { this.selected = true } else Modifier),
     ) {
+        BoxWithConstraints {
+        // Where the rating or rate button would squeeze the name until its longest word breaks letter
+        // by letter (large text, a narrow window), the button moves under the text instead.
+        val density = LocalDensity.current
+        val stacked = remember(title, rateLabel, row.overall, constraints.maxWidth, density) {
+            fun width(text: String, style: androidx.compose.ui.text.TextStyle) = measurer.measure(text, style).size.width
+            val longestWord = title.split(Regex("\\s+")).maxOfOrNull { width(it, titleStyle) } ?: 0
+            val trailing = with(density) {
+                when {
+                    extracting -> 22.dp.roundToPx()
+                    row.overall != null -> width(English.score(row.overall), RatingStyle) + 20.dp.roundToPx()
+                    row.state == CoffeeState.LOGGED -> width(rateLabel, buttonStyle) + 20.dp.roundToPx()
+                    else -> 20.dp.roundToPx()
+                }.coerceAtLeast(64.dp.roundToPx())
+            }
+            trailingGoesUnder(constraints.maxWidth, longestWord, trailing, with(density) { ROW_FIXED.roundToPx() })
+        }
         Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             HeroSquare(
                 file = photoStore.fileOrNull(row.heroThumb), size = 56.dp, radius = 10.dp, stroke = tint.fallback,
@@ -154,8 +180,16 @@ fun CoffeeRowCard(
                 Box(Modifier.widthIn(min = 64.dp), contentAlignment = Alignment.CenterEnd) { trailing() }
             }
         }
+        }
     }
 }
 
-/** Text scaled this far or more (Android's 150%) stacks a row's rating or rate button under its text. */
-private const val LARGE_TEXT = 1.5f
+/** A row's width that isn't the text's when the button sits beside it: padding, photo and gaps. */
+private val ROW_FIXED = 100.dp
+
+/**
+ * True when the title's longest word ([longestWordPx]) wouldn't fit between the photo and a
+ * [trailingPx]-wide button in a row [rowWidthPx] wide, so the button goes under the text.
+ */
+internal fun trailingGoesUnder(rowWidthPx: Int, longestWordPx: Int, trailingPx: Int, fixedPx: Int): Boolean =
+    longestWordPx > rowWidthPx - fixedPx - trailingPx
