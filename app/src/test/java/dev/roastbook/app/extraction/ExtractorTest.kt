@@ -933,7 +933,12 @@ class ExtractorTest {
         assertEquals(0, nano.calls)
     }
 
-    @Test fun secondMissWaitsFiveMinutesAndTheThirdFallsThroughToTheCloud() = runBlocking {
+    /**
+     * After a system update the built-in model can take over ten minutes to be ready (one tablet:
+     * about 14), so the second wait is ten minutes: the third try comes about 15 minutes after the
+     * first, counting the one-minute waits on the model.
+     */
+    @Test fun secondMissWaitsTenMinutesAndTheThirdFallsThroughToTheCloud() = runBlocking {
         val id = seedCoffee()
         val nano = FakeNano(status = NanoStatus.DOWNLOADABLE, onPrepare = { kotlinx.coroutines.awaitCancellation() })
         val cloud = FakeCloud(mutableListOf("""{"roaster":"Stillwick Roasters","coffee_name":"Beacon"}"""))
@@ -946,9 +951,9 @@ class ExtractorTest {
         ex.runIfDue(id)
         val second = db.coffeeDao().get(id)!!
         assertEquals(2, second.extractionAttempts)
-        assertEquals(now + 5 * 60_000L, second.nextAttemptAt)
+        assertEquals(now + 10 * 60_000L, second.nextAttemptAt)
         assertEquals(0, cloud.calls)
-        now += 5 * 60_000L
+        now += 10 * 60_000L
         val out = ex.runIfDue(id)!!
         assertEquals(ExtractionSource.CLOUD, out.source)
         val c = db.coffeeDao().get(id)!!

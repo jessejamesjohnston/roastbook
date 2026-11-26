@@ -378,12 +378,12 @@
     <string name="source_line_cloud">Read with your Gemini key</string>
     <string name="source_line_ocr">Read from the label text</string>
     <string name="row_preparing">Getting the built-in AI ready…</string>
-    <string name="row_preparing_subtitle">Android is downloading it. This can take a few minutes the first time.</string>
+    <string name="row_preparing_subtitle">Android is getting it ready. This can take several minutes after a download or a system update.</string>
     <string name="row_busy_retry_at">The built-in AI needs a short break after reading several bags. Trying again at %1$s.</string>
     <string name="row_busy_subtitle">The built-in AI needs a short break after reading several bags. Trying again in a moment.</string>
     <string name="row_battery_retry_at">Android has paused the built-in AI for Roastbook to save battery. Trying again at %1$s.</string>
     <string name="row_battery_subtitle">Android has paused the built-in AI for Roastbook to save battery. Trying again in a moment.</string>
-    <string name="row_preparing_retry_at">Android is still downloading it. Trying again at %1$s.</string>
+    <string name="row_preparing_retry_at">Android is still getting it ready. Trying again at %1$s.</string>
     <string name="what_ocr_generic">Read from the label text only</string>
     <string name="what_ocr_nano_unsupported">Read from the label text only. This device has no built-in AI for reading bags.</string>
     <string name="what_ocr_nano_failed">Read from the label text only. The built-in AI couldn\'t read this one.</string>

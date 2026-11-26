@@ -16,6 +16,10 @@ All notable changes to Roastbook are recorded here. The format follows
   then two, never longer than five). It no longer falls back to the label text at once or reports
   the built-in AI as failing.
 
+- When the built-in AI isn't ready yet (its first download, or just after a system update),
+  Roastbook keeps trying for about 15 minutes instead of 11 before reading the label text, and
+  says Android is getting it ready rather than that it is downloading.
+
 ### Fixed
 
 - A bag size that can't be right (often a misread gram figure, such as 3409 g for a 12 oz bag)

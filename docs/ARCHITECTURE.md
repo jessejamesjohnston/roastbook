@@ -38,8 +38,9 @@ EXTRACTING    OCR every photo (2048 px)
               │     │   (a tie goes to the reader when its first answer was valid JSON
               │     │   and Nano's was not)
               │     ├─ unparseable            → one strict retry, then ↓
-              │     ├─ model downloading      → PARKED: stays EXTRACTING, retried at +3 min,
-              │     │                           then +5 min; the third miss falls through ↓
+              │     ├─ model not ready (first download, or just after a system update)
+              │     │                         → PARKED: stays EXTRACTING, retried at +3 min,
+              │     │                           then +10 min; the third miss falls through ↓
               │     ├─ background blocked     → retried on the next foreground; third miss ↓
               │     ├─ usage limit (AICore meters each app: reads in a row, or battery)
               │     │                         → PARKED: retried at +1 min, then +2 min (longer

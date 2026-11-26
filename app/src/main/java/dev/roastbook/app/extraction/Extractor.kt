@@ -41,7 +41,7 @@ data class ExtractionOutcome(val source: ExtractionSource, val facts: BagFacts?,
  *   photos → OCR (always, full resolution)
  *     1. Nano (the system model; images + OCR text) → parse → [retry once, strict] → NANO
  *          model still downloading → the row is PARKED (stays EXTRACTING) and retried after 3, then
- *          5 minutes; the third miss falls through. prepare() and every call are time-bounded, so a
+ *          10 minutes; the third miss falls through. prepare() and every call are time-bounded, so a
  *          download that never reports back cannot hold the queue.
  *          background blocked → parked until the next foreground; the third miss falls through.
  *          usage limit (AICore refuses an app's reads for a while) → parked 1, then 2 minutes; the
@@ -409,7 +409,7 @@ class Extractor @Inject constructor(
 
     /**
      * Nano could not answer yet, for a reason that may clear. Count it and leave the row EXTRACTING
-     * (a download waits 3, then 5 minutes; a usage [limit] waits 1, then 2 minutes, or longer when
+     * (a model not ready waits 3, then 10 minutes; a usage [limit] waits 1, then 2 minutes, or longer when
      * AICore named a longer wait; a background block waits for the next foreground). The last
      * allowed attempt falls through to the other tiers instead, so a row never spins forever, and so
      * does a usage limit that names a wait over [MAX_LIMIT_WAIT_MS]: a bag never sits on "Reading
@@ -514,8 +514,12 @@ class Extractor @Inject constructor(
         private const val TAG = "Extraction"
         private val MODEL_SOURCES = setOf(ExtractionSource.NANO, ExtractionSource.LOCAL, ExtractionSource.CLOUD)
         const val MAX_ATTEMPTS = 3
-        /** Parked retries while Nano's model downloads: +3 minutes, then +5; the third miss falls through. */
-        val RETRY_DELAYS_MS = longArrayOf(3 * 60_000L, 5 * 60_000L)
+        /**
+         * Parked retries while Nano's model isn't ready: +3 minutes, then +10; the third miss falls
+         * through. After a system update one tablet's model took about 14 minutes to be ready, so
+         * the reads span about 15 (each also waits a minute on the model).
+         */
+        val RETRY_DELAYS_MS = longArrayOf(3 * 60_000L, 10 * 60_000L)
         /** Parked retries after the built-in AI's usage limit refused a read: +1 minute, then +2; the third refusal falls through. */
         val LIMIT_DELAYS_MS = longArrayOf(60_000L, 2 * 60_000L)
         /** The longest usage-limit wait a bag sits out; a longer one is not waited for, and the bag reads what it can now. */
