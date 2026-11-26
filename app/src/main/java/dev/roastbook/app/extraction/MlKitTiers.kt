@@ -46,13 +46,18 @@ class MlKitOcrTier @Inject constructor() : OcrTier {
 }
 
 /**
- * Gemini Nano through the ML Kit GenAI Prompt API. One client; status and generate calls are
- * serialized. The model download runs detached from the caller and is shared: a read that stops
- * waiting (the extractor bounds the wait) leaves it running, and the next read joins it instead of
- * starting another, so a download that never reports back cannot hold the lock other calls need.
+ * Gemini Nano through the ML Kit GenAI Prompt API; status and generate calls are serialized. Each
+ * read gets a client of its own, closed when the read ends, so nothing a client might keep (a
+ * session, an implicit cache) can carry one bag's answer into the next; status checks and the model
+ * download share one long-lived client. The download runs detached from the caller and is shared: a
+ * read that stops waiting (the extractor bounds the wait) leaves it running, and the next read joins
+ * it instead of starting another, so a download that never reports back cannot hold the lock other
+ * calls need.
  */
 @Singleton
-class GeminiNanoTier @Inject constructor() : NanoTier {
+class GeminiNanoTier internal constructor(private val newClient: () -> GenerativeModel) : NanoTier {
+    @Inject constructor() : this(Generation::getClient)
+
     private val mutex = Mutex()
     private var model: GenerativeModel? = null
     private var name: String = "nano"
@@ -60,7 +65,7 @@ class GeminiNanoTier @Inject constructor() : NanoTier {
     private var download: Deferred<Unit>? = null
 
     @Synchronized
-    private fun client(): GenerativeModel = model ?: Generation.getClient().also { model = it }
+    private fun client(): GenerativeModel = model ?: newClient().also { model = it }
 
     override fun modelName(): String = name
 
@@ -87,7 +92,11 @@ class GeminiNanoTier @Inject constructor() : NanoTier {
     }
 
     override suspend fun generate(images: List<Bitmap>, prompt: String): String = mutex.withLock {
-        val m = client()
+        val m = newClient()
+        try { read(m, images, prompt) } finally { m.close() }
+    }
+
+    private suspend fun read(m: GenerativeModel, images: List<Bitmap>, prompt: String): String {
         runCatching { name = m.getBaseModelName() }
         val content = Content.builder().apply {
             images.forEach { addPart(ImagePart(it)) }
@@ -97,7 +106,7 @@ class GeminiNanoTier @Inject constructor() : NanoTier {
             temperature = 0.2f
             maxOutputTokens = 1024
         }
-        try {
+        return try {
             m.generateContent(request).candidates.firstOrNull()?.text ?: ""
         } catch (e: GenAiException) {
             // 30 = background usage blocked; treat as transient so the row is retried in the foreground.
