@@ -12,6 +12,7 @@ import dev.roastbook.app.reminders.PendingActions
 import dev.roastbook.app.testutil.FakeSecretStore
 import dev.roastbook.app.testutil.TestGraph
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.lifecycle.ViewModelStore
 import java.io.File
 import java.util.UUID
@@ -78,6 +79,13 @@ fun idleUntil(timeoutMs: Long = 5_000, condition: () -> Boolean) {
  * Waits for [condition], letting real time pass between checks. Room delivers on its own threads,
  * which `waitUntil` alone does not give time to under Robolectric's paused looper.
  */
+/**
+ * Waits until a node showing [text] is on screen. The row reaching the database comes before the
+ * page recomposes with it, so a test that checks the screen waits on the screen.
+ */
+fun ComposeTestRule.awaitText(text: String, timeoutMs: Long = 5_000) =
+    awaitUntil(timeoutMs) { onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
+
 fun ComposeTestRule.awaitUntil(timeoutMs: Long = 5_000, condition: () -> Boolean) {
     val end = System.currentTimeMillis() + timeoutMs
     while (true) {

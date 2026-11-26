@@ -127,6 +127,7 @@ class DetailScreenFactsTest : DetailScreenTestBase() {
         compose.onNodeWithText("Sable & Rye").performClick()
         done(facts)
         compose.awaitUntil { row()?.sourceId == "s1" }
+        compose.awaitText("Sable & Rye")
         compose.onNodeWithText("Sable & Rye").assertIsDisplayed()
     }
 
@@ -148,6 +149,8 @@ class DetailScreenFactsTest : DetailScreenTestBase() {
         field(R.string.detail_seller_description).performTextReplacement("A sweet, juicy cup.")
         done(prose)
         compose.awaitUntil { row()?.sellerDescription == "A sweet, juicy cup." }
+        compose.awaitText(str(R.string.detail_seller_description))
+        compose.awaitText("A sweet, juicy cup.")
         compose.onNodeWithText(str(R.string.detail_seller_description)).assertIsDisplayed()
         compose.onNodeWithText("A sweet, juicy cup.").assertIsDisplayed()
         assertEquals("Grown on volcanic soil.", row()!!.bagDescription)
