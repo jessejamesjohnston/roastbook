@@ -761,6 +761,29 @@ class ExtractorTest {
         assertEquals(setOf("process", "elevationM"), ExtractionTrail.decode(c.extractionTrail).guessedNames)
     }
 
+    /** A value an earlier reading filled stays when a later reading has nothing for it, whatever the label text says. */
+    @Test fun aGuessNeverReplacesAValueAReaderSet() = runBlocking {
+        val id = seedCoffee()
+        extractor(FakeNano(answers = mutableListOf({ """{"roaster":"Lantern Roasters","origin_country":"Ethiopia"}""" })), FakeOcr(labelText)).run(id)
+        repo.reextract(id)
+        extractor(FakeNano(answers = mutableListOf({ """{"roaster":"Lantern Roasters"}""" })), FakeOcr(labelText)).run(id)
+        val c = db.coffeeDao().get(id)!!
+        assertEquals("Ethiopia", c.originCountry)
+        assert("originCountry" !in ExtractionTrail.decode(c.extractionTrail).guessedNames)
+    }
+
+    /** The roaster is never guessed from the label text, even when it names one plainly. */
+    @Test fun theRoasterIsNeverGuessedFromTheLabelText() = runBlocking {
+        val id = seedCoffee()
+        val label = "LANTERN COFFEE ROASTERS\nlanterncoffeeroasters.example\nOrigin: Colombia"
+        assertEquals("the guess alone would name it", "Lantern Coffee Roasters", OcrGuess.guess(label).roaster)
+        extractor(FakeNano(answers = mutableListOf({ """{"coffee_name":"Finca Veleta","process":"Washed"}""" })), FakeOcr(label)).run(id)
+        val c = db.coffeeDao().get(id)!!
+        assertNull(c.roaster)
+        assertEquals("Colombia", c.originCountry)
+        assert("roaster" !in ExtractionTrail.decode(c.extractionTrail).guessedNames)
+    }
+
     @Test fun aLaterReadingReplacesAGuessAndAGuessIsKeptAcrossARereadThatHasNothing() = runBlocking {
         val id = seedCoffee()
         extractor(FakeNano(answers = mutableListOf({ """{"roaster":"Lantern Roasters"}""" })), FakeOcr(labelText)).run(id)
