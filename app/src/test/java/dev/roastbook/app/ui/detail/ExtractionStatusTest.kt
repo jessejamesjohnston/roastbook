@@ -127,6 +127,19 @@ class ExtractionStatusTest {
         return out
     }
 
+    private fun englishTime(at: Long) =
+        java.time.format.DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US).format(java.time.Instant.ofEpochMilli(at).atZone(java.time.ZoneId.systemDefault()))
+
+    /** Waiting out the built-in AI's usage limit: still reading, with when it tries again, in English. */
+    @Test @Config(qualifiers = "de")
+    fun aReadWaitingOutTheUsageLimitSaysWhenItTriesAgain() {
+        val at = System.currentTimeMillis() + 90_000
+        assertEquals(
+            listOf(str(R.string.row_extracting) to str(R.string.row_busy_retry_at, englishTime(at)), str(R.string.row_extracting) to str(R.string.row_busy_subtitle)),
+            lines("nano=busy" to at, "nano=busy" to null),
+        )
+    }
+
     @Test fun anOrdinaryReadSaysItIsReadingTheBag() {
         assertEquals(listOf(str(R.string.row_extracting) to str(R.string.row_extracting_subtitle)), lines(null to null))
     }

@@ -22,6 +22,7 @@ import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -279,6 +280,46 @@ class ExtractorTest {
         val c = db.coffeeDao().get(id)!!
         assertEquals(CoffeeState.EXTRACTING, c.state)
         assertEquals(1, c.extractionAttempts)
+    }
+
+    // --- The built-in AI's usage limit: AICore refuses an app's reads for a while after a run of them ---
+
+    /** What AICore throws once an app has read several bags back to back (ML Kit error code 9, BUSY). */
+    private fun quotaRefusal(retry: java.time.Duration? = null) =
+        if (retry == null) com.google.mlkit.genai.common.GenAiException("out of usage quota", null, 9)
+        else com.google.mlkit.genai.common.GenAiException("out of usage quota", null, 9, retry)
+
+    @Test fun aUsageLimitRefusalWaitsAMinuteAndTriesAgainWithoutCallingTheBuiltInAiBroken() = runBlocking {
+        val id = seedCoffee()
+        val out = extractor(FakeNano(answers = mutableListOf({ throw quotaRefusal() })), FakeOcr("text")).run(id)
+        assertEquals(ExtractionSource.NONE, out.source)
+        val c = db.coffeeDao().get(id)!!
+        assertEquals(CoffeeState.EXTRACTING, c.state)
+        assertEquals(1, c.extractionAttempts)
+        assertEquals(now + 60_000L, c.nextAttemptAt)
+        assertEquals(TierOutcome.BUSY, ExtractionTrail.decode(c.extractionTrail)[Tier.NANO])
+        assertFalse("a usage limit says nothing about the device", health.failing)
+    }
+
+    @Test fun aUsageLimitThatNamesALongerWaitIsWaitedOut() = runBlocking {
+        val id = seedCoffee()
+        extractor(FakeNano(answers = mutableListOf({ throw quotaRefusal(java.time.Duration.ofSeconds(150)) })), FakeOcr("text")).run(id)
+        assertEquals(now + 150_000L, db.coffeeDao().get(id)!!.nextAttemptAt)
+    }
+
+    @Test fun aSecondRefusalWaitsLongerAndTheThirdReadsWhatItCanWithoutTheBuiltInAi() = runBlocking {
+        val id = seedCoffee()
+        extractor(FakeNano(answers = mutableListOf({ throw quotaRefusal() })), FakeOcr("text")).run(id)
+        now += 60_000L
+        extractor(FakeNano(answers = mutableListOf({ throw quotaRefusal() })), FakeOcr("text")).run(id)
+        assertEquals(now + 120_000L, db.coffeeDao().get(id)!!.nextAttemptAt)
+        now += 120_000L
+        val out = extractor(FakeNano(answers = mutableListOf({ throw quotaRefusal() })), FakeOcr("ROAST DATE 03NOV26")).run(id)
+        assertEquals(ExtractionSource.OCR, out.source)
+        val c = db.coffeeDao().get(id)!!
+        assertEquals(CoffeeState.LOGGED, c.state)
+        assertEquals(TierOutcome.NOT_READY, ExtractionTrail.decode(c.extractionTrail)[Tier.NANO])
+        assertFalse(health.failing)
     }
 
     @Test fun nothingReadableEndsAsNone() = runBlocking {

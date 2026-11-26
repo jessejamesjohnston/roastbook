@@ -50,21 +50,32 @@ fun isPreparingReader(state: CoffeeState, trail: String?): Boolean =
     state == CoffeeState.EXTRACTING && ExtractionTrail.decode(trail)[Tier.NANO] == TierOutcome.PREPARING
 
 /**
- * Title and subtitle for a coffee that is still being read: the usual "Reading the bag…", or the
- * first-download state while the phone's AI model is still arriving (with the retry time when the
- * row is parked).
+ * Title and subtitle for a coffee that is still being read: the usual "Reading the bag…", the
+ * first-download state while the phone's AI model is still arriving, or a wait for the built-in
+ * AI's usage limit (each with the retry time when the row is parked).
  */
 @Composable
 fun extractingLines(trail: String?, nextAttemptAt: Long?): Pair<String, String> {
-    if (ExtractionTrail.decode(trail)[Tier.NANO] != TierOutcome.PREPARING) {
+    val nano = ExtractionTrail.decode(trail)[Tier.NANO]
+    val retryAt = nextAttemptAt?.takeIf { it > System.currentTimeMillis() }
+    if (nano == TierOutcome.BUSY) {
+        // English like every other line: the app's strings are English only.
+        val sub = if (retryAt != null) stringResource(R.string.row_busy_retry_at, englishTime(retryAt)) else stringResource(R.string.row_busy_subtitle)
+        return stringResource(R.string.row_extracting) to sub
+    }
+    if (nano != TierOutcome.PREPARING) {
         return stringResource(R.string.row_extracting) to stringResource(R.string.row_extracting_subtitle)
     }
     val context = LocalContext.current
-    val sub = if (nextAttemptAt != null && nextAttemptAt > System.currentTimeMillis()) {
-        stringResource(R.string.row_preparing_retry_at, DateFormat.getTimeFormat(context).format(Date(nextAttemptAt)))
+    val sub = if (retryAt != null) {
+        stringResource(R.string.row_preparing_retry_at, DateFormat.getTimeFormat(context).format(Date(retryAt)))
     } else stringResource(R.string.row_preparing_subtitle)
     return stringResource(R.string.row_preparing) to sub
 }
+
+/** A clock time as "3:04 PM", in English whatever the device's language. */
+internal fun englishTime(at: Long, zone: java.time.ZoneId = java.time.ZoneId.systemDefault()): String =
+    java.time.format.DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US).format(java.time.Instant.ofEpochMilli(at).atZone(zone))
 
 /**
  * "Read by …" under the facts: which tier's reading this is, with the guess named as a guess. Null

@@ -379,6 +379,8 @@
     <string name="source_line_ocr">Read from the label text</string>
     <string name="row_preparing">Getting the built-in AI ready…</string>
     <string name="row_preparing_subtitle">Android is downloading it. This can take a few minutes the first time.</string>
+    <string name="row_busy_retry_at">The built-in AI needs a short break after reading several bags. Trying again at %1$s.</string>
+    <string name="row_busy_subtitle">The built-in AI needs a short break after reading several bags. Trying again in a moment.</string>
     <string name="row_preparing_retry_at">Android is still downloading it. Trying again at %1$s.</string>
     <string name="what_ocr_generic">Read from the label text only</string>
     <string name="what_ocr_nano_unsupported">Read from the label text only. This device has no built-in AI for reading bags.</string>

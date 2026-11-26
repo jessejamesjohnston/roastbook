@@ -13,8 +13,10 @@ enum class TierOutcome {
     UNSUPPORTED,
     /** The model is still downloading (Nano's first use): the row is parked for a retry. */
     PREPARING,
-    /** Gave up waiting for the model download; the read fell through to the next tier. */
+    /** Gave up waiting for the model download or the usage limit; the read fell through to the next tier. */
     NOT_READY,
+    /** Refused for now by the system's per-app usage limit: the row is parked for a retry. */
+    BUSY,
     /** Available but not set up by the user (the on-device reader is not downloaded). */
     ABSENT,
     /** Not configured (no cloud key). */

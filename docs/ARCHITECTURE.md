@@ -41,6 +41,10 @@ EXTRACTING    OCR every photo (2048 px)
               │     ├─ model downloading      → PARKED: stays EXTRACTING, retried at +3 min,
               │     │                           then +5 min; the third miss falls through ↓
               │     ├─ background blocked     → retried on the next foreground; third miss ↓
+              │     ├─ usage limit (AICore meters each app) → PARKED: retried at +1 min,
+              │     │                           then +2 min (longer if AICore names a wait);
+              │     │                           the third refusal falls through ↓, and the
+              │     │                           device is not marked as failing
               │     └─ unavailable / threw / timed out → ↓
               ├─ 2. on-device reader (Gemma 4 E2B, LiteRT-LM, CPU) if downloaded → LOCAL
               ├─ 3. user's Gemini key → same prompt → CLOUD

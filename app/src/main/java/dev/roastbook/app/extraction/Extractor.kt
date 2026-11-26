@@ -44,6 +44,8 @@ data class ExtractionOutcome(val source: ExtractionSource, val facts: BagFacts?,
  *          5 minutes; the third miss falls through. prepare() and every call are time-bounded, so a
  *          download that never reports back cannot hold the queue.
  *          background blocked → parked until the next foreground; the third miss falls through.
+ *          usage limit (AICore refuses an app's reads for a while) → parked 1, then 2 minutes; the
+ *          third refusal falls through. It never marks Nano as failing here ([NanoLimits]).
  *          skipped while the person chose the reader in Settings and it is downloaded.
  *          a poor reading (not the JSON asked for, or neither roaster nor coffee) is checked
  *          against the reader when it is downloaded, and the one with more fields is kept (NANO
@@ -375,6 +377,7 @@ class Extractor @Inject constructor(
         } catch (e: TransientExtractionException) {
             return park(coffeeId, pages, ocrText, "transient: ${e.message}", delayed = false)
         } catch (e: Exception) {
+            NanoLimits.waitMs(e)?.let { wait -> return park(coffeeId, pages, ocrText, "nano usage limit", delayed = false, limitWaitMs = wait) }
             Log.w(TAG, "nano failed", e)
             nanoHealth.recordNano(ok = false, reason = "${e::class.simpleName}: ${e.message?.take(120)}")
             return NanoStep.Fall(TierOutcome.FAILED, "nano threw ${e::class.simpleName}: ${e.message?.take(160)}")
@@ -405,21 +408,31 @@ class Extractor @Inject constructor(
 
     /**
      * Nano could not answer yet, for a reason that may clear. Count it and leave the row EXTRACTING
-     * (a download waits 3, then 5 minutes; a background block waits for the next foreground). The
-     * last allowed attempt falls through to the other tiers instead, so a row never spins forever.
+     * (a download waits 3, then 5 minutes; a usage limit [limitWaitMs] waits 1, then 2 minutes, or
+     * longer when AICore named a longer wait; a background block waits for the next foreground).
+     * The last allowed attempt falls through to the other tiers instead, so a row never spins
+     * forever. A usage limit never marks Nano as failing on this device.
      */
-    private suspend fun park(coffeeId: String, pages: List<OcrPage>, ocrText: String, note: String, delayed: Boolean): NanoStep {
+    private suspend fun park(
+        coffeeId: String, pages: List<OcrPage>, ocrText: String, note: String, delayed: Boolean, limitWaitMs: Long? = null,
+    ): NanoStep {
         val attempts = (dao.get(coffeeId)?.extractionAttempts ?: 0) + 1
+        val limited = limitWaitMs != null
         if (attempts >= MAX_ATTEMPTS) {
             Log.w(TAG, "nano: giving up on $coffeeId after $attempts attempts: $note")
-            nanoHealth.recordNano(ok = false, reason = note)
-            return NanoStep.Fall(if (delayed) TierOutcome.NOT_READY else TierOutcome.FAILED, "nano gave up after $attempts attempts: $note")
+            if (!limited) nanoHealth.recordNano(ok = false, reason = note)
+            return NanoStep.Fall(if (delayed || limited) TierOutcome.NOT_READY else TierOutcome.FAILED, "nano gave up after $attempts attempts: $note")
         }
-        val at = if (delayed) clock.now() + RETRY_DELAYS_MS[(attempts - 1).coerceIn(0, RETRY_DELAYS_MS.lastIndex)] else null
+        val step = (attempts - 1).coerceAtLeast(0)
+        val at = when {
+            limitWaitMs != null -> clock.now() + maxOf(limitWaitMs, LIMIT_DELAYS_MS[step.coerceAtMost(LIMIT_DELAYS_MS.lastIndex)])
+            delayed -> clock.now() + RETRY_DELAYS_MS[step.coerceAtMost(RETRY_DELAYS_MS.lastIndex)]
+            else -> null
+        }
         db.withTransaction {
             dao.get(coffeeId)?.let {
                 val trail = ExtractionTrail.decode(it.extractionTrail)
-                    .let { t -> if (delayed) t.with(Tier.NANO, TierOutcome.PREPARING) else t }
+                    .let { t -> if (delayed) t.with(Tier.NANO, TierOutcome.PREPARING) else if (limited) t.with(Tier.NANO, TierOutcome.BUSY) else t }
                 dao.update(
                     it.copy(extractionAttempts = attempts, extractionMeta = note, nextAttemptAt = at, extractionTrail = trail.encode()),
                 )
@@ -495,6 +508,8 @@ class Extractor @Inject constructor(
         const val MAX_ATTEMPTS = 3
         /** Parked retries while Nano's model downloads: +3 minutes, then +5; the third miss falls through. */
         val RETRY_DELAYS_MS = longArrayOf(3 * 60_000L, 5 * 60_000L)
+        /** Parked retries after the built-in AI's usage limit refused a read: +1 minute, then +2; the third refusal falls through. */
+        val LIMIT_DELAYS_MS = longArrayOf(60_000L, 2 * 60_000L)
         /** After an unexpected error the row is tried again after this times its attempt count. */
         const val FAILURE_RETRY_MS = 60_000L
         /** Images a model tier is given; the on-device reader's engine takes at most this many (LiteRtLocalReader). */
