@@ -24,12 +24,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -38,6 +35,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.roastbook.app.R
+import dev.roastbook.app.util.English
+import dev.roastbook.app.util.englishPlural
 import dev.roastbook.app.data.db.CoffeeRow
 import dev.roastbook.app.data.db.CoffeeState
 import dev.roastbook.app.data.db.ExtractionSource
@@ -51,8 +50,6 @@ import dev.roastbook.app.ui.theme.LocalHighContrast
 import dev.roastbook.app.ui.theme.NotesStyle
 import dev.roastbook.app.ui.theme.RatingStyle
 import dev.roastbook.app.ui.theme.onTintVariant
-import java.text.SimpleDateFormat
-import java.util.Date
 
 /**
  * One coffee in the list. TalkBack reads the row as one item ("Hills of Lumen, Larkmoor Coffee, rated
@@ -67,9 +64,7 @@ fun CoffeeRowCard(
     val secondary = onTintVariant()
     val extracting = row.state == CoffeeState.EXTRACTING
     val hc = LocalHighContrast.current
-    val locale = LocalConfiguration.current.locales[0]
-    val dateFormat = remember(locale) { SimpleDateFormat("MMM d", locale) }
-    val ratingLabel = row.overall?.let { stringResource(R.string.row_rating_description, "%.1f".format(it)) }
+    val ratingLabel = row.overall?.let { stringResource(R.string.row_rating_description, English.score(it)) }
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
@@ -95,7 +90,7 @@ fun CoffeeRowCard(
                         val (readingTitle, readingSubtitle) = extractingLines(row.extractionTrail, row.nextAttemptAt)
                         Text(readingTitle, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                         Text(readingSubtitle, style = NotesStyle, color = secondary)
-                        val photos = pluralStringResource(R.plurals.photos, row.photoCount, row.photoCount)
+                        val photos = englishPlural(R.plurals.photos, row.photoCount)
                         Text(photos + " · " + stringResource(R.string.row_just_now),
                             style = MaterialTheme.typography.labelSmall, color = secondary)
                     }
@@ -103,7 +98,7 @@ fun CoffeeRowCard(
                         Text(stringResource(R.string.row_extract_failed), style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface)
                         Text(stringResource(R.string.row_extract_failed_subtitle), style = NotesStyle, color = secondary)
-                        Text(dateFormat.format(Date(row.loggedAt)), style = MaterialTheme.typography.labelSmall, color = secondary)
+                        Text(English.shortDate(row.loggedAt), style = MaterialTheme.typography.labelSmall, color = secondary)
                     }
                     else -> {
                         Text(row.coffeeName ?: row.roaster ?: stringResource(R.string.detail_untitled),
@@ -113,7 +108,7 @@ fun CoffeeRowCard(
                             Text(row.tastingNotes.joinToString(" · "), style = NotesStyle, color = secondary, maxLines = 2,
                                 overflow = TextOverflow.Ellipsis)
                         }
-                        val byline = listOfNotNull(row.roaster.takeIf { row.coffeeName != null }, dateFormat.format(Date(row.loggedAt)))
+                        val byline = listOfNotNull(row.roaster.takeIf { row.coffeeName != null }, English.shortDate(row.loggedAt))
                         Text(byline.joinToString(" · "),
                             style = MaterialTheme.typography.labelSmall, color = secondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
@@ -128,7 +123,7 @@ fun CoffeeRowCard(
                             horizontalAlignment = Alignment.End,
                             modifier = Modifier.clearAndSetSemantics { contentDescription = ratingLabel ?: "" },
                         ) {
-                            Text("%.1f".format(row.overall), style = RatingStyle, color = MaterialTheme.colorScheme.onSurface)
+                            Text(English.score(row.overall), style = RatingStyle, color = MaterialTheme.colorScheme.onSurface)
                             RatingDots(row.overall, tint.accent)
                         }
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, Modifier.size(20.dp), tint = secondary)

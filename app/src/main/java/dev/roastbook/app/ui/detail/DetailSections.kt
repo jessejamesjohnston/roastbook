@@ -55,6 +55,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import dev.roastbook.app.R
+import dev.roastbook.app.util.English
 import dev.roastbook.app.util.ExternalLinks
 import dev.roastbook.app.cloud.Enricher
 import dev.roastbook.app.cloud.LookupResult
@@ -69,8 +70,6 @@ import dev.roastbook.app.ui.theme.onTintVariant
 import dev.roastbook.app.util.WebLinks
 import java.io.File
 import java.net.URLEncoder
-import java.text.SimpleDateFormat
-import java.util.Date
 
 /** The square Detail hero: the photo over the bag's tint, or the tint alone without a file. */
 @Composable
@@ -87,10 +86,10 @@ internal fun HeroBox(file: File?, tint: Color, label: String, modifier: Modifier
  * name) and logged date, then the tasting notes if any.
  */
 @Composable
-internal fun TitleBlock(c: CoffeeEntity, title: String, dateFormat: SimpleDateFormat, modifier: Modifier) {
+internal fun TitleBlock(c: CoffeeEntity, title: String, modifier: Modifier) {
     Column(modifier) {
         Text(title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
-        Text(listOfNotNull(c.roaster.takeIf { c.coffeeName != null }, dateFormat.format(Date(c.loggedAt))).joinToString(" · "),
+        Text(listOfNotNull(c.roaster.takeIf { c.coffeeName != null }, English.longDate(c.loggedAt)).joinToString(" · "),
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (c.tastingNotes.isNotEmpty()) {
             Spacer(Modifier.height(6.dp))
@@ -185,12 +184,12 @@ internal fun RatingSection(
     val editingInline = draft != null
     CardFrame(tint) {
         val shown = if (editingInline) draft.overall else c.overall
-        val overallLabel = shown?.let { stringResource(R.string.detail_overall_description, "%.1f".format(it)) }
+        val overallLabel = shown?.let { stringResource(R.string.detail_overall_description, English.score(it)) }
         CardHeader(
             stringResource(R.string.detail_ratings), editable = c.overall != null || editingInline, editing = editingInline,
             onEdit = onEdit, onDone = onDone,
         ) {
-            if (shown != null) Text("%.1f".format(shown), style = RatingStyle,
+            if (shown != null) Text(English.score(shown), style = RatingStyle,
                 modifier = Modifier.semantics { contentDescription = overallLabel ?: "" })
         }
         Spacer(Modifier.height(8.dp))

@@ -13,6 +13,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.roastbook.app.R
+import dev.roastbook.app.util.English
 import dev.roastbook.app.data.backup.BackupManager
 import dev.roastbook.app.data.backup.BackupManifest
 import dev.roastbook.app.data.backup.BackupPrefs
@@ -209,7 +210,7 @@ class SettingsViewModel @Inject constructor(
                     message = BackupUi.Message(
                         R.string.settings_backup_done,
                         listOf(
-                            context.resources.getQuantityString(R.plurals.coffees, r.coffees, r.coffees),
+                            English.plural(context.resources, R.plurals.coffees, r.coffees),
                             humanBytes(r.bytes),
                         ),
                     ),
@@ -275,7 +276,7 @@ class SettingsViewModel @Inject constructor(
                     working = BackupUi.Working.NONE,
                     message = BackupUi.Message(
                         R.string.settings_restore_done,
-                        listOf(context.resources.getQuantityString(R.plurals.coffees, m.coffees, m.coffees)),
+                        listOf(English.plural(context.resources, R.plurals.coffees, m.coffees)),
                     ),
                 )
             } catch (e: CancellationException) { throw e } catch (e: Exception) {
@@ -326,7 +327,7 @@ class SettingsViewModel @Inject constructor(
                 ago < DateUtils.DAY_IN_MILLIS || days < 1 -> ago(ago / DateUtils.HOUR_IN_MILLIS, RelativeUnit.HOURS)
                 days == 1L -> yesterday
                 ago < DateUtils.WEEK_IN_MILLIS -> ago(days, RelativeUnit.DAYS)
-                else -> java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy", java.util.Locale.US).format(lastAt)
+                else -> English.mediumDate(last, zone)
             }
         }
 
@@ -335,9 +336,7 @@ class SettingsViewModel @Inject constructor(
          * 26, 2026 at 3:04 PM and has …"). English whatever the phone's language, for the same reason
          * as [lastBackupWhen].
          */
-        fun backupMadeAt(at: Long, zone: java.time.ZoneId = java.time.ZoneId.systemDefault()): String =
-            java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy 'at' h:mm a", java.util.Locale.US)
-                .format(java.time.Instant.ofEpochMilli(at).atZone(zone))
+        fun backupMadeAt(at: Long, zone: java.time.ZoneId = java.time.ZoneId.systemDefault()): String = English.dateTime(at, zone)
 
         fun humanBytes(b: Long): String = when {
             b >= 1L shl 20 -> "%.1f MB".format(java.util.Locale.US, b / (1024f * 1024f))

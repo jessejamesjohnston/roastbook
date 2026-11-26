@@ -26,13 +26,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import dev.roastbook.app.R
+import dev.roastbook.app.util.englishPlural
 
 /** Settings: one card per topic (backup, cloud AI, on-device reader, reminders, photos, appearance), then About. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -90,8 +90,8 @@ fun SettingsScreen(
 
     ui.pendingRestore?.let { p ->
         val date = SettingsViewModel.backupMadeAt(p.manifest.createdAt)
-        val coffees = pluralStringResource(R.plurals.coffees, p.manifest.coffees, p.manifest.coffees)
-        val photos = pluralStringResource(R.plurals.photos, p.manifest.photos, p.manifest.photos)
+        val coffees = englishPlural(R.plurals.coffees, p.manifest.coffees)
+        val photos = englishPlural(R.plurals.photos, p.manifest.photos)
         AlertDialog(
             onDismissRequest = { vm.cancelRestore() },
             title = { Text(stringResource(R.string.settings_restore_title)) },

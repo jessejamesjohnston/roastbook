@@ -29,7 +29,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -42,6 +41,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.roastbook.app.R
+import dev.roastbook.app.util.englishString
 import dev.roastbook.app.data.db.CoffeeEntity
 import dev.roastbook.app.data.db.CoffeePhotoEntity
 import dev.roastbook.app.data.db.CoffeeState
@@ -56,8 +56,6 @@ import dev.roastbook.app.ui.rating.RatingDraft
 import dev.roastbook.app.ui.rating.RatingEditor
 import dev.roastbook.app.ui.theme.LocalHighContrast
 import dev.roastbook.app.ui.theme.onTintVariant
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 /**
  * The page under the top bar: hero and title, the reading banner and note, then the cards. On a
@@ -88,7 +86,6 @@ internal fun DetailBody(
     val heroFile = listOfNotNull(hero?.square, hero?.original, hero?.thumb).map { vm.photoStore.file(it) }.firstOrNull { it.exists() }
     val thumbnailOnly = hero != null && !vm.photoStore.file(hero.original).exists() &&
         hero.thumb?.let { vm.photoStore.file(it).exists() } == true
-    val dateFormat = remember { SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()) }
     val extracting = c.state == CoffeeState.EXTRACTING
     val readingTitle = extractingLines(c.extractionTrail, c.nextAttemptAt).first
     val title = when {
@@ -112,12 +109,12 @@ internal fun DetailBody(
                 Row(Modifier.padding(horizontal = 16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     HeroBox(heroFile, tint.tint, heroLabel, Modifier.width(260.dp))
                     Spacer(Modifier.width(20.dp))
-                    TitleBlock(c, title, dateFormat, Modifier.weight(1f))
+                    TitleBlock(c, title, Modifier.weight(1f))
                 }
             } else {
                 HeroBox(heroFile, tint.tint, heroLabel, Modifier.padding(horizontal = 16.dp).fillMaxWidth())
                 Spacer(Modifier.height(16.dp))
-                TitleBlock(c, title, dateFormat, Modifier.padding(horizontal = 20.dp))
+                TitleBlock(c, title, Modifier.padding(horizontal = 20.dp))
             }
             Spacer(Modifier.height(16.dp))
 
@@ -275,7 +272,7 @@ private fun DetailCards(
         if (photos.isNotEmpty()) ReadOnlySection(stringResource(R.string.detail_photos), tint.tint) {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 itemsIndexed(photos, key = { _, p -> p.id }) { i, p ->
-                    val label = stringResource(R.string.detail_photo_position, i + 1, photos.size)
+                    val label = englishString(R.string.detail_photo_position, i + 1, photos.size)
                     HeroSquare(vm.photoStore.fileOrNull(p.thumb ?: p.original), 88.dp, 12.dp, stroke = false,
                         modifier = Modifier.semantics { contentDescription = label })
                 }

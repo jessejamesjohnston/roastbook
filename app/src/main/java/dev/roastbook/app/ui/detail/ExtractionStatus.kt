@@ -1,6 +1,5 @@
 package dev.roastbook.app.ui.detail
 
-import android.text.format.DateFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,12 +29,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.roastbook.app.R
+import dev.roastbook.app.util.English
 import dev.roastbook.app.data.db.CoffeeEntity
 import dev.roastbook.app.data.db.CoffeeState
 import dev.roastbook.app.data.db.ExtractionSource
@@ -43,7 +42,6 @@ import dev.roastbook.app.extraction.ExtractionTrail
 import dev.roastbook.app.extraction.Tier
 import dev.roastbook.app.extraction.TierOutcome
 import dev.roastbook.app.extraction.WhatHappenedRules
-import java.util.Date
 
 /** True while Nano's model is downloading for this row (the first-download state). */
 fun isPreparingReader(state: CoffeeState, trail: String?): Boolean =
@@ -59,23 +57,17 @@ fun extractingLines(trail: String?, nextAttemptAt: Long?): Pair<String, String> 
     val nano = ExtractionTrail.decode(trail)[Tier.NANO]
     val retryAt = nextAttemptAt?.takeIf { it > System.currentTimeMillis() }
     if (nano == TierOutcome.BUSY) {
-        // English like every other line: the app's strings are English only.
-        val sub = if (retryAt != null) stringResource(R.string.row_busy_retry_at, englishTime(retryAt)) else stringResource(R.string.row_busy_subtitle)
+        val sub = if (retryAt != null) stringResource(R.string.row_busy_retry_at, English.clock(retryAt)) else stringResource(R.string.row_busy_subtitle)
         return stringResource(R.string.row_extracting) to sub
     }
     if (nano != TierOutcome.PREPARING) {
         return stringResource(R.string.row_extracting) to stringResource(R.string.row_extracting_subtitle)
     }
-    val context = LocalContext.current
     val sub = if (retryAt != null) {
-        stringResource(R.string.row_preparing_retry_at, DateFormat.getTimeFormat(context).format(Date(retryAt)))
+        stringResource(R.string.row_preparing_retry_at, English.clock(retryAt))
     } else stringResource(R.string.row_preparing_subtitle)
     return stringResource(R.string.row_preparing) to sub
 }
-
-/** A clock time as "3:04 PM", in English whatever the device's language. */
-internal fun englishTime(at: Long, zone: java.time.ZoneId = java.time.ZoneId.systemDefault()): String =
-    java.time.format.DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US).format(java.time.Instant.ofEpochMilli(at).atZone(zone))
 
 /**
  * "Read by …" under the facts: which tier's reading this is, with the guess named as a guess. Null

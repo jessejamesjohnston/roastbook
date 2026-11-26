@@ -35,7 +35,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -45,6 +44,8 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.roastbook.app.R
+import dev.roastbook.app.util.englishPlural
+import dev.roastbook.app.util.englishString
 import dev.roastbook.app.data.backup.BackupNudge
 import dev.roastbook.app.data.db.DateRange
 import dev.roastbook.app.data.db.HistoryFilter
@@ -116,9 +117,9 @@ private fun CounterOrFilterLine(filter: HistoryFilter, sources: List<SourceEntit
         filter.dateRange.takeIf { it != DateRange.ANY }?.let { stringResource(it.label()) },
     )
     if (active.isEmpty()) {
-        val coffees = pluralStringResource(R.plurals.coffees, count, count)
+        val coffees = englishPlural(R.plurals.coffees, count)
         Text(
-            if (unrated > 0) stringResource(R.string.history_count_to_rate, coffees, unrated) else coffees,
+            if (unrated > 0) englishString(R.string.history_count_to_rate, coffees, unrated) else coffees,
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     } else Row(verticalAlignment = Alignment.CenterVertically) {
@@ -146,7 +147,7 @@ private fun BackupBanner(nudge: BackupNudge, onSettings: () -> Unit) {
                 is BackupNudge.Off -> stringResource(R.string.banner_backup_off)
                 is BackupNudge.NoFolder,
                 is BackupNudge.NeverBackedUp -> stringResource(R.string.banner_no_folder)
-                is BackupNudge.Stale -> pluralStringResource(R.plurals.banner_no_backup, nudge.days, nudge.days)
+                is BackupNudge.Stale -> englishPlural(R.plurals.banner_no_backup, nudge.days)
             },
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onTertiaryContainer,
             modifier = Modifier.weight(1f),

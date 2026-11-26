@@ -24,8 +24,10 @@ All notable changes to Roastbook are recorded here. The format follows
   maceration") is dropped.
 - A reading from your own Gemini key that wasn't the JSON asked for no longer clears values an
   earlier reading filled, as with the other readers.
-- The restore question dates the backup in English, like the rest of the app, whatever the
-  device's language.
+- Dates, times and numbers inside the app's text (the restore question, the journal and coffee
+  page dates, retry times, counts and scores) are English, like the rest of the app, whatever the
+  device's language. On an Arabic or Persian device they no longer switch to that language's
+  digits.
 - A one-line note on a coffee's page, such as "Read by the on-device reader", is no taller than its
   line.
 

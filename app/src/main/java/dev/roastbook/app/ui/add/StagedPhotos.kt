@@ -47,7 +47,6 @@ import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInputModeManager
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -60,6 +59,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import dev.roastbook.app.R
+import dev.roastbook.app.util.englishPlural
+import dev.roastbook.app.util.englishString
 import dev.roastbook.app.data.db.PhotoRole
 import dev.roastbook.app.ui.theme.Honey
 import kotlinx.coroutines.delay
@@ -80,7 +81,7 @@ internal fun StagedThumb(
     ) {
         Box {
             AsyncImage(
-                model = photo.file, contentDescription = stringResource(R.string.add_photo_position, position, count),
+                model = photo.file, contentDescription = englishString(R.string.add_photo_position, position, count),
                 contentScale = ContentScale.Crop, modifier = Modifier.size(THUMB).clip(RoundedCornerShape(10.dp)),
             )
             RemoveButton(stringResource(R.string.remove_photo, roleLabel), enabled, onRemove, Modifier.align(Alignment.TopEnd))
@@ -185,7 +186,7 @@ internal fun RemovedUndo(removed: List<RemovedPhoto>, onUndo: () -> Unit, onExpi
             .padding(start = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(pluralStringResource(R.plurals.add_photos_removed, removed.size, removed.size), color = Color.White,
+        Text(englishPlural(R.plurals.add_photos_removed, removed.size), color = Color.White,
             style = MaterialTheme.typography.bodyMedium)
         TextButton(onClick = onUndo, modifier = Modifier.focusRequester(undoFocus),
             colors = ButtonDefaults.textButtonColors(contentColor = Honey)) {

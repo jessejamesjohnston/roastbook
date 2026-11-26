@@ -33,7 +33,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -42,6 +41,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import dev.roastbook.app.R
+import dev.roastbook.app.util.englishPlural
 import dev.roastbook.app.data.backup.BackupOff
 import dev.roastbook.app.data.backup.NO_SPACE_ERROR
 import dev.roastbook.app.data.prefs.UserSettings
@@ -101,7 +101,7 @@ internal fun BackupCard(vm: SettingsViewModel) {
                     yesterday = stringResource(R.string.settings_last_backup_yesterday),
                 ),
                 SettingsViewModel.humanBytes(state.lastBackupBytes ?: 0),
-                pluralStringResource(R.plurals.coffees, state.lastBackupCoffees ?: 0, state.lastBackupCoffees ?: 0),
+                englishPlural(R.plurals.coffees, state.lastBackupCoffees ?: 0),
             ),
             style = MaterialTheme.typography.bodyMedium,
         )
@@ -117,7 +117,7 @@ internal fun BackupCard(vm: SettingsViewModel) {
         // Rotation happens in a folder; with none chosen there is nothing to keep.
         if (state.folderUri != null) {
             Text(
-                pluralStringResource(R.plurals.settings_backup_keeps, state.keepCount, state.keepCount),
+                englishPlural(R.plurals.settings_backup_keeps, state.keepCount),
                 style = MaterialTheme.typography.bodySmall,
                 color = muted,
             )
@@ -219,11 +219,7 @@ internal fun RemindersCard(vm: SettingsViewModel, settings: UserSettings) {
         Spacer(Modifier.height(8.dp))
         SwitchRow(
             title = stringResource(R.string.settings_second_look),
-            hint = pluralStringResource(
-                R.plurals.settings_second_look_hint,
-                settings.secondLookDays,
-                settings.secondLookDays,
-            ),
+            hint = englishPlural(R.plurals.settings_second_look_hint, settings.secondLookDays),
             checked = settings.secondLookEnabled, onChange = { vm.setSecondLookEnabled(it) },
         )
         if (settings.secondLookEnabled) {
@@ -233,7 +229,7 @@ internal fun RemindersCard(vm: SettingsViewModel, settings: UserSettings) {
                 UserSettings.SECOND_LOOK_CHOICES.forEach { d ->
                     FilterChip(
                         selected = settings.secondLookDays == d, onClick = { vm.setSecondLookDays(d) },
-                        label = { Text(pluralStringResource(R.plurals.settings_days, d, d)) },
+                        label = { Text(englishPlural(R.plurals.settings_days, d)) },
                         modifier = Modifier.semantics { role = Role.RadioButton },
                     )
                 }

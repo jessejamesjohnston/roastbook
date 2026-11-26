@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.roastbook.app.R
+import dev.roastbook.app.util.englishString
 import dev.roastbook.app.data.db.CoffeeEntity
 import dev.roastbook.app.ui.theme.NotesStyle
 import androidx.compose.foundation.layout.width
@@ -98,7 +99,7 @@ fun RatingSheet(coffee: CoffeeEntity, accent: Color, onSave: (RatingDraft) -> Un
 fun RatingSummary(c: CoffeeEntity, accent: Color) {
     val secondary = dev.roastbook.app.ui.theme.onTintVariant()
     @Composable fun row(label: Int, v: Int?, ends: Pair<Int, Int>? = null) {
-        val state = if (v == null) stringResource(R.string.rate_state_unset) else stringResource(R.string.rate_value, v)
+        val state = if (v == null) stringResource(R.string.rate_state_unset) else englishString(R.string.rate_value, v)
         Row(
             Modifier.fillMaxWidth().padding(vertical = 3.dp).semantics(mergeDescendants = true) { stateDescription = state },
             verticalAlignment = Alignment.CenterVertically,

@@ -46,6 +46,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.roastbook.app.R
+import dev.roastbook.app.util.englishString
 import dev.roastbook.app.data.prefs.UserPrefs
 import javax.inject.Inject
 import kotlinx.coroutines.NonCancellable
@@ -88,7 +89,7 @@ fun OnboardingScreen(
         HorizontalPager(state = pager, modifier = Modifier.weight(1f)) { i ->
             val p = pages[i]
             // A readable measure on tablets; the page announces its position to TalkBack.
-            val position = stringResource(R.string.onboarding_page_position, i + 1, pages.size)
+            val position = englishString(R.string.onboarding_page_position, i + 1, pages.size)
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(
                 // Scrolls when large text or a short window can't fit the page.

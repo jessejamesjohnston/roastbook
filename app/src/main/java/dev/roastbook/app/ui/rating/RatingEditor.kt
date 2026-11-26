@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import dev.roastbook.app.R
+import dev.roastbook.app.util.English
+import dev.roastbook.app.util.englishString
 import dev.roastbook.app.data.db.CoffeeEntity
 import dev.roastbook.app.ui.theme.RatingStyle
 
@@ -106,7 +108,7 @@ fun RatingEditor(
         afterScores()
         if (!embedded) Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.rate_overall), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            Text(draft.overall?.let { "%.1f".format(it) } ?: "–", style = RatingStyle)
+            Text(draft.overall?.let { English.score(it) } ?: "–", style = RatingStyle)
         }
         if (showProfile) {
             Spacer(Modifier.height(10.dp))
@@ -159,7 +161,7 @@ private fun DimRow(label: String, value: Int?, accent: Color, ends: Pair<String,
     val secondary = dev.roastbook.app.ui.theme.onTintVariant()
     // For TalkBack and switch access the whole row is ONE adjustable control: it reads
     // "Aroma, 3 of 5" and swipe up/down (or the volume keys) move the value.
-    val state = if (value == null) stringResource(R.string.rate_state_unset) else stringResource(R.string.rate_value, value)
+    val state = if (value == null) stringResource(R.string.rate_state_unset) else englishString(R.string.rate_value, value)
     val rangeLabel = ends?.let { stringResource(R.string.rate_range, it.first, it.second) }
     val rowModifier = Modifier.fillMaxWidth().padding(vertical = 1.dp).semantics(mergeDescendants = true) {
         contentDescription = listOfNotNull(label, rangeLabel).joinToString(", ")

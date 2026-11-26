@@ -52,6 +52,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import dev.roastbook.app.R
+import dev.roastbook.app.util.English
 import dev.roastbook.app.data.db.CoffeeEntity
 import dev.roastbook.app.ui.rating.RatingDraft
 import dev.roastbook.app.ui.theme.onTintVariant
@@ -83,12 +84,12 @@ internal fun factFields(c: CoffeeEntity, sourceName: String?, res: Resources): L
     Field("producer", R.string.field_producer, c.producer) { e, v -> e.copy(producer = v) },
     Field("process", R.string.field_process, c.process) { e, v -> e.copy(process = v) },
     Field("varietal", R.string.field_varietal, c.varietal.joinToString(", ").ifBlank { null }) { e, v -> e.copy(varietal = splitList(v)) },
-    Field("elevation", R.string.field_elevation, c.elevationM?.let { res.getString(R.string.unit_masl, it) }) { e, v ->
+    Field("elevation", R.string.field_elevation, c.elevationM?.let { English.string(res, R.string.unit_masl, it) }) { e, v ->
         e.copy(elevationM = digits(v))
     },
     Field("roastLevel", R.string.field_roast_level, c.roastLevel) { e, v -> e.copy(roastLevel = v) },
     Field("roastDate", R.string.field_roast_date, c.roastDate) { e, v -> e.copy(roastDate = v) },
-    Field("bag", R.string.field_bag_size, c.bagSizeG?.let { res.getString(R.string.unit_grams, it) }) { e, v ->
+    Field("bag", R.string.field_bag_size, c.bagSizeG?.let { English.string(res, R.string.unit_grams, it) }) { e, v ->
         e.copy(bagSizeG = digits(v))
     },
     Field("notes", R.string.field_tasting_notes, c.tastingNotes.joinToString(", ").ifBlank { null }) { e, v ->

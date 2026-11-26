@@ -1,6 +1,5 @@
 package dev.roastbook.app.ui.detail
 
-import android.text.format.DateFormat
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
@@ -127,12 +126,27 @@ class ExtractionStatusTest {
         return out
     }
 
-    private fun englishTime(at: Long) =
-        java.time.format.DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US).format(java.time.Instant.ofEpochMilli(at).atZone(java.time.ZoneId.systemDefault()))
+    /** How an English reader expects a retry time: "3:04 PM", with the day when it isn't today. */
+    private fun englishTime(at: Long): String {
+        val zone = java.time.ZoneId.systemDefault()
+        val then = java.time.Instant.ofEpochMilli(at).atZone(zone)
+        val time = java.time.format.DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US).format(then)
+        val today = java.time.LocalDate.now(zone)
+        return if (then.toLocalDate() == today) time else "$time on " + java.time.format.DateTimeFormatter.ofPattern("MMM d", java.util.Locale.US).format(then)
+    }
 
-    /** Waiting out the built-in AI's usage limit: still reading, with when it tries again, in English. */
-    @Test @Config(qualifiers = "de")
-    fun aReadWaitingOutTheUsageLimitSaysWhenItTriesAgain() {
+    /**
+     * Waiting out the built-in AI's usage limit: still reading, with when it tries again, in English.
+     * Run under Arabic and Japanese, whose digits and day-half markers differ from English (German's
+     * look the same, so a German run can't tell the two apart).
+     */
+    @Test @Config(qualifiers = "ar")
+    fun aReadWaitingOutTheUsageLimitSaysWhenItTriesAgainInEnglishOnAnArabicDevice() = busyLineIsEnglish()
+
+    @Test @Config(qualifiers = "ja")
+    fun aReadWaitingOutTheUsageLimitSaysWhenItTriesAgainInEnglishOnAJapaneseDevice() = busyLineIsEnglish()
+
+    private fun busyLineIsEnglish() {
         val at = System.currentTimeMillis() + 90_000
         assertEquals(
             listOf(str(R.string.row_extracting) to str(R.string.row_busy_retry_at, englishTime(at)), str(R.string.row_extracting) to str(R.string.row_busy_subtitle)),
@@ -146,7 +160,7 @@ class ExtractionStatusTest {
 
     @Test fun aParkedFirstDownloadSaysWhenItWillTryAgain() {
         val at = System.currentTimeMillis() + 60 * 60 * 1000
-        val time = DateFormat.getTimeFormat(context).format(Date(at))
+        val time = englishTime(at)
         assertEquals(listOf(str(R.string.row_preparing) to str(R.string.row_preparing_retry_at, time)), lines("nano=preparing" to at))
     }
 
