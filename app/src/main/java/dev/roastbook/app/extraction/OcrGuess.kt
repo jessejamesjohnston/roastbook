@@ -310,26 +310,7 @@ object OcrGuess {
     internal fun roastLevel(text: String): String? =
         ROAST.find(text)?.groupValues?.get(1)?.lowercase()?.replace(Regex("\\s+"), "-")?.replaceFirstChar { it.uppercase() }
 
-    internal fun bagSize(text: String): Int? {
-        Regex("""(\d{2,4}(?:[.,]\d)?)\s*(?:g|gr|grams?)\b""", RegexOption.IGNORE_CASE).findAll(text).forEach { m ->
-            val g = m.groupValues[1].replace(',', '.').toDoubleOrNull()?.roundToInt()
-            if (g != null && g in 50..5000) return g
-        }
-        Regex("""(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:oz|ounces?)\b""", RegexOption.IGNORE_CASE).find(text)?.let { m ->
-            val oz = m.groupValues[1].replace(',', '.').toDoubleOrNull() ?: return@let
-            val g = (oz * 28.35).roundToInt()
-            if (g in 50..5000) return g
-        }
-        Regex("""(\d(?:[.,]\d{1,2})?)\s*(?:kg|kilograms?)\b""", RegexOption.IGNORE_CASE).find(text)?.let { m ->
-            val g = ((m.groupValues[1].replace(',', '.').toDoubleOrNull() ?: return@let) * 1000).roundToInt()
-            if (g in 50..5000) return g
-        }
-        Regex("""(\d(?:[.,]\d{1,2})?)\s*(?:lbs?|pounds?)\b""", RegexOption.IGNORE_CASE).find(text)?.let { m ->
-            val g = ((m.groupValues[1].replace(',', '.').toDoubleOrNull() ?: return@let) * 453.6).roundToInt()
-            if (g in 50..5000) return g
-        }
-        return null
-    }
+    internal fun bagSize(text: String): Int? = NetWeight.fromLabel(text)
 
     // ---- tasting notes ----
 

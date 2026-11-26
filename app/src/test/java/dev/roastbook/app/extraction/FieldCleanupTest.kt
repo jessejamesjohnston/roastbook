@@ -100,4 +100,28 @@ class FieldCleanupTest {
         // A reading whose only "names" are placeholders is thin.
         assert(BagFactsParser.parseChecked("""{"roaster": "null", "coffee_name": "null null", "process": "Washed"}""")!!.facts.isThin)
     }
+
+    private val multiWordProcesses = listOf(
+        "Mango osmotic dehydration", "Lychee carbonic maceration", "Double anaerobic natural", "Red honey",
+        "Black honey", "Wet hulled", "Semi washed", "Pulped natural", "Anaerobic washed", "Thermal shock",
+    )
+
+    @Test fun aTastingNoteThatOnlyRepeatsAMultiWordProcessIsDropped() {
+        for (process in multiWordProcesses) {
+            for (repeat in listOf(process, process.uppercase(), process.lowercase(), "  $process ", process.replace(" ", "  "))) {
+                val out = FieldCleanup.clean(BagFacts(process = process, tastingNotes = listOf(repeat, "Plum", "Cocoa")))
+                assertEquals("$repeat with process $process", listOf("Plum", "Cocoa"), out.tastingNotes)
+            }
+        }
+    }
+
+    @Test fun realTastingNotesStayWhateverTheProcess() {
+        val oneWordProcesses = listOf("Honey", "Natural", "Washed", "Anaerobic")
+        val notes = listOf("Honey", "Honeysuckle", "Natural sweetness", "Mango", "Dehydrated mango", "Red apple", "Black tea", "Plum")
+        for (process in oneWordProcesses + multiWordProcesses) {
+            val kept = notes.filterNot { it.equals(process, ignoreCase = true) && process.contains(' ') }
+            assertEquals("process $process", kept, FieldCleanup.clean(BagFacts(process = process, tastingNotes = notes)).tastingNotes)
+        }
+        assertEquals(notes, FieldCleanup.clean(BagFacts(tastingNotes = notes)).tastingNotes)
+    }
 }

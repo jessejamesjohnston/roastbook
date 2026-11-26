@@ -621,6 +621,22 @@ class ExtractorTest {
         assertEquals(setOf("roaster", "process"), ExtractionTrail.decode(db.coffeeDao().get(id)!!.extractionTrail).garbledFields)
     }
 
+    /** A model that takes a misread gram figure for the bag size is corrected by the ounces on the same line. */
+    @Test fun aBagSizeTheLabelContradictsIsReadFromTheLabel() = runBlocking {
+        val id = seedCoffee()
+        val nano = FakeNano(answers = mutableListOf({ """{"roaster":"Lantern Roasters","bag_size_g":3409}""" }))
+        extractor(nano, FakeOcr("LANTERN ROASTERS\nNet wt. 12OZ (3409) | Whole bean")).run(id)
+        assertEquals(340, db.coffeeDao().get(id)!!.bagSizeG)
+    }
+
+    /** The process, repeated as a tasting note by the model, is not a tasting note. */
+    @Test fun theProcessRepeatedAsATastingNoteIsDropped() = runBlocking {
+        val id = seedCoffee()
+        val answer = """{"roaster":"Lantern Roasters","process":"Lychee Carbonic Maceration","tasting_notes":["Lychee carbonic maceration","Rose","Cola"]}"""
+        extractor(FakeNano(answers = mutableListOf({ answer })), FakeOcr("x")).run(id)
+        assertEquals(listOf("Rose", "Cola"), db.coffeeDao().get(id)!!.tastingNotes)
+    }
+
     /** A Gemini answer that was not the JSON asked for is garbled like any model's: it clears nothing. */
     @Test fun aGeminiAnswerThatIsNotJsonKeepsWhatAGarbledAnswerFilled() = runBlocking {
         val id = seedCoffee()

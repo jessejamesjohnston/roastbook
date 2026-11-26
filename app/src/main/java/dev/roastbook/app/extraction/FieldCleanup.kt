@@ -12,6 +12,9 @@ package dev.roastbook.app.extraction
  *   bracket or brace goes only when it has no partner in the value, so text that was quoted or
  *   bracketed on purpose keeps its marks, and apostrophes and periods are never touched.
  * - A roast date with no digit at all is empty; any other date is kept as written (see [date]).
+ * - A tasting note that only repeats the process is dropped when the process is more than one word
+ *   ("Mango osmotic dehydration" is how the coffee was made, not a flavor). A one-word process stays
+ *   as a note too: "Honey" can be both.
  *
  * Every rule only removes; nothing is invented or reworded. Running it twice changes nothing.
  */
@@ -26,7 +29,7 @@ object FieldCleanup {
         varietal = list(f.varietal),
         roastLevel = text(f.roastLevel),
         roastDate = date(f.roastDate),
-        tastingNotes = list(f.tastingNotes),
+        tastingNotes = list(f.tastingNotes).filterNot { repeatsProcess(it, text(f.process)) },
         bagDescription = text(f.bagDescription),
         sellerDescription = text(f.sellerDescription),
     )
@@ -46,6 +49,15 @@ object FieldCleanup {
     }
 
     private fun list(items: List<String>): List<String> = items.mapNotNull { text(it) }.distinct()
+
+    private val SPACES = Regex("""\s+""")
+
+    /** True when [note] is [process] again, ignoring case and spacing, and the process is more than one word. */
+    private fun repeatsProcess(note: String, process: String?): Boolean {
+        if (process == null) return false
+        fun words(s: String) = s.trim().lowercase().split(SPACES)
+        return words(process).size > 1 && words(note) == words(process)
+    }
 
     /** Strips JSON residue from both ends until none is left (see the class comment). */
     private fun trimResidue(input: String): String {

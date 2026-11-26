@@ -514,8 +514,9 @@ class Extractor @Inject constructor(
         baseline: CoffeeEntity? = null, fillBlanksOnly: Boolean = false, garbled: Boolean = false,
     ): ExtractionOutcome {
         // Every tier's text passes the same cleanup on its way in, so placeholder words and JSON
-        // residue never land in a coffee's details.
-        val cleaned = facts?.let(FieldCleanup::clean)
+        // residue never land in a coffee's details, and a bag size the label's own weight
+        // contradicts gives way to that weight.
+        val cleaned = facts?.let(FieldCleanup::clean)?.let { it.copy(bagSizeG = NetWeight.reconcile(it.bagSizeG, ocrText)) }
         var f = cleaned ?: BagFacts()
         var finalNote = note
         var finalFacts = cleaned

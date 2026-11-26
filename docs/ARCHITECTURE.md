@@ -80,7 +80,15 @@ Rules the code holds to:
   are trimmed (a quote, bracket or brace only when it has no partner), and a
   roast date with no digit at all is empty. Any other roast date is kept as
   written, whatever its style (`03NOV26`, `KW 45`): nothing parses it, it is
-  shown and edited as text. It only removes.
+  shown and edited as text. A tasting note that repeats a process of more
+  than one word is dropped (a one-word process such as "Honey" can be a
+  note too). It only removes.
+- `NetWeight` checks a model's bag size against the weight the label text
+  states, reading the usual recognition slips ("1Ooz", "100z" for "10oz",
+  "(2849)" for "(284g)"). When the label clearly names the bag's weight (on
+  a "net" line, or every weight it prints agreeing) and the model's figure
+  is more than 5% off it, the label's weight is kept. It never fills a
+  blank.
 - A model's reading (Nano, the reader or a Gemini key) is garbled when its
   first answer was not the JSON asked for. The trail lists each field a
   garbled reading changed (`garbled=coffeeName,roastDate`), plus any listed
