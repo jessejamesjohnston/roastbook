@@ -4,7 +4,28 @@ All notable changes to Roastbook are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow the app's
 `versionName`. Versions 0.2.0 to 0.3.5 were private test builds and were not published.
 
-## [Unreleased]
+## [0.4.1] - Unreleased
+
+### Changed
+
+- On a Chromebook or Googlebook, links that leave the app (About, a roaster's site) open in your
+  browser as a normal tab. Phones and tablets keep the in-app browser tab, or use the browser when
+  none is available.
+- When the built-in AI needs a break after reading several bags in a row, the bag keeps reading:
+  it says so and when it will try again (after a minute, then two). It no longer falls back to the
+  label text at once or reports the built-in AI as failing.
+
+### Fixed
+
+- A bag size the label's own weight contradicts (often a misread gram figure, such as 3409 g for a
+  12 oz bag) now gives way to that weight.
+- A tasting note that only repeats the process (such as "Mango osmotic dehydration") is dropped.
+- A reading from your own Gemini key that wasn't the JSON asked for no longer clears values an
+  earlier reading filled, as with the other readers.
+- The restore question dates the backup in English, like the rest of the app, whatever the
+  device's language.
+- A one-line note on a coffee's page, such as "Read by the on-device reader", is no taller than its
+  line.
 
 ## [0.4.0] - 2026-11-25
 
