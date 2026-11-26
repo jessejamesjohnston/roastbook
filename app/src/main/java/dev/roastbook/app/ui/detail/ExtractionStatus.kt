@@ -2,6 +2,7 @@ package dev.roastbook.app.ui.detail
 
 import android.text.format.DateFormat
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -133,9 +135,13 @@ fun ExtractionStatusCard(
                 }
                 w.hint?.let { Spacer(Modifier.height(4.dp)); Text(stringResource(it), style = MaterialTheme.typography.bodySmall, color = secondary) }
             }
-            // Close: the note goes until the next read. 48dp to touch; the cross itself stays small.
-            IconButton(onClick = onDismiss, modifier = Modifier.padding(start = 4.dp).size(48.dp).offset(x = 12.dp, y = (-12).dp)) {
-                Icon(Icons.Default.Close, stringResource(R.string.detail_dismiss_note), tint = secondary, modifier = Modifier.size(20.dp))
+            // Close: the note goes until the next read. The slot is one line tall, so a one-line note
+            // keeps a one-line card; the 48dp button is centered on it and reaches into the card's
+            // padding, so the target stays 48dp to touch while the cross itself stays small.
+            Box(Modifier.padding(start = 4.dp).size(width = 36.dp, height = 24.dp)) {
+                IconButton(onClick = onDismiss, modifier = Modifier.requiredSize(48.dp).offset(x = 6.dp)) {
+                    Icon(Icons.Default.Close, stringResource(R.string.detail_dismiss_note), tint = secondary, modifier = Modifier.size(20.dp))
+                }
             }
         }
         if (w.offerReread) {

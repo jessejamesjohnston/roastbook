@@ -1,9 +1,12 @@
 package dev.roastbook.app.ui.detail
 
 import android.text.format.DateFormat
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
@@ -137,6 +140,29 @@ class ExtractionStatusTest {
     @Test fun aFirstDownloadWithNoRetryTimeAheadSaysItIsDownloading() {
         val expected = str(R.string.row_preparing) to str(R.string.row_preparing_subtitle)
         assertEquals(listOf(expected, expected), lines("nano=preparing" to System.currentTimeMillis() - 1_000, "nano=preparing" to null))
+    }
+
+    /**
+     * A one-line note is as tall as its line plus the card's padding: the close button keeps its
+     * 48dp touch target without stretching the card below the text.
+     */
+    @Test @Config(qualifiers = "w600dp-h800dp")
+    fun aOneLineNoteIsNoTallerThanItsLine() {
+        compose.setContent {
+            RoastbookTheme {
+                ExtractionStatusCard(coffee(ExtractionSource.LOCAL, trail = "nano=unsupported;local=read"), readerOffered = false,
+                    nanoFailing = false, hasKey = true, onReread = {}, onDismiss = {}, modifier = Modifier.testTag("note"))
+            }
+        }
+        val dp = context.resources.displayMetrics.density
+        val card = compose.onNodeWithTag("note").fetchSemanticsNode().boundsInRoot
+        val line = compose.onNodeWithText(str(R.string.what_local_read)).fetchSemanticsNode().boundsInRoot
+        // The card sits 6dp inside its slot and pads its content by 12dp, top and bottom.
+        val spaceBelowLine = (card.bottom - 18 * dp) - line.bottom
+        assertTrue("${spaceBelowLine / dp}dp of empty card under the line", spaceBelowLine <= 1 * dp)
+        val close = compose.onNodeWithContentDescription(str(R.string.detail_dismiss_note)).fetchSemanticsNode().boundsInRoot
+        assertTrue("close target ${close.width / dp}x${close.height / dp}dp", close.width >= 47.5f * dp && close.height >= 47.5f * dp)
+        compose.onNodeWithContentDescription(str(R.string.detail_dismiss_note)).performClick()
     }
 
     /** The attribution line for each coffee, from one composition. */
