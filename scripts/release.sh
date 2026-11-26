@@ -2,6 +2,7 @@
 # Build and sign a Roastbook release APK from a clean checkout of a tag, then verify it.
 #
 #   scripts/release.sh v0.4.0            build, sign and verify
+#   scripts/release.sh --check-tag <tag> run the release-tag check only (no key, no build)
 #   scripts/release.sh --verify <apk>    verify an APK only
 #
 # Both need ANDROID_HOME (or ANDROID_SDK_ROOT) pointing at an Android SDK with build-tools 35 or
@@ -17,10 +18,20 @@
 #   ROASTBOOK_EXPECTED_CERT      the SHA-256 of the certificate the APK must be signed with.
 #                                Default: the certificate of the published Roastbook releases.
 #                                Set it to your own certificate when you sign with your own key.
+#   ROASTBOOK_TAG_KEY            the fingerprint (SHA256:...) of the SSH key that must have signed
+#                                the tag. Default: the key that signs the published Roastbook
+#                                tags. Set it to your own key's (ssh-keygen -lf <key>.pub) when you
+#                                sign tags yourself.
+#
+# The tag must be a tag object made for this tag's own name, carrying an SSH signature by the
+# ROASTBOOK_TAG_KEY key that verifies against the keys in the file git's
+# gpg.ssh.allowedSignersFile setting names; the script refuses anything else (see check_tag
+# below), before it reads the keystore and again just before it writes dist/, so a tag moved
+# during the build is refused too.
 #
 # The password and the alias are checked against the keystore, and the password must unlock the
-# key, before anything is cloned or built, so a wrong one fails at once. The tag is cloned into a
-# temporary directory and built there, so uncommitted changes and untracked files in this checkout
+# key, before anything is fetched or built, so a wrong one fails at once. The tag's commit is
+# fetched into a temporary directory and built there, so uncommitted changes and untracked files in this checkout
 # never reach the release, and the commit recorded inside the APK is the tag's. The password
 # reaches keytool and Gradle only through the environment: it is never printed,
 # never put on a command line and never written to disk, and Gradle runs without its daemon or
@@ -33,6 +44,11 @@ set -euo pipefail
 
 OFFICIAL_CERT="D8:79:AD:13:90:76:D9:92:D6:37:CF:A9:E3:A4:6C:84:2C:9C:E1:99:0A:AC:2A:B6:5B:0F:D7:6E:97:76:38:E1"
 EXPECTED_CERT="${ROASTBOOK_EXPECTED_CERT:-$OFFICIAL_CERT}"
+# The SSH key that signs official release tags, by its fingerprint (ssh-keygen -lf).
+OFFICIAL_TAG_KEY="SHA256:sxKlr/5ruHyIbd2mZcZCEW4L0hVedAq35LioP5GuUBE"
+EXPECTED_TAG_KEY="${ROASTBOOK_TAG_KEY:-$OFFICIAL_TAG_KEY}"
+[[ "$EXPECTED_TAG_KEY" =~ ^SHA256:[A-Za-z0-9+/]{43}$ ]] \
+    || { echo "release: ROASTBOOK_TAG_KEY is not an SSH key fingerprint (SHA256:... as ssh-keygen -lf prints it)" >&2; exit 1; }
 
 die() { echo "release: $*" >&2; exit 1; }
 
@@ -117,14 +133,65 @@ if [[ "${1:-}" == "--verify" ]]; then
     if [[ -n "$SKIPPED" ]]; then echo "release: verified, except $SKIPPED"; else echo "release: verified"; fi
     exit 0
 fi
+
+# The release-tag check. Builds nothing and reads no keystore; run first, and again just before
+# anything is written to dist/. Only a tag signed with the release-tag key passes:
+# 1. it is a tag object (a lightweight tag carries no signature);
+# 2. the object names this tag, so a signed tag made for another version cannot be moved here;
+# 3. its signature is an SSH signature. An OpenPGP or X.509 signature is refused before git sees
+#    it, because git would check one against whatever keyring the releaser happens to have;
+# 4. git verify-tag accepts it against the allowed-signers file git's gpg.ssh.allowedSignersFile
+#    names. git asks ssh-keygen (-Y find-principals, then -Y verify in the "git" namespace at the
+#    tag's own date), so the file is read as ssh-keygen documents it, options such as
+#    namespaces="git", valid-after=... and cert-authority included, and the signer is found by
+#    its key, never by git's user.email;
+# 5. the signing key's fingerprint is EXPECTED_TAG_KEY.
+# Prints the key and the principal that signed. Sets TAG_OBJECT and TAG_COMMIT.
+check_tag() {
+    local text named signers verified good principal key
+    git -C "$REPO" rev-parse -q --verify "refs/tags/$TAG" >/dev/null || die "no tag $TAG in $REPO"
+    TAG_OBJECT="$(git -C "$REPO" rev-parse "refs/tags/$TAG")"
+    [[ "$(git -C "$REPO" cat-file -t "$TAG_OBJECT")" == tag ]] || die "tag $TAG is a lightweight tag, so it carries no signature"
+    text="$(git -C "$REPO" cat-file tag "$TAG_OBJECT")"
+    named="$(sed -n '1,/^$/s/^tag //p' <<<"$text")"
+    [[ "$named" == "$TAG" ]] || die "the tag object at $TAG was made for another name ($named)"
+    ! grep -qxE -- '-----BEGIN (PGP SIGNATURE|SIGNED MESSAGE)-----' <<<"$text" \
+        || die "tag $TAG carries an OpenPGP or X.509 signature, which this script does not accept (only SSH)"
+    grep -qx -- '-----BEGIN SSH SIGNATURE-----' <<<"$text" || die "tag $TAG has no SSH signature (it is unsigned)"
+    signers="$(git -C "$REPO" config --type=path --get gpg.ssh.allowedSignersFile || true)"
+    [[ -n "$signers" && -f "$signers" ]] \
+        || die "set gpg.ssh.allowedSignersFile (git config) to the file of keys allowed to sign release tags"
+    verified="$(git -C "$REPO" -c gpg.ssh.allowedSignersFile="$signers" verify-tag --raw "$TAG_OBJECT" 2>&1)" \
+        || die "the SSH signature on tag $TAG does not verify against $signers (a key it does not list, or an altered tag)"
+    # ssh-keygen reports: Good "git" signature for <principal> with <TYPE> key SHA256:<fingerprint>
+    # (a certificate adds its ID and CA after the fingerprint). Without a listed principal git
+    # still reports a good signature, but not "for" anyone, and that is refused.
+    good="$(grep -m1 '^Good "git" signature for .* with [^ ]* key SHA256:' <<<"$verified" || true)"
+    principal="$(sed -n 's/^Good "git" signature for \(.*\) with [^ ]* key SHA256:.*$/\1/p' <<<"$good")"
+    key="$(sed -n 's/^Good "git" signature for .* with [^ ]* key \(SHA256:[A-Za-z0-9+/]*\).*$/\1/p' <<<"$good")"
+    [[ -n "$principal" && -n "$key" ]] || die "tag $TAG is signed by a key that $signers does not list"
+    [[ "$key" == "$EXPECTED_TAG_KEY" ]] \
+        || die "tag $TAG is signed by $key ($principal), not by the release-tag key $EXPECTED_TAG_KEY (set ROASTBOOK_TAG_KEY to build with your own key)"
+    TAG_COMMIT="$(git -C "$REPO" rev-parse "$TAG_OBJECT^{commit}")"
+    echo "release: tag $TAG is signed by $key, listed for $principal in $signers"
+}
+
+REPO="$(cd "$(dirname "$0")/.." && pwd)"
+
+if [[ "${1:-}" == "--check-tag" ]]; then
+    TAG="${2:-}"
+    [[ -n "$TAG" ]] || { echo "usage: scripts/release.sh --check-tag <tag>" >&2; exit 2; }
+    check_tag
+    echo "release: tag $TAG passes the release-tag check (commit $TAG_COMMIT)"
+    exit 0
+fi
+
 # A release must pass every check, so building needs readelf.
 [[ -n "$READELF" ]] || die "readelf not on PATH (binutils, or llvm-readelf from the NDK)"
 
 TAG="${1:-}"
-[[ -n "$TAG" ]] || { echo "usage: scripts/release.sh <tag> | --verify <apk>" >&2; exit 2; }
-
-REPO="$(cd "$(dirname "$0")/.." && pwd)"
-git -C "$REPO" rev-parse -q --verify "refs/tags/$TAG" >/dev/null || die "no tag $TAG in $REPO"
+[[ -n "$TAG" ]] || { echo "usage: scripts/release.sh <tag> | --check-tag <tag> | --verify <apk>" >&2; exit 2; }
+check_tag
 
 STORE="${ROASTBOOK_KEYSTORE_PATH:-}"
 [[ -n "$STORE" && -f "$STORE" ]] || die "set ROASTBOOK_KEYSTORE_PATH to your keystore file"
@@ -166,8 +233,14 @@ echo "release: signing with key '$ALIAS'"
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-git clone --quiet --no-local --depth 1 --branch "$TAG" "file://$REPO" "$WORK/src"
+# Fetch only the tag and check out its commit, which must be the one the check passed. "git clone
+# --branch <tag> --depth 1" would work too, but warns "refs/tags/<tag> ... is not a commit!" for
+# every annotated or signed tag.
+git init --quiet "$WORK/src"
 cd "$WORK/src"
+git fetch --quiet --depth 1 --no-tags "file://$REPO" "refs/tags/$TAG"
+git -c advice.detachedHead=false checkout --quiet FETCH_HEAD
+[[ "$(git rev-parse HEAD)" == "$TAG_COMMIT" ]] || die "the checkout is not the commit tag $TAG names"
 
 VERSION="$(sed -n 's/^ *versionName = "\(.*\)"/\1/p' app/build.gradle.kts)"
 [[ "$TAG" == "v$VERSION" ]] || die "tag $TAG does not match versionName $VERSION (expected v$VERSION)"
@@ -192,6 +265,13 @@ grep -q "revision: \"$COMMIT\"" <<<"$VCS_INFO" \
     || die "the APK does not record the tag's commit $COMMIT; dist/ left as it was"
 # Each R8 build renames differently, so only this build's mapping can retrace its stack traces.
 [[ -s "$BUILT_MAPPING" ]] || die "R8 wrote no mapping at $BUILT_MAPPING; dist/ left as it was"
+
+# The tag could have been moved or replaced while the build ran: check it again, and that it is
+# still the object this build came from.
+BUILT_OBJECT="$TAG_OBJECT"
+check_tag
+[[ "$TAG_OBJECT" == "$BUILT_OBJECT" ]] \
+    || die "tag $TAG moved during the build (it was $BUILT_OBJECT, now $TAG_OBJECT); dist/ left as it was"
 
 mkdir -p "$REPO/dist"
 APK="roastbook-$VERSION.apk"
