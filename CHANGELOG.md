@@ -42,6 +42,8 @@ All notable changes to Roastbook are recorded here. The format follows
   page dates, retry times, counts, scores and download sizes) are English, like the rest of the
   app, whatever the device's language: English digits, and "coffee" or "coffees" chosen by English
   rules (a French device no longer reads "0 coffee").
+- With very large text on a narrow phone, the journal's title and coffee names no longer break in
+  the middle of a word.
 - A one-line note on a coffee's page, such as "Read by the on-device reader", is no taller than its
   line.
 
