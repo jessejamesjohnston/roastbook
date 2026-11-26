@@ -1,9 +1,17 @@
 package dev.roastbook.app.ui.rating
 
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.semantics.stateDescription
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -47,7 +55,7 @@ import kotlinx.coroutines.delay
  * The rating flow as a bottom sheet (scrim over whatever is behind). On Save the sheet shows the
  * reaction line for a beat, then closes.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun RatingSheet(coffee: CoffeeEntity, accent: Color, onSave: (RatingDraft) -> Unit, onMore: (RatingDraft) -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
@@ -79,20 +87,50 @@ fun RatingSheet(coffee: CoffeeEntity, accent: Color, onSave: (RatingDraft) -> Un
                 }
             }
             if (reaction == null) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                // Each button keeps its words on one line: when the three don't fit side by side
+                // (large text on a narrow phone), Cancel and Save move to a line of their own.
+                FlowRow(Modifier.fillMaxWidth(), itemVerticalAlignment = Alignment.CenterVertically) {
                     // Saves whatever is entered so far, then opens the Detail editor (profile + notes).
-                    TextButton(onClick = { onMore(draft) }) { Text(stringResource(R.string.rate_more)) }
-                    Spacer(Modifier.weight(1f))
-                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.detail_cancel)) }
-                    Button(enabled = draft.complete, onClick = {
-                        onSave(draft)
-                        reaction = Reactions.forOverall(context, draft.overall ?: 3f)
-                    }) { Text(stringResource(R.string.rate_save)) }
+                    TextButton(onClick = { onMore(draft) }) { Text(stringResource(R.string.rate_more), maxLines = 1, softWrap = false) }
+                    Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(onClick = onDismiss) { Text(stringResource(R.string.detail_cancel), maxLines = 1, softWrap = false) }
+                        Button(enabled = draft.complete, onClick = {
+                            onSave(draft)
+                            reaction = Reactions.forOverall(context, draft.overall ?: 3f)
+                        }) { Text(stringResource(R.string.rate_save), maxLines = 1, softWrap = false) }
+                    }
                 }
+                if (!draft.complete) SaveHint()
             }
         }
     }
 }
+
+/**
+ * Why Save is disabled, under it: the large-screen dialog's sentence when it fits on one line, else
+ * the same in fewer words, so at large text on a narrow phone it never wraps or pushes Save away.
+ */
+@Composable
+private fun SaveHint() {
+    val full = stringResource(R.string.edit_rating_incomplete)
+    val short = stringResource(R.string.edit_rating_incomplete_short)
+    val style = MaterialTheme.typography.bodySmall
+    val measurer = rememberTextMeasurer()
+    BoxWithConstraints(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+        val width = constraints.maxWidth
+        val hint = remember(full, short, style, width) {
+            saveHint(full, short) { measurer.measure(it, style, constraints = Constraints(maxWidth = width)).lineCount == 1 }
+        }
+        Text(
+            hint, style = style, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
+            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+            modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite },
+        )
+    }
+}
+
+/** The full reason when [fitsOnOneLine] says it fits, else the short one. */
+internal fun saveHint(full: String, short: String, fitsOnOneLine: (String) -> Boolean): String = if (fitsOnOneLine(full)) full else short
 
 /** Read-only rating: score rows and profile rows on one grid, a buy-again pill, notes under a header. */
 @Composable

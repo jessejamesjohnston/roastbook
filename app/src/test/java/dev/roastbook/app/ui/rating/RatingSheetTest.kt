@@ -98,6 +98,47 @@ class RatingSheetTest {
         compose.onNodeWithText(text(R.string.detail_cancel)).assertIsDisplayed()
     }
 
+    /** A disabled Save says why, as the large-screen dialog does, and the reason goes once Save is enabled. */
+    @Config(qualifiers = "w400dp-h800dp")
+    @Test fun aDisabledSaveSaysWhyUntilTheScoresAreIn() {
+        show()
+        compose.onNodeWithText(text(R.string.edit_rating_incomplete)).assertIsDisplayed()
+        rateScores(4, 4, 5)
+        compose.onNodeWithText(text(R.string.edit_rating_incomplete)).assertDoesNotExist()
+        compose.onNodeWithText(text(R.string.edit_rating_incomplete_short)).assertDoesNotExist()
+    }
+
+    /** The reason never takes more than one line, and Save stays on screen, on a 360dp phone at 200% text. */
+    @Config(qualifiers = "w360dp-h640dp", fontScale = 2.0f)
+    @Test fun onANarrowPhoneWithLargeTextTheReasonTakesOneLineAndSaveStaysOnScreen() {
+        show()
+        compose.onNodeWithText(text(R.string.rate_save)).assertIsDisplayed()
+        assertEquals("one line", 1, hintLines())
+    }
+
+    /**
+     * Where the full sentence would wrap, the same is said in fewer words. Robolectric's text layout
+     * doesn't wrap like a device's, so the choice is tested on its own here and the 360dp case on an
+     * emulator.
+     */
+    @Test fun whereTheFullReasonWouldWrapTheShortOneIsChosen() {
+        val full = text(R.string.edit_rating_incomplete)
+        val short = text(R.string.edit_rating_incomplete_short)
+        assertEquals(full, saveHint(full, short) { true })
+        assertEquals(short, saveHint(full, short) { it == short })
+        assert(short.length < full.length)
+    }
+
+    /** Lines in the shown reason, whichever form it takes. */
+    private fun hintLines(): Int {
+        val node = compose.onNode(
+            hasText(text(R.string.edit_rating_incomplete)) or hasText(text(R.string.edit_rating_incomplete_short)),
+        ).fetchSemanticsNode()
+        val layout = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        node.config[androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult].action!!(layout)
+        return layout.single().lineCount
+    }
+
     @Test fun addDetailsHandsOverWhatIsEnteredSoFar() {
         show()
         row(R.string.sort_aroma).setTo(3f)

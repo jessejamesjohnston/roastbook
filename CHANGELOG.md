@@ -25,6 +25,10 @@ All notable changes to Roastbook are recorded here. The format follows
   elevation and the like), Roastbook fills it with its guess from the label text and says which
   fields are guesses. It never replaces a value the reader or you set.
 
+- The rating sheet says why Save is off until aroma, flavor, and finish are rated ("Rate all three
+  to save" where the full sentence won't fit), and with large text on a narrow phone its buttons
+  keep their words on one line.
+
 ### Fixed
 
 - A bag size that can't be right (often a misread gram figure, such as 3409 g for a 12 oz bag)

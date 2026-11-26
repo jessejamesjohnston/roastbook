@@ -356,6 +356,7 @@
     <string name="edit_discard_body">What you changed on this card won\'t be saved</string>
     <string name="edit_keep_editing">Keep editing</string>
     <string name="edit_rating_incomplete">Rate aroma, flavor, and finish to save</string>
+    <string name="edit_rating_incomplete_short">Rate all three to save</string>
     <string name="pane_pick_title">Pick a coffee</string>
     <string name="pane_pick_body">Tap any coffee in your list and its page opens here</string>
     <string name="pane_empty_title">Your coffees will show up here</string>
