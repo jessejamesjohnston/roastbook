@@ -153,7 +153,7 @@ catalog, or when the bundled notice files are missing; the notices generator
 (`scripts/third_party_notices.py`) refuses to write a partial file. The 2.6 GB model download is
 pinned to a commit and a SHA-256.
 
-**Tests.** 1093 JVM unit tests (Robolectric and Compose UI tests) cover every extraction branch,
+**Tests.** 1109 JVM unit tests (Robolectric and Compose UI tests) cover every extraction branch,
 the backup and restore paths, Room migrations across four exported schemas, the tap-only roaster
 lookup, color contrast as numbers, the update check, the screens and the wording of every
 string. CI fails if line coverage drops below 95% (`scripts/coverage.py` reports 98.9% today and
