@@ -115,7 +115,7 @@ class ModelDownloadWorkerTest {
         assertEquals(cancelThisJob, first.notification.actions.single().actionIntent)
         assertEquals(cancelThisJob, shown.last().notification.actions.single().actionIntent)
         assertTrue(first.notification.flags and Notification.FLAG_ONGOING_EVENT != 0)
-        val sizes = android.text.format.Formatter.formatShortFileSize(context, body.size.toLong())
+        val sizes = dev.roastbook.app.util.English.fileSize(body.size.toLong())
         assertTrue(shown.any { it.notification.text() == context.getString(R.string.reader_notif_progress, sizes, sizes) })
         assertEquals(context.getString(R.string.reader_notif_verifying), shown.last().notification.title())
         // Re-posted on whole-percent steps, not for every chunk.
@@ -129,8 +129,8 @@ class ModelDownloadWorkerTest {
         val m = manager()
         val info = worker(m).getForegroundInfo()
         assertEquals(context.getString(R.string.reader_notif_downloading), info.notification.title())
-        val zero = android.text.format.Formatter.formatShortFileSize(context, 0)
-        val total = android.text.format.Formatter.formatShortFileSize(context, body.size.toLong())
+        val zero = dev.roastbook.app.util.English.fileSize(0)
+        val total = dev.roastbook.app.util.English.fileSize(body.size.toLong())
         assertEquals(context.getString(R.string.reader_notif_progress, zero, total), info.notification.text())
     }
 

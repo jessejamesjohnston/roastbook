@@ -85,7 +85,7 @@ class ModelDownloadWorker @AssistedInject constructor(
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(ctx.getString(if (verifying) R.string.reader_notif_verifying else R.string.reader_notif_downloading))
             .setContentText(ctx.getString(R.string.reader_notif_progress,
-                android.text.format.Formatter.formatShortFileSize(ctx, bytes), android.text.format.Formatter.formatShortFileSize(ctx, total)))
+                dev.roastbook.app.util.English.fileSize(bytes), dev.roastbook.app.util.English.fileSize(total)))
             .setProgress(100, pct, bytes == 0L && !verifying)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

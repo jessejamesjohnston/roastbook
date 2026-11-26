@@ -1,7 +1,6 @@
 package dev.roastbook.app.ui.onboarding
 
 import android.os.Looper
-import android.text.format.Formatter
 import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -52,7 +51,7 @@ class ReaderNoticeTest {
 
     private fun shown(text: String) = compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
     private val downloadText get() = h.context.getString(
-        R.string.onboarding_reader_download, Formatter.formatShortFileSize(h.context, ModelSpec.GEMMA_4_E2B.sizeBytes))
+        R.string.onboarding_reader_download, dev.roastbook.app.util.English.fileSize(ModelSpec.GEMMA_4_E2B.sizeBytes))
     private val cloudText get() = h.context.getString(R.string.onboarding_reader_cloud)
 
     @Test fun aCapablePhoneWithoutBuiltInAiHearsAboutTheDownloadAndItsSize() {

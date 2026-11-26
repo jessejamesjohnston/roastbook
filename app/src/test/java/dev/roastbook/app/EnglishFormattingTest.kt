@@ -52,8 +52,9 @@ class EnglishFormattingTest {
         assertEquals(emptyList<String>(), offenders(localized))
     }
 
+    /** Dates, times and file sizes (Android's file-size formatter follows the device too). */
     @Test fun noDateOrTimeIsFormattedInTheDevicesLanguage() {
-        val rule = Regex("""DateFormat\.get\w*Format|DateUtils\.format|SimpleDateFormat\((?![^)]*Locale\.US)|DateTimeFormatter\.ofPattern\((?![^)]*Locale\.US)""")
+        val rule = Regex("""Formatter\.format\w*FileSize|DateFormat\.get\w*Format|DateUtils\.format|SimpleDateFormat\((?![^)]*Locale\.US)|DateTimeFormatter\.ofPattern\((?![^)]*Locale\.US)""")
         assertEquals(emptyList<String>(), offenders(rule))
     }
 }

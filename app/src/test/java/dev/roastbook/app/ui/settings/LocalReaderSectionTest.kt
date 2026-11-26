@@ -3,7 +3,6 @@ package dev.roastbook.app.ui.settings
 import android.Manifest
 import android.app.Application
 import android.os.Looper
-import android.text.format.Formatter
 import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.result.ActivityResultRegistry
 import androidx.activity.result.ActivityResultRegistryOwner
@@ -63,7 +62,7 @@ class LocalReaderSectionTest {
     private var vm: LocalReaderViewModel? = null
 
     private fun str(id: Int, vararg args: Any) = h.context.getString(id, *args)
-    private fun size(bytes: Long) = Formatter.formatShortFileSize(h.context, bytes)
+    private fun size(bytes: Long) = dev.roastbook.app.util.English.fileSize(bytes)
     private val total = ReaderHarness.MODEL_BYTES.size.toLong()
 
     /** Permission dialogs the card asked Android for, and the answer each one gets. */

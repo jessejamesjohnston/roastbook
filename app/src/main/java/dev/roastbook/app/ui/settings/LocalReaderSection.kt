@@ -1,7 +1,6 @@
 package dev.roastbook.app.ui.settings
 
 import android.content.Context
-import android.text.format.Formatter
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -42,6 +41,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.roastbook.app.R
+import dev.roastbook.app.util.English
 import dev.roastbook.app.extraction.NanoStatus
 import dev.roastbook.app.extraction.NanoTier
 import dev.roastbook.app.reader.DeviceProfile
@@ -121,7 +121,7 @@ fun LocalReaderSection(vm: LocalReaderViewModel = hiltViewModel()) {
     // The device has its own AI, so there is a choice to make between it and the reader.
     val hasBuiltInAi = nano == NanoStatus.AVAILABLE || nano == NanoStatus.DOWNLOADABLE
     if (offer == ReaderOffer.HIDDEN) return
-    fun size(b: Long) = Formatter.formatShortFileSize(context, b)
+    fun size(b: Long) = English.fileSize(b)
     val secondary = MaterialTheme.colorScheme.onSurfaceVariant
     // The first download that would need the notification permission says why first (see
     // [ReaderDownloadStarter]); while it's refused, the progress says it shows only here.

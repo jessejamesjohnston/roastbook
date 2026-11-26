@@ -1,6 +1,5 @@
 package dev.roastbook.app.ui.detail
 
-import android.text.format.Formatter
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,6 +25,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.roastbook.app.R
+import dev.roastbook.app.util.English
 import dev.roastbook.app.reader.DownloadPhase
 import dev.roastbook.app.reader.ReaderState
 import dev.roastbook.app.ui.components.ReaderProgressBar
@@ -63,7 +63,7 @@ fun ReaderOfferCard(
     explainNotifications: Boolean = false, onContinue: () -> Unit = {},
 ) {
     val context = LocalContext.current
-    fun size(b: Long) = Formatter.formatShortFileSize(context, b)
+    fun size(b: Long) = English.fileSize(b)
     val secondary = MaterialTheme.colorScheme.onSurfaceVariant
     Column(
         modifier.padding(horizontal = 16.dp, vertical = 6.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp))

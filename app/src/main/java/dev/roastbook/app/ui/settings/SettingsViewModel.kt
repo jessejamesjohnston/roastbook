@@ -210,7 +210,7 @@ class SettingsViewModel @Inject constructor(
                     message = BackupUi.Message(
                         R.string.settings_backup_done,
                         listOf(
-                            English.plural(context.resources, R.plurals.coffees, r.coffees),
+                            English.plural(context, R.plurals.coffees, r.coffees),
                             humanBytes(r.bytes),
                         ),
                     ),
@@ -276,7 +276,7 @@ class SettingsViewModel @Inject constructor(
                     working = BackupUi.Working.NONE,
                     message = BackupUi.Message(
                         R.string.settings_restore_done,
-                        listOf(English.plural(context.resources, R.plurals.coffees, m.coffees)),
+                        listOf(English.plural(context, R.plurals.coffees, m.coffees)),
                     ),
                 )
             } catch (e: CancellationException) { throw e } catch (e: Exception) {

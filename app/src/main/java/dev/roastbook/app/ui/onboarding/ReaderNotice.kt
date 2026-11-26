@@ -1,6 +1,5 @@
 package dev.roastbook.app.ui.onboarding
 
-import android.text.format.Formatter
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +22,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.roastbook.app.R
+import dev.roastbook.app.util.English
 import dev.roastbook.app.extraction.NanoTier
 import dev.roastbook.app.reader.LocalReaderManager
 import dev.roastbook.app.reader.ReaderOffer
@@ -57,7 +57,7 @@ fun ReaderNotice(vm: ReaderNoticeViewModel = hiltViewModel()) {
     val o = offer ?: return
     val context = LocalContext.current
     val text = when (o) {
-        ReaderOffer.OFFER -> stringResource(R.string.onboarding_reader_download, Formatter.formatShortFileSize(context, vm.modelSize))
+        ReaderOffer.OFFER -> stringResource(R.string.onboarding_reader_download, English.fileSize(vm.modelSize))
         else -> stringResource(R.string.onboarding_reader_cloud)
     }
     Spacer(Modifier.height(20.dp))

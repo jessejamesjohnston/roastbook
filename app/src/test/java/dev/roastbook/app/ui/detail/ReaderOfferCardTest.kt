@@ -1,6 +1,5 @@
 package dev.roastbook.app.ui.detail
 
-import android.text.format.Formatter
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -42,7 +41,7 @@ class ReaderOfferCardTest {
     private val clicks = mutableListOf<String>()
 
     private fun str(id: Int, vararg args: Any) = context.getString(id, *args)
-    private fun size(b: Long) = Formatter.formatShortFileSize(context, b)
+    private fun size(b: Long) = dev.roastbook.app.util.English.fileSize(b)
 
     private fun state(
         phase: DownloadPhase, bytes: Long = 0, failure: DownloadFailure? = null, metered: Boolean = false, stopped: Boolean = false,
