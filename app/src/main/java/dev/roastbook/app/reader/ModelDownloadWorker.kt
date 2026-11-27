@@ -82,7 +82,7 @@ class ModelDownloadWorker @AssistedInject constructor(
         val cancel = WorkManager.getInstance(ctx).createCancelPendingIntent(id)
         val pct = if (total > 0) ((bytes * 100) / total).toInt() else 0
         val n = NotificationCompat.Builder(ctx, CHANNEL)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_stat_roastbook)
             .setContentTitle(ctx.getString(if (verifying) R.string.reader_notif_verifying else R.string.reader_notif_downloading))
             .setContentText(ctx.getString(R.string.reader_notif_progress,
                 dev.roastbook.app.util.English.fileSize(bytes), dev.roastbook.app.util.English.fileSize(total)))

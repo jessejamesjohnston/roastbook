@@ -133,7 +133,7 @@ class ReminderScheduler @Inject constructor(
         }
         val tap = PendingIntent.getActivity(context, notificationId, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val n = NotificationCompat.Builder(context, CHANNEL)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_stat_roastbook)
             .setContentTitle(title)
             .setContentText(body)
             .setContentIntent(tap)

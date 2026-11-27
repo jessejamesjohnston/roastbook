@@ -96,7 +96,7 @@ class UpdateCheckWorker @AssistedInject constructor(
         val open = Intent(Intent.ACTION_VIEW, UpdateChecker.RELEASES_PAGE.toUri())
         val tap = PendingIntent.getActivity(ctx, NOTIFICATION_ID, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val n = NotificationCompat.Builder(ctx, CHANNEL)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_stat_roastbook)
             .setContentTitle(ctx.getString(R.string.update_available, version))
             .setContentText(ctx.getString(R.string.update_notif_text))
             .setContentIntent(tap)
