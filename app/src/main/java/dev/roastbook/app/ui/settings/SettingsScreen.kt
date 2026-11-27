@@ -40,6 +40,7 @@ import dev.roastbook.app.util.englishPlural
 fun SettingsScreen(
     onBack: () -> Unit,
     onLicenses: () -> Unit = {},
+    onReplayIntro: () -> Unit = {},
     vm: SettingsViewModel = hiltViewModel(),
     // A slot so tests can render the screen without Hilt (the reader section builds its own ViewModel).
     readerSection: @Composable () -> Unit = { LocalReaderSection() },
@@ -80,7 +81,7 @@ fun SettingsScreen(
                 }
                 val update by vm.update.collectAsState()
                 AboutCard(
-                    version, onLicenses, update = update, weeklyCheck = settings.weeklyUpdateCheck,
+                    version, onLicenses, onReplayIntro = onReplayIntro, update = update, weeklyCheck = settings.weeklyUpdateCheck,
                     onCheckForUpdates = { vm.checkForUpdates(version) }, onUpdatePageOpened = vm::updatePageOpened,
                     onWeeklyCheck = vm::setWeeklyUpdateCheck,
                 )

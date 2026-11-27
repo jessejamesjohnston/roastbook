@@ -32,7 +32,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,8 +86,20 @@ fun OnboardingScreen(
     val animationsOff = dev.roastbook.app.ui.theme.rememberAnimationsOff()
     val scope = rememberCoroutineScope()
     val finish = { vm.done(); onDone() }
+    // One page back or forward, sliding unless animations are off.
+    fun go(page: Int) {
+        scope.launch { if (animationsOff) pager.scrollToPage(page) else pager.animateScrollToPage(page) }
+    }
+    val back = { if (pager.currentPage > 0) go(pager.currentPage - 1) }
+    // Past the first page, the system Back and Escape step back a page instead of leaving.
+    BackHandler(enabled = pager.currentPage > 0) { back() }
 
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+    Surface(
+        Modifier.fillMaxSize().onPreviewKeyEvent { e ->
+            if (e.type == KeyEventType.KeyDown && e.key == Key.Escape && pager.currentPage > 0) { back(); true } else false
+        },
+        color = MaterialTheme.colorScheme.surface,
+    ) {
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
             TextButton(onClick = finish) { Text(stringResource(R.string.onboarding_skip)) }
@@ -127,25 +145,19 @@ fun OnboardingScreen(
             }
         }
         Spacer(Modifier.height(16.dp))
-        Button(
-            onClick = {
-                if (pager.currentPage >= pages.lastIndex) finish()
-                // With animations removed the next page appears at once instead of sliding in.
-                else scope.launch {
-                    if (animationsOff) {
-                        pager.scrollToPage(pager.currentPage + 1)
-                    } else {
-                        pager.animateScrollToPage(pager.currentPage + 1)
-                    }
-                }
-            },
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .widthIn(max = 480.dp)
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .heightIn(min = 52.dp),
-        ) { Text(stringResource(if (pager.currentPage < pages.lastIndex) R.string.onboarding_next else R.string.onboarding_start)) }
+        // Back (after the first page) beside Next, so a page read too fast is one tap away.
+        Row(
+            Modifier.align(Alignment.CenterHorizontally).widthIn(max = 480.dp).fillMaxWidth().padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (pager.currentPage > 0) {
+                TextButton(onClick = back, modifier = Modifier.heightIn(min = 52.dp)) { Text(stringResource(R.string.onboarding_back)) }
+            }
+            Button(
+                onClick = { if (pager.currentPage >= pages.lastIndex) finish() else go(pager.currentPage + 1) },
+                modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+            ) { Text(stringResource(if (pager.currentPage < pages.lastIndex) R.string.onboarding_next else R.string.onboarding_start)) }
+        }
         Spacer(Modifier.height(24.dp))
     } }
 }

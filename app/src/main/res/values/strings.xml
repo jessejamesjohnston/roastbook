@@ -67,6 +67,9 @@
     <string name="filter_date_year">This year</string>
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_next">Next</string>
+    <string name="onboarding_back">Back</string>
+    <string name="settings_replay_intro">Show the intro again</string>
+    <string name="settings_replay_intro_hint">The three pages from your first start</string>
     <string name="onboarding_start">Get started</string>
     <string name="onboarding_1_title">Your personal coffee journal</string>
     <string name="onboarding_1_body">Roastbook remembers every bag you open: the roaster, the origin, what it tasted like, and whether you\'d buy it again</string>

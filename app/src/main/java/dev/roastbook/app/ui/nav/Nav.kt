@@ -36,6 +36,8 @@ import kotlinx.serialization.Serializable
 @Serializable data class Detail(val id: String, val editRating: Boolean = false)
 @Serializable object Settings
 @Serializable object Onboarding
+/** The intro again, from Settings; it returns to Settings when it ends. */
+@Serializable object IntroReplay
 @Serializable object Licenses
 /** A license page: [sections] of the license texts joined by ";", or the third-party notices when blank. */
 @Serializable data class LicenseText(val title: String, val sections: String = "")
@@ -110,7 +112,10 @@ fun RoastbookNavHost(pending: PendingActions, showOnboarding: Boolean, shortcuts
                 )
             }
             composable<Settings> {
-                SettingsScreen(onBack = { nav.popBackStack() }, onLicenses = { nav.navigate(Licenses) })
+                SettingsScreen(onBack = { nav.popBackStack() }, onLicenses = { nav.navigate(Licenses) }, onReplayIntro = { nav.navigate(IntroReplay) })
+            }
+            composable<IntroReplay> {
+                OnboardingScreen(onDone = { nav.popBackStack() })
             }
             composable<Licenses> {
                 LicensesScreen(

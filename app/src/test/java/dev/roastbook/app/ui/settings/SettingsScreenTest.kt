@@ -61,6 +61,7 @@ class SettingsScreenTest {
 
     private var backs = 0
     private var licenses = 0
+    private var replays = 0
 
     @After fun tearDown() {
         shadowOf(RuntimeEnvironment.getApplication()).checkActivities(false)
@@ -69,7 +70,9 @@ class SettingsScreenTest {
 
     private fun show() {
         compose.setContent {
-            RoastbookTheme { SettingsScreen(onBack = { backs++ }, onLicenses = { licenses++ }, vm = rig.vm, readerSection = {}) }
+            RoastbookTheme {
+                SettingsScreen(onBack = { backs++ }, onLicenses = { licenses++ }, onReplayIntro = { replays++ }, vm = rig.vm, readerSection = {})
+            }
         }
         compose.waitForIdle()
     }
@@ -512,6 +515,13 @@ class SettingsScreenTest {
         val description = str(kind, str(title), str(subtitle).removeSuffix("."))
         return compose.onNode(hasContentDescription(description)).performScrollTo()
     }
+    /** The intro can be shown again from Settings, as a row that opens a screen in the app. */
+    @Test fun theIntroCanBeShownAgainFromSettings() {
+        show()
+        aboutRow(R.string.settings_replay_intro, R.string.settings_replay_intro_hint, R.string.about_row).performClick()
+        assertEquals(1, replays)
+    }
+
     private fun aboutContactRow() = compose.onNode(
         hasContentDescription(str(R.string.about_opens_email, str(R.string.about_contact), str(R.string.about_contact_address))),
     ).performScrollTo()

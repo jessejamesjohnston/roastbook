@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Gavel
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material3.HorizontalDivider
@@ -83,6 +84,7 @@ internal fun AboutCard(
     onCheckForUpdates: () -> Unit = {},
     onUpdatePageOpened: () -> Unit = {},
     onWeeklyCheck: (Boolean) -> Unit = {},
+    onReplayIntro: () -> Unit = {},
 ) {
     val context = LocalContext.current
     // An inline line under a row when nothing on the device can open its page or email.
@@ -146,6 +148,9 @@ internal fun AboutCard(
         val supportUrl = stringResource(R.string.support_url)
         AboutRow(Icons.AutoMirrored.Outlined.HelpOutline, stringResource(R.string.about_help), stringResource(R.string.about_help_hint),
             AboutRowKind.BROWSER) { openPage(supportUrl) }
+        RowDivider()
+        AboutRow(Icons.Outlined.School, stringResource(R.string.settings_replay_intro), stringResource(R.string.settings_replay_intro_hint),
+            AboutRowKind.IN_APP, onReplayIntro)
         RowDivider()
         val address = stringResource(R.string.about_contact_address)
         val subject = stringResource(R.string.settings_version, version)

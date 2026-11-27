@@ -31,6 +31,8 @@ All notable changes to Roastbook are recorded here. The format follows
 
 ### Fixed
 
+- The intro can be stepped back through: a Back button on every page after the first, and the
+  system Back or Escape go back one page. Settings, About has "Show the intro again".
 - Before Android asks for notifications (a reminder, the reader's download) or the camera, the
   reason now comes as a proper dialog with a title, Continue, and Not now, which asks nothing.
 - The "Show only" sheet's date row reads like its other rows, and every date choice, "Any time"
