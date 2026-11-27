@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsClient
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.net.toUri
 
 /**
  * Opens every link that leaves the app, the same way everywhere. On a laptop-class device (one that
@@ -42,7 +43,7 @@ object ExternalLinks {
     /** Starts an email to [address] with [subject]; false when no mail app can take it, so the caller can say so. */
     fun email(context: Context, address: String, subject: String): Boolean = runCatching {
         context.startActivity(
-            Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).putExtra(Intent.EXTRA_EMAIL, arrayOf(address)).putExtra(Intent.EXTRA_SUBJECT, subject)
+            Intent(Intent.ACTION_SENDTO, "mailto:".toUri()).putExtra(Intent.EXTRA_EMAIL, arrayOf(address)).putExtra(Intent.EXTRA_SUBJECT, subject)
                 .addFlags(if (context.activity() == null) Intent.FLAG_ACTIVITY_NEW_TASK else 0),
         )
     }.isSuccess

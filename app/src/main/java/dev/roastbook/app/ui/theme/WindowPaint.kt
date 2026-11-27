@@ -10,7 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalContext
+import androidx.activity.compose.LocalActivity
 import androidx.compose.ui.res.stringResource
 import androidx.core.graphics.drawable.toDrawable
 import dev.roastbook.app.R
@@ -23,8 +23,10 @@ import dev.roastbook.app.R
 fun Activity.paintWindow(color: Color, label: String) {
     val argb = color.toArgb()
     window.setBackgroundDrawable(argb.toDrawable())
+    // The task's color builder exists from Android 13, the caption-bar flags from Android 15 (before
+    // it a window has no caption); on older versions only the window background is painted.
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
     setTaskDescription(ActivityManager.TaskDescription.Builder().setLabel(label).setPrimaryColor(argb).setBackgroundColor(argb).build())
-    // The caption-bar appearance flags exist from Android 15; before it a window has no caption.
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) return
     val lightBars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or
         WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS or
@@ -39,7 +41,7 @@ fun Activity.paintWindow(color: Color, label: String) {
  */
 @Composable
 fun PaintWindow() {
-    val activity = LocalContext.current as? Activity ?: return
+    val activity = LocalActivity.current ?: return
     val page = MaterialTheme.colorScheme.surface
     val label = stringResource(R.string.app_name)
     LaunchedEffect(page, label) { activity.paintWindow(page, label) }
