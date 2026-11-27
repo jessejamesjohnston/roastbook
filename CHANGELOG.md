@@ -49,7 +49,8 @@ All notable changes to Roastbook are recorded here. The format follows
 - With a keyboard, every button, row, chip and card shows a clear 3 dp ring in the accent color
   where the focus is. A question that deletes or replaces something starts with Cancel focused.
 - On a Chromebook or Googlebook the window's title bar takes the page's color, light or dark, and
-  follows the theme chosen in Settings.
+  follows the theme chosen in Settings. Over the photo viewer and the camera it turns black, so its buttons
+  stay visible, and the intro's Skip and the camera screen's title no longer sit under it.
 - Settings keeps its title and back button in the same centered column as its cards on a wide
   window, and its rows, About block and copyright line use the sizes the other Merriment Labs apps
   use. A line under Backup says what Android's own backup carries.
