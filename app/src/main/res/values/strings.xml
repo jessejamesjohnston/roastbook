@@ -210,6 +210,8 @@
     <string name="notif_reason_reminder_title">Get reminders as notifications</string>
     <string name="notif_reason_download_title">See the download\'s progress</string>
     <string name="camera_reason_title">Use the camera</string>
+    <string name="notif_reason_update_title">Hear about new versions</string>
+    <string name="notif_why_update">A new version is announced in a notification. Allow notifications so it can show.</string>
     <!-- Opens Android's Settings app, so Settings is capitalized (as in every Merriment Labs app). -->
     <string name="permission_open_settings">Open Settings</string>
     <string name="notif_why_reminder">Reminders come as a notification. Allow notifications so they can show.</string>

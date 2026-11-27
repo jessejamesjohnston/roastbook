@@ -43,6 +43,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,6 +66,7 @@ import dev.roastbook.app.R
 import dev.roastbook.app.util.ExternalLinks
 import dev.roastbook.app.ui.components.NOTIFICATION_PERMISSION
 import dev.roastbook.app.ui.components.PermissionAsk
+import dev.roastbook.app.ui.components.PermissionReasonDialog
 import dev.roastbook.app.ui.components.rememberPermissionAsk
 import dev.roastbook.app.update.UpdateCheckResult
 import dev.roastbook.app.update.UpdateChecker
@@ -100,14 +102,24 @@ internal fun AboutCard(
     // whatever the answer.
     val notifAsk = rememberPermissionAsk(NOTIFICATION_PERMISSION)
     val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> notifAsk.answered(granted) }
+    // The reason shows first, in the same dialog as every other ask; Android's question follows Continue.
+    var explainWeekly by rememberSaveable { mutableStateOf(false) }
     fun setWeekly(on: Boolean) {
         onWeeklyCheck(on)
         if (!on || Build.VERSION.SDK_INT < 33) return
         notifAsk.refresh()
-        if (notifAsk.value == PermissionAsk.FIRST_ASK || notifAsk.value == PermissionAsk.ASK_AGAIN) {
-            notifAsk.markAsked()
-            notifPermission.launch(NOTIFICATION_PERMISSION)
-        }
+        if (notifAsk.value == PermissionAsk.FIRST_ASK || notifAsk.value == PermissionAsk.ASK_AGAIN) explainWeekly = true
+    }
+    if (explainWeekly) {
+        PermissionReasonDialog(
+            title = stringResource(R.string.notif_reason_update_title), reason = stringResource(R.string.notif_why_update),
+            onContinue = {
+                explainWeekly = false
+                notifAsk.markAsked()
+                notifPermission.launch(NOTIFICATION_PERMISSION)
+            },
+            onNotNow = { explainWeekly = false },
+        )
     }
     // A check that found a newer version opens the release page once.
     LaunchedEffect(update.openPage) {

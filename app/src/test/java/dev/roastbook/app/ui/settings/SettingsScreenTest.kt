@@ -38,6 +38,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import androidx.compose.ui.test.onAllNodesWithText
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -651,6 +652,61 @@ class SettingsScreenTest {
                 .any { it.state == androidx.work.WorkInfo.State.ENQUEUED }
         }
         assertEquals("turning it on asks GitHub nothing by itself", 0, rig.server.requestCount)
+    }
+
+    /** Permission requests the screen launched; each is answered "granted" at once. */
+    private val launched = mutableListOf<Any?>()
+    private val grantingRegistry = object : androidx.activity.result.ActivityResultRegistry() {
+        override fun <I, O> onLaunch(
+            requestCode: Int, contract: androidx.activity.result.contract.ActivityResultContract<I, O>, input: I,
+            options: androidx.core.app.ActivityOptionsCompat?,
+        ) {
+            launched += input
+            dispatchResult(requestCode, true)
+        }
+    }
+
+    private fun showAsking() {
+        compose.setContent {
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.activity.compose.LocalActivityResultRegistryOwner provides object : androidx.activity.result.ActivityResultRegistryOwner {
+                    override val activityResultRegistry = grantingRegistry
+                },
+            ) {
+                RoastbookTheme { SettingsScreen(onBack = {}, vm = rig.vm, readerSection = {}) }
+            }
+        }
+        compose.waitForIdle()
+    }
+
+    @Test fun theWeeklyCheckSaysWhyBeforeAndroidAsksForNotifications() {
+        androidx.work.testing.WorkManagerTestInitHelper.initializeTestWorkManager(context)
+        showAsking()
+        text(R.string.update_weekly).performScrollTo().performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithText(str(R.string.notif_reason_update_title)).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(androidx.compose.ui.test.isDialog()).assertExists()
+        assertTrue("nothing asked while the reason shows", launched.isEmpty())
+        fun box(id: Int) = compose.onNodeWithText(str(id)).fetchSemanticsNode().boundsInRoot
+        val reason = box(R.string.notif_why_update)
+        val notNow = box(R.string.permission_not_now)
+        val go = box(R.string.permission_continue)
+        assertTrue("actions under the reason", notNow.top >= reason.bottom && go.top >= reason.bottom)
+        assertTrue("Not now, then Continue at the end", notNow.right <= go.left && kotlin.math.abs(notNow.center.y - go.center.y) < 2f)
+        text(R.string.permission_continue).performClick()
+        eventually { launched == listOf<Any?>(android.Manifest.permission.POST_NOTIFICATIONS) }
+        text(R.string.notif_why_update).assertDoesNotExist()
+        eventually { runBlocking { rig.graph.userPrefs.current() }.weeklyUpdateCheck }
+    }
+
+    @Test fun notNowOnTheWeeklyReasonAsksNothingAndLeavesTheCheckOn() {
+        androidx.work.testing.WorkManagerTestInitHelper.initializeTestWorkManager(context)
+        showAsking()
+        text(R.string.update_weekly).performScrollTo().performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithText(str(R.string.permission_not_now)).fetchSemanticsNodes().isNotEmpty() }
+        text(R.string.permission_not_now).performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithText(str(R.string.notif_why_update)).fetchSemanticsNodes().isEmpty() }
+        assertTrue(launched.isEmpty())
+        eventually { runBlocking { rig.graph.userPrefs.current() }.weeklyUpdateCheck }
     }
 
     @Test fun theLicensesRowOpensTheLicensesScreen() {
