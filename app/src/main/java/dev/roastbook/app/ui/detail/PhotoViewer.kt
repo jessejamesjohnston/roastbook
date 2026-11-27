@@ -36,6 +36,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -85,8 +88,12 @@ fun PhotoViewer(title: String, files: List<File>, start: Int, onClose: () -> Uni
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         val pager = rememberPagerState(initialPage = start.coerceIn(0, files.lastIndex)) { files.size }
         val scope = rememberCoroutineScope()
-        val zoom = remember { ZoomState() }
-        LaunchedEffect(pager.currentPage) { zoom.reset() }
+        // The zoom, and the page it belongs to, survive a rotation; moving to another photo resets it.
+        val zoom = rememberSaveable(saver = ZoomState.Saver) { ZoomState() }
+        var zoomPage by rememberSaveable { mutableIntStateOf(pager.currentPage) }
+        LaunchedEffect(pager.currentPage) {
+            if (pager.currentPage != zoomPage) { zoom.reset(); zoomPage = pager.currentPage }
+        }
         val focus = remember { FocusRequester() }
         LaunchedEffect(Unit) { focus.requestFocus() }
         fun go(page: Int) {
@@ -169,10 +176,10 @@ internal fun List<ViewablePhoto>.indexOfId(id: String): Int = indexOfFirst { it.
 
 /** How far a photo is zoomed and panned; 1x is the whole photo fitted to the window. */
 @Stable
-class ZoomState {
-    var scale by mutableFloatStateOf(1f)
+class ZoomState(scale: Float = 1f, offset: Offset = Offset.Zero) {
+    var scale by mutableFloatStateOf(scale)
         private set
-    var offset by mutableStateOf(Offset.Zero)
+    var offset by mutableStateOf(offset)
         private set
     private var bounds = IntSize.Zero
 
@@ -199,7 +206,15 @@ class ZoomState {
         return Offset(o.x.coerceIn(-maxX, maxX), o.y.coerceIn(-maxY, maxY))
     }
 
-    private companion object { const val MAX_SCALE = 5f }
+    companion object {
+        private const val MAX_SCALE = 5f
+
+        /** Saves the scale and pan with the screen; the pan is clamped again once the window is measured. */
+        val Saver = listSaver<ZoomState, Float>(
+            save = { listOf(it.scale, it.offset.x, it.offset.y) },
+            restore = { ZoomState(it[0], Offset(it[1], it[2])) },
+        )
+    }
 }
 
 /**

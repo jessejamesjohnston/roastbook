@@ -39,4 +39,16 @@ class ZoomStateTest {
         assertEquals(1f, z.scale, 0.001f)
         assertEquals(Offset.Zero, z.offset)
     }
+
+    /** A rotation keeps the zoom and pan: they are saved with the screen and come back as they were. */
+    @Test fun theZoomIsSavedAndRestored() {
+        val z = zoom()
+        z.zoomBy(2f, pan = Offset(120f, -80f))
+        val scope = androidx.compose.runtime.saveable.SaverScope { true }
+        val saved = with(ZoomState.Saver) { scope.save(z) }!!
+        val back = ZoomState.Saver.restore(saved)!!
+        assertEquals(z.scale, back.scale, 0.001f)
+        assertEquals(z.offset, back.offset)
+        assertTrue(back.zoomed)
+    }
 }
