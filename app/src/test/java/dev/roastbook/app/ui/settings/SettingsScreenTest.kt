@@ -180,7 +180,8 @@ class SettingsScreenTest {
     private fun assertBackupsOffSays(line: Int) {
         waitForText(str(line))
         text(R.string.settings_backup_folder_none).assertExists()
-        text(R.string.settings_choose_folder).assertIsEnabled()
+        // The off line follows the preference at once; the card stops being busy a moment later.
+        eventually { runCatching { text(R.string.settings_choose_folder).assertIsEnabled() }.isSuccess }
         text(R.string.settings_daily_backup).assertIsOff().assertIsNotEnabled()
         text(R.string.settings_daily_backup_needs_folder).assertExists()
         text(R.string.settings_back_up_now).assertIsNotEnabled()

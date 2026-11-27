@@ -185,7 +185,9 @@ class LocalReaderSectionTest {
         click(str(R.string.reader_allow_mobile))
         waitFor(str(R.string.reader_waiting_network))
         assertTrue(h.prefs.current().allowMetered)
-        assertEquals(NetworkType.CONNECTED, h.pendingJob().constraints.requiredNetworkType)
+        // The preference (and so the line) changes first; the job is replaced after a hop to IO, and
+        // for a moment the old and new jobs can both be listed. Wait for the replacement.
+        waitUntil { runCatching { h.pendingJob().constraints.requiredNetworkType == NetworkType.CONNECTED }.getOrDefault(false) }
     }
 
     @Test fun aWaitingDownloadWithBytesSaysHowFarItGot() = runBlocking {
