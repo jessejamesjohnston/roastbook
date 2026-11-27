@@ -12,6 +12,11 @@ class HouseTypeTest {
         assertEquals(FontWeight.Medium, RowTitleStyle.fontWeight)
     }
 
+    @Test fun supportingTextIs14Over20() {
+        assertEquals(14f, RoastbookTypography.bodyMedium.fontSize.value, 0.01f)
+        assertEquals(20f, RoastbookTypography.bodyMedium.lineHeight.value, 0.01f)
+    }
+
     @Test fun finePrintIs12Over16() {
         assertEquals(12f, RoastbookTypography.labelSmall.fontSize.value, 0.01f)
         assertEquals(16f, RoastbookTypography.labelSmall.lineHeight.value, 0.01f)

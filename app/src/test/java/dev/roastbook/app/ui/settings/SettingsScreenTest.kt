@@ -550,6 +550,7 @@ class SettingsScreenTest {
         val title = style(compose.onNodeWithText(str(R.string.settings_version, version), useUnmergedTree = true).performScrollTo())
         assertEquals(16f, title.fontSize.value, 0.01f)
         assertEquals(androidx.compose.ui.text.font.FontWeight.Medium, title.fontWeight)
+        assertEquals(14f, style(compose.onNodeWithText(str(R.string.app_subtitle), useUnmergedTree = true)).fontSize.value, 0.01f)
         val copyright = text(R.string.settings_copyright).performScrollTo()
         assertEquals(12f, style(copyright).fontSize.value, 0.01f)
         assertTrue("below the card's last row", copyright.fetchSemanticsNode().boundsInRoot.top >= aboutContactRow().fetchSemanticsNode().boundsInRoot.bottom)
