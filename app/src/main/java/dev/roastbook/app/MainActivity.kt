@@ -18,6 +18,7 @@ import dev.roastbook.app.reminders.PendingActions
 import dev.roastbook.app.ui.nav.RoastbookNavHost
 import dev.roastbook.app.ui.theme.NightMode
 import dev.roastbook.app.ui.theme.RoastbookTheme
+import dev.roastbook.app.ui.theme.PaintWindow
 import dev.roastbook.app.data.prefs.ThemeMode
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
@@ -53,6 +54,8 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
             RoastbookTheme(darkTheme = dark, highContrast = settings.highContrast) {
+                // The caption bar and system bars follow the page color, the in-app theme included.
+                PaintWindow()
                 RoastbookNavHost(pending, showOnboarding, shortcuts)
             }
         }
