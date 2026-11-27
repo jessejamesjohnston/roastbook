@@ -1,5 +1,6 @@
 package dev.roastbook.app.ui.settings
 
+import androidx.compose.ui.semantics.error
 import androidx.compose.foundation.shape.CircleShape
 import dev.roastbook.app.ui.components.focusRing
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -181,13 +182,22 @@ internal fun CloudCard(vm: SettingsViewModel, settings: UserSettings) {
             style = MaterialTheme.typography.bodyLarge,
         )
         Spacer(Modifier.height(8.dp))
+        // A refused key is said under the field, as the field's own error, and clears once it is edited.
+        val refusal = cloud.message?.takeIf { it.isError }?.let { stringResource(it.res, *it.args.toTypedArray()) }
         OutlinedTextField(
-            value = keyDraft, onValueChange = { keyDraft = it }, singleLine = true,
+            value = keyDraft, onValueChange = { keyDraft = it; vm.clearCloudMessage() }, singleLine = true,
             label = { Text(stringResource(R.string.settings_cloud_key_hint)) },
+            isError = refusal != null,
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().semantics { if (refusal != null) error(refusal) },
         )
+        if (refusal != null) {
+            Text(
+                refusal, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+            )
+        }
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Button(modifier = Modifier.focusRing(CircleShape, onFill = true), onClick = { vm.saveKey(keyDraft); keyDraft = "" }, enabled = keyDraft.isNotBlank()) {
@@ -200,7 +210,8 @@ internal fun CloudCard(vm: SettingsViewModel, settings: UserSettings) {
                 TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { vm.removeKey() }) { Text(stringResource(R.string.settings_cloud_remove)) }
             }
         }
-        cloud.message?.let { m -> ResultLine(m, top = 6) }
+        // A good result answers in place, under the buttons; a refusal sits under the field above.
+        cloud.message?.takeIf { !it.isError }?.let { m -> ResultLine(m, top = 6) }
         if (cloud.hasKey) {
             Spacer(Modifier.height(10.dp))
             OutlinedTextField(

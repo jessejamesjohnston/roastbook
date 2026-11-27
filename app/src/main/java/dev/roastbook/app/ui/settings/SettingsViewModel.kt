@@ -141,6 +141,9 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { secrets.setGeminiKey(null); _cloud.value = _cloud.value.copy(message = null) }
     }
     fun setModel(model: String) { viewModelScope.launch { userPrefs.setGeminiModel(model) } }
+    /** Clears the last key result: the key field is being edited, so its refusal no longer applies. */
+    fun clearCloudMessage() { if (_cloud.value.message != null) _cloud.value = _cloud.value.copy(message = null) }
+
     fun testKey() {
         testJob?.cancel()
         testJob = viewModelScope.launch {

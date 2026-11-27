@@ -444,6 +444,26 @@ class SettingsScreenTest {
         waitForText(str(R.string.cloud_err_key))
     }
 
+    /**
+     * A refused key is said under its field (app-standard section 12, rule 19): within 8dp below it,
+     * as the field's own error, and gone once the field is edited.
+     */
+    @Test fun aRefusedKeySitsUnderItsFieldAndClearsOnEdit() {
+        runBlocking { rig.graph.secrets.setGeminiKey("FAKETestKey1234") }
+        rig.server.enqueue(MockResponse().setResponseCode(403))
+        show()
+        text(R.string.settings_cloud_test).performScrollTo().performClick()
+        waitForText(str(R.string.cloud_err_key))
+        val field = compose.onNode(hasSetTextAction() and hasText(str(R.string.settings_cloud_key_hint))).fetchSemanticsNode()
+        val sentence = compose.onNodeWithText(str(R.string.cloud_err_key), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val gap = (sentence.top - field.boundsInRoot.bottom) / context.resources.displayMetrics.density
+        assertTrue("the sentence sits right under the field: ${gap}dp", gap in -1f..8f)
+        assertEquals(str(R.string.cloud_err_key), field.config[SemanticsProperties.Error])
+        compose.onNode(hasSetTextAction() and hasText(str(R.string.settings_cloud_key_hint))).performTextInput("A")
+        compose.waitForIdle()
+        text(R.string.cloud_err_key).assertDoesNotExist()
+    }
+
     @Test fun removingTheKeyReturnsTheCardToNoKey() {
         runBlocking { rig.graph.secrets.setGeminiKey("FAKETestKey1234") }
         show()
