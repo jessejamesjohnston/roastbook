@@ -42,11 +42,19 @@
             android:name="com.google.mlkit.vision.DEPENDENCIES"
             android:value="subject_segment" />
 
+        <!-- On a laptop-class device the app opens as a normal window of this size, like any
+             desktop app, and can be resized down to a phone's width; nothing locks orientation. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
+            android:resizeableActivity="true"
             android:windowSoftInputMode="adjustResize">
+            <layout
+                android:defaultWidth="720dp"
+                android:defaultHeight="640dp"
+                android:minWidth="320dp"
+                android:minHeight="320dp" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

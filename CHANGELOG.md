@@ -37,6 +37,8 @@ All notable changes to Roastbook are recorded here. The format follows
 
 ### Fixed
 
+- On a Chromebook or Googlebook Roastbook opens as a normal resizable window (720 by 640 dp to
+  start, down to 320 dp), like other apps, instead of full screen.
 - The intro can be stepped back through: a Back button on every page after the first, and the
   system Back or Escape go back one page. Settings, About has "Show the intro again".
 - Before Android asks for notifications (a reminder, the reader's download) or the camera, the
