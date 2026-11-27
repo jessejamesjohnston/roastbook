@@ -39,6 +39,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onRoot
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -794,6 +795,40 @@ class SettingsScreenTest {
     fun onAPhoneTheColumnHas16dpSides() {
         show()
         assertEquals(16f, columnStart(), 1f)
+    }
+
+    /**
+     * At twice the text size on a 360dp phone, no text in Settings is cut off or runs past the window
+     * (app-standard section 12, rule 30).
+     */
+    @Test @Config(qualifiers = "w360dp-h640dp")
+    fun atTwiceTheTextSizeNothingInSettingsIsCutOff() {
+        compose.setContent {
+            val d = androidx.compose.ui.platform.LocalDensity.current
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(d.density, fontScale = 2f),
+            ) {
+                RoastbookTheme { SettingsScreen(onBack = {}, vm = rig.vm, readerSection = {}) }
+            }
+        }
+        compose.waitForIdle()
+        val width = compose.onRoot().fetchSemanticsNode().size.width
+        val cut = mutableListOf<String>()
+        // Every text's own box, unclipped by the scroll: inside the window, and clear of every other text.
+        val texts = compose.onAllNodes(androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.isRoot()), useUnmergedTree = true)
+            .fetchSemanticsNodes().mapNotNull { node ->
+                val text = node.config.getOrElseNullable(SemanticsProperties.Text) { null }?.joinToString() ?: return@mapNotNull null
+                text to androidx.compose.ui.geometry.Rect(node.positionInRoot, node.size.let { androidx.compose.ui.geometry.Size(it.width.toFloat(), it.height.toFloat()) })
+            }
+        assertTrue("the whole page was measured: ${texts.size} texts", texts.size > 40)
+        texts.forEach { (text, r) -> if (r.left < 0f || r.right > width + 1f) cut += "past the window: $text" }
+        texts.forEachIndexed { i, (a, ra) ->
+            texts.drop(i + 1).forEach { (b, rb) ->
+                val overlap = ra.intersect(rb)
+                if (overlap.width > 1f && overlap.height > 1f) cut += "overlap: $a / $b"
+            }
+        }
+        assertEquals(emptyList<String>(), cut)
     }
 
     @Test fun theLicensesRowOpensTheLicensesScreen() {
