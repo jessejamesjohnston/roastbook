@@ -40,12 +40,14 @@ All notable changes to Roastbook are recorded here. The format follows
 - On a Chromebook or Googlebook Roastbook opens as a normal resizable window (1040 by 700 dp to
   start, down to 320 dp), like other apps, instead of full screen.
 - The intro can be stepped back through: a Back button on every page after the first, and the
-  system Back or Escape go back one page. Settings has "Show the intro again" under Getting started.
+  system Back or Escape go back exactly one page. Settings has "Show the intro again" under Getting started.
 - Before Android asks for notifications (a reminder, the reader's download, Check weekly) or the
   camera, the reason now comes as a proper dialog with a title, Not now, and Continue, which is the
   only way on to Android's question. Check weekly used to ask with no reason at all.
-- After notifications are refused, Settings, Reminders says reminders can't show and offers "Allow
-  notifications", or "Open Settings" once Android no longer asks.
+- After "Not now" to a notification reason, or a refusal, the top of Settings says what can't show
+  (reminders, the update notice, the download's progress, whichever are in use) and offers "Allow
+  notifications", or "Open Settings" once Android no longer asks. A reason answered "Not now" isn't
+  shown again.
 - With a keyboard, every button, row, chip and card shows a clear 3 dp ring in the accent color
   where the focus is. A question that deletes or replaces something starts with Cancel focused.
 - On a Chromebook or Googlebook the window's title bar takes the page's color, light or dark, and
