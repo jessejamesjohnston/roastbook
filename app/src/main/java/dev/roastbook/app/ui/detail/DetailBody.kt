@@ -41,6 +41,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.roastbook.app.R
+import dev.roastbook.app.ui.components.ReasonDialog
 import dev.roastbook.app.util.englishString
 import dev.roastbook.app.data.db.CoffeeEntity
 import dev.roastbook.app.data.db.CoffeePhotoEntity
@@ -152,9 +153,9 @@ internal fun DetailBody(
                     if (justAccepted) rs.asJustAccepted() else rs, waiting = waiting || justAccepted,
                     onDownload = { starter.start(ACCEPT_READER) }, onNotNow = vm::declineReaderOffer,
                     onRetry = { starter.start(RETRY_READER) }, onCancel = { accepted = false; vm.cancelReaderDownload() },
-                    explainNotifications = starter.explaining, onContinue = starter::continueToAsk,
                 )
             }
+            starter.ReasonDialog()
             if (!noteDismissed) {
                 // With the reader's card on the page, the note adds no second pointer to the reader or a key.
                 ExtractionStatusCard(

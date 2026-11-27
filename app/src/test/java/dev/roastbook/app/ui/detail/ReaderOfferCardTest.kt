@@ -48,13 +48,12 @@ class ReaderOfferCardTest {
         starting: Boolean = false,
     ) = ReaderState(Eligibility.ELIGIBLE, phase, bytes, total, 0, metered, false, failure, "Test model", stopped, starting)
 
-    private fun show(s: ReaderState, waiting: Boolean = true, explain: Boolean = false) = compose.setContent {
+    private fun show(s: ReaderState, waiting: Boolean = true) = compose.setContent {
         RoastbookTheme {
             ReaderOfferCard(
                 s, waiting,
                 onDownload = { clicks += "download" }, onNotNow = { clicks += "notNow" },
                 onRetry = { clicks += "retry" }, onCancel = { clicks += "cancel" },
-                explainNotifications = explain, onContinue = { clicks += "continue" },
             )
         }
     }
@@ -79,13 +78,6 @@ class ReaderOfferCardTest {
         compose.onNodeWithText(str(R.string.detail_reader_offer_body, size(total))).assertExists()
         metered = true
         compose.onNodeWithText(str(R.string.detail_reader_offer_body_mobile, size(total))).assertExists()
-    }
-
-    @Test fun theOfferCanExplainNotificationsInPlaceOfItsButtons() {
-        show(state(DownloadPhase.NONE), waiting = false, explain = true)
-        assert(!shown(str(R.string.detail_reader_offer_not_now)))
-        compose.onNodeWithText(str(R.string.permission_continue)).performClick()
-        assertEquals(listOf("continue"), clicks)
     }
 
     @Test fun theMomentAfterDownloadSaysItIsStartingWithAMovingBarAndCancel() {
@@ -240,12 +232,5 @@ class ReaderOfferCardTest {
         assertEquals(1, bars(indeterminate))
         assert(!shown(str(R.string.reader_cancel)))
         assert(!shown(str(R.string.detail_reader_waiting)))
-    }
-
-    @Test fun aWaitingCardCanExplainNotificationsBeforeResuming() {
-        show(state(DownloadPhase.NONE, bytes = 5, stopped = true), explain = true)
-        assert(!shown(str(R.string.reader_resume)))
-        compose.onNodeWithText(str(R.string.permission_continue)).performClick()
-        assertEquals(listOf("continue"), clicks)
     }
 }

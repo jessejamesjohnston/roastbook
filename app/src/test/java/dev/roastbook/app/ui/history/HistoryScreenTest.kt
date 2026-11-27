@@ -602,6 +602,32 @@ class HistoryScreenTest {
         assertNull(vm.triedSheetFor.value)
     }
 
+    /**
+     * The explanation is a Material dialog: a title, the reason, then Not now and Continue together at
+     * the bottom end, Continue last. Not now keeps the reminder and asks nothing.
+     */
+    @Test fun theReminderExplanationIsADialogWithItsActionsAtTheBottomEnd() {
+        val vm = showTriedSheet()
+        compose.onNodeWithText(str(R.string.sheet_remind_tomorrow)).performClick()
+        waitForText(str(R.string.notif_reason_reminder_title))
+        compose.onNode(androidx.compose.ui.test.isDialog()).assertExists()
+        compose.onNodeWithText(str(R.string.sheet_tried_title)).assertDoesNotExist()
+        fun box(text: String) = compose.onNodeWithText(text).fetchSemanticsNode().boundsInRoot
+        val title = box(str(R.string.notif_reason_reminder_title))
+        val reason = box(str(R.string.notif_why_reminder))
+        val notNow = box(str(R.string.permission_not_now))
+        val go = box(str(R.string.permission_continue))
+        assertTrue("reason under the title", reason.top >= title.bottom)
+        assertTrue("actions under the reason", notNow.top >= reason.bottom && go.top >= reason.bottom)
+        assertTrue("Not now beside Continue, Continue at the end", notNow.right <= go.left && kotlin.math.abs(notNow.top - go.top) < 2f)
+        assertTrue("actions at the end", go.right >= reason.right - 1f)
+        compose.onNodeWithText(str(R.string.permission_not_now)).performClick()
+        waitGone(str(R.string.notif_why_reminder))
+        assertTrue(launched.isEmpty())
+        assertTrue(row("c1")!!.remindAt != null)
+        assertNull(vm.triedSheetFor.value)
+    }
+
     @Test fun withNotificationsAllowedNextWeekJustSetsTheReminder() {
         shadowOf(compose.activity.application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
         val vm = showTriedSheet()

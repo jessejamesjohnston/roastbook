@@ -45,6 +45,9 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
@@ -70,6 +73,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import dev.roastbook.app.R
+import dev.roastbook.app.ui.components.PermissionReasonDialog
 import dev.roastbook.app.ui.components.PermissionAsk
 import dev.roastbook.app.ui.components.PermissionAskState
 import dev.roastbook.app.ui.components.PermissionAsks
@@ -162,19 +166,33 @@ internal fun rememberCaptureLaunchers(onPicked: (List<Uri>) -> Unit): CaptureLau
     }
 }
 
-/** In place of the preview while the camera isn't allowed: why it's needed, and the one button that helps. */
+/**
+ * In place of the preview while the camera isn't allowed: why it's needed, and the one button that
+ * helps. Before Android first asks, the reason comes as a dialog (Continue asks; Not now leaves the
+ * reason here with Allow camera, and Library keeps working).
+ */
 @Composable
 private fun CameraPermissionPrompt(launchers: CaptureLaunchers, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    var reasonDismissed by rememberSaveable { mutableStateOf(false) }
     Column(modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         val ask = launchers.camera.value
+        if (ask == PermissionAsk.FIRST_ASK && !reasonDismissed) {
+            PermissionReasonDialog(
+                title = stringResource(R.string.camera_reason_title),
+                reason = stringResource(R.string.add_camera_why),
+                onContinue = launchers::askCamera,
+                onNotNow = { reasonDismissed = true },
+            )
+            return@Column
+        }
         Text(
             stringResource(if (ask == PermissionAsk.FIRST_ASK) R.string.add_camera_why else R.string.add_camera_permission),
             color = Color.White, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(12.dp))
         when (ask) {
-            PermissionAsk.FIRST_ASK -> Button(onClick = launchers::askCamera) { Text(stringResource(R.string.permission_continue)) }
+            PermissionAsk.FIRST_ASK -> Button(onClick = launchers::askCamera) { Text(stringResource(R.string.add_camera_permission_button)) }
             PermissionAsk.ASK_AGAIN ->
                 Button(onClick = launchers::askCamera) { Text(stringResource(R.string.add_camera_permission_button)) }
             else ->

@@ -41,6 +41,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.roastbook.app.R
+import dev.roastbook.app.ui.components.ReasonDialog
 import dev.roastbook.app.util.English
 import dev.roastbook.app.extraction.NanoStatus
 import dev.roastbook.app.extraction.NanoTier
@@ -146,7 +147,7 @@ fun LocalReaderSection(vm: LocalReaderViewModel = hiltViewModel()) {
             ReaderOffer.OFFER -> ReaderControls(
                 s, size = ::size, allowMetered = settings?.allowMetered == true,
                 nanoFailReason = settings?.nanoFailReason.takeIf { settings?.nanoFailing == true },
-                notificationsOff = starter.notificationsOff, explainNotifications = starter.explaining, onContinue = starter::continueToAsk,
+                notificationsOff = starter.notificationsOff,
                 onDownload = { starter.start(DOWNLOAD) }, onPause = vm::pause, onCancel = vm::cancel, onDelete = { confirmDelete = true },
                 onAllowMetered = vm::setAllowMetered,
                 preferReader = settings?.preferReader == true, onPreferReader = vm::setPreferReader.takeIf { hasBuiltInAi },
@@ -154,6 +155,7 @@ fun LocalReaderSection(vm: LocalReaderViewModel = hiltViewModel()) {
         }
     }
 
+    starter.ReasonDialog()
     if (confirmDelete) AlertDialog(
         onDismissRequest = { confirmDelete = false },
         title = { Text(stringResource(R.string.reader_delete_title)) },
@@ -171,7 +173,6 @@ private const val DOWNLOAD = "download"
 @Composable
 private fun ReaderControls(
     s: ReaderState, size: (Long) -> String, allowMetered: Boolean, nanoFailReason: String?, notificationsOff: Boolean,
-    explainNotifications: Boolean, onContinue: () -> Unit,
     onDownload: () -> Unit, onPause: () -> Unit, onCancel: () -> Unit, onDelete: () -> Unit, onAllowMetered: (Boolean) -> Unit,
     preferReader: Boolean = false, onPreferReader: ((Boolean) -> Unit)? = null,
 ) {
@@ -181,7 +182,7 @@ private fun ReaderControls(
         DownloadPhase.DOWNLOADING, DownloadPhase.VERIFYING, DownloadPhase.WAITING_FOR_NETWORK ->
             ReaderInProgress(s, size, allowMetered, notificationsOff, onPause, onCancel)
         DownloadPhase.NONE, DownloadPhase.FAILED ->
-            ReaderIdleOrFailed(s, size, explainNotifications, onContinue, onDownload, onCancel)
+            ReaderIdleOrFailed(s, size, onDownload, onCancel)
     }
     // Which model reads bags, where the device has its own AI. Off keeps the device default.
     if (onPreferReader != null) {
@@ -259,8 +260,7 @@ private fun ReaderInProgress(
 /** Not downloaded, paused part-way, or failed: why it failed, how far it got, and Download, Resume or Retry. */
 @Composable
 private fun ReaderIdleOrFailed(
-    s: ReaderState, size: (Long) -> String, explainNotifications: Boolean,
-    onContinue: () -> Unit, onDownload: () -> Unit, onCancel: () -> Unit,
+    s: ReaderState, size: (Long) -> String, onDownload: () -> Unit, onCancel: () -> Unit,
 ) {
     s.failure?.let { f ->
         Text(
@@ -278,13 +278,7 @@ private fun ReaderIdleOrFailed(
         )
         Spacer(Modifier.height(8.dp))
     }
-    if (explainNotifications) {
-        // In place of the Download button: why Android is about to ask, then Continue.
-        Text(stringResource(R.string.notif_why_download), style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
-        Spacer(Modifier.height(8.dp))
-        Button(onClick = onContinue, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.permission_continue)) }
-    } else FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
         Button(onClick = onDownload, modifier = Modifier.heightIn(min = 48.dp)) {
             Text(
                 when {

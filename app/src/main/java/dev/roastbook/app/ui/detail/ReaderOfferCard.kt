@@ -51,16 +51,12 @@ import dev.roastbook.app.ui.components.readerProgressText
  * | VERIFYING | Checking the download… | moving | Cancel download |
  * | FAILED | why, in Settings' words | none | Try again, Not now (this bag stops waiting) |
  * | READY, read not started yet | Reading this bag again with the on-device reader… | moving | none |
- *
- * [explainNotifications]: the notification explanation and Continue stand in for the buttons
- * (see [dev.roastbook.app.ui.components.ReaderDownloadStarter]).
  */
 @Composable
 fun ReaderOfferCard(
     reader: ReaderState, waiting: Boolean,
     onDownload: () -> Unit, onNotNow: () -> Unit, onRetry: () -> Unit, onCancel: () -> Unit,
     modifier: Modifier = Modifier,
-    explainNotifications: Boolean = false, onContinue: () -> Unit = {},
 ) {
     val context = LocalContext.current
     fun size(b: Long) = English.fileSize(b)
@@ -75,14 +71,10 @@ fun ReaderOfferCard(
             val body = if (reader.allowMetered) R.string.detail_reader_offer_body_mobile else R.string.detail_reader_offer_body
             Text(stringResource(body, size(reader.totalBytes)), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(8.dp))
-            if (explainNotifications) {
-                NotificationExplainer(onContinue)
-            } else {
-                Buttons(
-                    primary = stringResource(R.string.reader_download, size(reader.totalBytes)) to onDownload,
-                    secondary = stringResource(R.string.detail_reader_offer_not_now) to onNotNow,
-                )
-            }
+            Buttons(
+                primary = stringResource(R.string.reader_download, size(reader.totalBytes)) to onDownload,
+                secondary = stringResource(R.string.detail_reader_offer_not_now) to onNotNow,
+            )
             return@Column
         }
         val partial = reader.downloadedBytes > 0 && !reader.starting
@@ -110,7 +102,6 @@ fun ReaderOfferCard(
         }
         when {
             reader.phase == DownloadPhase.READY -> Unit
-            explainNotifications -> { Spacer(Modifier.height(8.dp)); NotificationExplainer(onContinue) }
             failed -> {
                 Spacer(Modifier.height(8.dp))
                 Buttons(
@@ -152,11 +143,3 @@ private fun Buttons(primary: Pair<String, () -> Unit>, secondary: Pair<String, (
     }
 }
 
-/** Why Android is about to ask for notifications, and Continue, in place of the download button. */
-@Composable
-private fun NotificationExplainer(onContinue: () -> Unit) {
-    Text(stringResource(R.string.notif_why_download), style = MaterialTheme.typography.bodyMedium,
-        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
-    Spacer(Modifier.height(8.dp))
-    Button(onClick = onContinue, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.permission_continue)) }
-}

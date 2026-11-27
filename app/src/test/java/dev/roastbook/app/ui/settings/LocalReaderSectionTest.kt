@@ -350,11 +350,11 @@ class LocalReaderSectionTest {
         waitFor(str(R.string.reader_download, size(total)))
         click(str(R.string.reader_download, size(total)))
         waitFor(str(R.string.notif_why_download))
-        // The sentence takes the Download button's place; nothing starts until Continue.
-        assertFalse(shown(str(R.string.reader_download, size(total))))
+        // The reason is a dialog; nothing starts until Continue (or Not now).
+        compose.onNode(androidx.compose.ui.test.isDialog()).assertExists()
         assertTrue(h.jobs().isEmpty())
         assertTrue(asked.isEmpty())
-        click(str(R.string.permission_continue))
+        compose.onNodeWithText(str(R.string.permission_continue)).performClick()
         assertEquals(listOf(Manifest.permission.POST_NOTIFICATIONS), asked)
         waitFor(str(R.string.reader_waiting_wifi))
         assertFalse(shown(str(R.string.notif_why_download)))
@@ -369,7 +369,7 @@ class LocalReaderSectionTest {
         waitFor(str(R.string.reader_download, size(total)))
         click(str(R.string.reader_download, size(total)))
         waitFor(str(R.string.permission_continue))
-        click(str(R.string.permission_continue))
+        compose.onNodeWithText(str(R.string.permission_continue)).performClick()
         waitFor(str(R.string.reader_waiting_wifi))
         assertTrue(shown(str(R.string.reader_notif_denied)))
         assertEquals(WorkInfo.State.ENQUEUED, h.pendingJob().state)

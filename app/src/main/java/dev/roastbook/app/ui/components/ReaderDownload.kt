@@ -32,8 +32,8 @@ import dev.roastbook.app.reader.ReaderState
  * Starts the reader's download the same way wherever it is offered (Settings, a coffee's page).
  * The download is a foreground job whose notification carries its progress and Pause. On Android
  * 13+ that notification shows only with the notification permission (the job runs either way), so
- * the first download that would need it says why in one sentence first ([explaining]); Continue
- * shows Android's dialog, and the download starts whatever the answer.
+ * the first download that would need it says why first, in a dialog ([explaining], [ReasonDialog]);
+ * Continue shows Android's dialog, Not now asks nothing, and the download starts either way.
  */
 class ReaderDownloadStarter internal constructor(
     private val needsExplaining: () -> Boolean,
@@ -42,7 +42,7 @@ class ReaderDownloadStarter internal constructor(
     private val run: (String) -> Unit,
     private val notificationsOffState: () -> Boolean,
 ) {
-    /** True while the one-sentence explanation and Continue stand in for the download button. */
+    /** True while the reason dialog is up. */
     val explaining: Boolean get() = explainingState.value != null
 
     /** Notifications are off, so the download's progress shows only in the app. */
@@ -55,6 +55,25 @@ class ReaderDownloadStarter internal constructor(
 
     /** Continue under the explanation: Android's dialog, then the waiting action. */
     fun continueToAsk() = ask()
+
+    /** Not now under the explanation: nothing is asked, and the waiting action runs (its progress shows in the app). */
+    fun skipAsking() {
+        val action = explainingState.value ?: return
+        explainingState.value = null
+        run(action)
+    }
+}
+
+/** The reason dialog for the download's notification, while [ReaderDownloadStarter.explaining]. */
+@Composable
+fun ReaderDownloadStarter.ReasonDialog() {
+    if (!explaining) return
+    PermissionReasonDialog(
+        title = stringResource(R.string.notif_reason_download_title),
+        reason = stringResource(R.string.notif_why_download),
+        onContinue = ::continueToAsk,
+        onNotNow = ::skipAsking,
+    )
 }
 
 /**

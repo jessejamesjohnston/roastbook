@@ -49,6 +49,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import dev.roastbook.app.R
+import dev.roastbook.app.ui.components.PermissionReasonDialog
 import dev.roastbook.app.data.photo.PhotoStore
 import dev.roastbook.app.ui.components.NOTIFICATION_PERMISSION
 import dev.roastbook.app.ui.components.PermissionAsk
@@ -98,7 +99,7 @@ fun HistoryScreen(
     var filterSheet by remember { mutableStateOf(false) }
     // Asked at the moment a reminder is chosen, after one sentence of why, and only when Android would
     // show its dialog. The reminder is stored at the tap either way. Held here, not in the sheet, so
-    // the ask survives the sheet's content switching from the choices to the explanation.
+    // the ask survives the sheet closing into the reason dialog.
     val notifAsk = rememberPermissionAsk(NOTIFICATION_PERMISSION)
     var explainNotifications by rememberSaveable { mutableStateOf(false) }
     val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -178,38 +179,38 @@ fun HistoryScreen(
 
     sheetFor?.let { id ->
         TriedSheet(
-            coffeeId = id, vm = vm, notifAsk = notifAsk, explainNotifications = explainNotifications,
-            onExplain = { explainNotifications = true },
-            onDismiss = { explainNotifications = false; vm.dismissTried() },
-            onContinueToAsk = {
+            coffeeId = id, vm = vm, notifAsk = notifAsk,
+            // The reminder is stored by now; the sheet closes and the reason takes its place.
+            onExplain = { vm.dismissTried(); explainNotifications = true },
+            onDismiss = { vm.dismissTried() },
+        )
+    }
+    if (explainNotifications) {
+        PermissionReasonDialog(
+            title = stringResource(R.string.notif_reason_reminder_title),
+            reason = stringResource(R.string.notif_why_reminder),
+            onContinue = {
+                explainNotifications = false
                 notifAsk.markAsked()
                 notifPermission.launch(NOTIFICATION_PERMISSION)
             },
+            onNotNow = { explainNotifications = false },
         )
     }
 }
 
 /**
  * Asked right after a coffee is logged: rate it now, be reminded tomorrow or next week, or neither.
- * Choosing a reminder the first time, where Android would show its notification dialog, swaps the
- * choices for one sentence of why and Continue (the reminder is already stored by then).
+ * Choosing a reminder the first time, where Android would show its notification dialog, stores the
+ * reminder and hands over to the reason dialog ([onExplain]).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TriedSheet(
-    coffeeId: String, vm: HistoryViewModel, notifAsk: PermissionAskState, explainNotifications: Boolean,
-    onExplain: () -> Unit, onDismiss: () -> Unit, onContinueToAsk: () -> Unit,
+    coffeeId: String, vm: HistoryViewModel, notifAsk: PermissionAskState, onExplain: () -> Unit, onDismiss: () -> Unit,
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surfaceContainerHigh) {
-        if (explainNotifications) Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
-            // The reminder is already set; this says why Android is about to ask, then asks.
-            Text(stringResource(R.string.notif_why_reminder), style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
-            Spacer(Modifier.height(16.dp))
-            Button(onClick = onContinueToAsk, modifier = Modifier.align(Alignment.End)) {
-                Text(stringResource(R.string.permission_continue))
-            }
-        } else Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
+        Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
             Text(stringResource(R.string.sheet_tried_title), style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.semantics { heading() })
             Spacer(Modifier.height(12.dp))

@@ -31,6 +31,8 @@ All notable changes to Roastbook are recorded here. The format follows
 
 ### Fixed
 
+- Before Android asks for notifications (a reminder, the reader's download) or the camera, the
+  reason now comes as a proper dialog with a title, Continue, and Not now, which asks nothing.
 - The "Show only" sheet's date row reads like its other rows, and every date choice, "Any time"
   included, is a chip that shows when it is chosen.
 - A bag size that can't be right (often a misread gram figure, such as 3409 g for a 12 oz bag)

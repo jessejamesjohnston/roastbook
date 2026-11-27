@@ -161,6 +161,19 @@ class AddScreenTest {
         assertEquals(Manifest.permission.CAMERA, registry.launches.single().second)
     }
 
+    /** Not now closes the reason and asks nothing; the reason stays on the screen with Allow camera. */
+    @Test fun notNowOnTheCameraReasonAsksNothingAndLeavesAllowCamera() {
+        show()
+        compose.onNode(androidx.compose.ui.test.isDialog()).assertExists()
+        compose.onNodeWithText(text(R.string.camera_reason_title)).assertExists()
+        compose.onNodeWithText(text(R.string.permission_not_now)).performClick()
+        compose.onNode(androidx.compose.ui.test.isDialog()).assertDoesNotExist()
+        assertTrue(registry.launches.isEmpty())
+        compose.onNodeWithText(text(R.string.add_camera_why)).assertExists()
+        compose.onNodeWithText(text(R.string.add_camera_permission_button)).performClick()
+        assertEquals(Manifest.permission.CAMERA, registry.launches.single().second)
+    }
+
     @Test fun refusedOnceOffersAllowCameraAndRefusedAgainOpensSettings() {
         show()
         compose.onNodeWithText(text(R.string.permission_continue)).performClick()
