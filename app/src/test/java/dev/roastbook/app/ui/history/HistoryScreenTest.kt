@@ -423,6 +423,33 @@ class HistoryScreenTest {
         compose.onNodeWithText(coffees(3)).assertExists()
     }
 
+    /**
+     * On a laptop window (1040 x 700 dp, as Roastbook declares) and shorter, and on a small phone, the
+     * filter sheet's last row, the date chips, can be brought fully inside the window.
+     */
+    private fun theLastDateChipIsReachable() {
+        insert("a") { copy(roaster = "Northwind", coffeeName = "Harbor Fog", extractionSource = ExtractionSource.OCR) }
+        show(vm())
+        waitForText("Harbor Fog")
+        openFilters()
+        compose.waitForIdle()
+        val last = compose.onNodeWithText(str(R.string.filter_date_year), useUnmergedTree = true)
+        last.performScrollTo()
+        compose.waitForIdle()
+        val chip = last.fetchSemanticsNode().let { it.positionInRoot.y + it.size.height }
+        val window = compose.onAllNodes(androidx.compose.ui.test.isRoot()).fetchSemanticsNodes().maxOf { it.size.height }
+        assertTrue("the last chip ends inside the window: $chip <= $window", chip <= window + 1f)
+    }
+
+    @Config(qualifiers = "w1040dp-h700dp")
+    @Test fun onALaptopWindowTheFilterSheetsLastRowIsReachable() = theLastDateChipIsReachable()
+
+    @Config(qualifiers = "w1040dp-h480dp")
+    @Test fun inAShortWindowTheFilterSheetsLastRowIsReachable() = theLastDateChipIsReachable()
+
+    @Config(qualifiers = "w360dp-h560dp")
+    @Test fun onASmallPhoneTheFilterSheetsLastRowIsReachable() = theLastDateChipIsReachable()
+
     /** Every row of the filter sheet reads in one style, and each date choice is a chip, spaced alike. */
     @Config(qualifiers = "w400dp-h1600dp")
     @Test fun theFilterSheetsRowsShareOneStyleAndEveryDateChoiceIsAChip() {

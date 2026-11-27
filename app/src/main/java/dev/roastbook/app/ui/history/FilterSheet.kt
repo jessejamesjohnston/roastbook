@@ -24,6 +24,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -60,7 +61,11 @@ fun FilterSheet(
     filter: HistoryFilter, sources: List<SourceEntity>, roasters: List<String>, origins: List<String>, processes: List<String>,
     vm: HistoryViewModel, onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surfaceContainerHigh) {
+    // Opens all the way: half open, the sheet's scrolling column runs past the window's bottom edge,
+    // so on a laptop window the date chips could not be brought into view. Taller than the window,
+    // the column scrolls to its last row.
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = MaterialTheme.colorScheme.surfaceContainerHigh) {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
             Text(stringResource(R.string.filter_title), style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.semantics { heading() })
