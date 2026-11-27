@@ -5,7 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * Padding, gaps and offsets come from the family's spacing scale (app-standard section 12, rule 27).
+ * Padding, gaps and offsets come from the family's spacing scale (as in the other Merriment Labs apps).
  * Sizes, radii, widths and breakpoints are separate and not checked here.
  */
 class SpacingScaleTest {

@@ -4,7 +4,7 @@ import androidx.compose.ui.text.font.FontWeight
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** The family's type scale (app-standard section 12, rule 24) where Roastbook's own roles carry it. */
+/** The family's type scale (as in the other Merriment Labs apps) where Roastbook's own roles carry it. */
 class HouseTypeTest {
     @Test fun aRowTitleIs16Over22Medium() {
         assertEquals(16f, RowTitleStyle.fontSize.value, 0.01f)

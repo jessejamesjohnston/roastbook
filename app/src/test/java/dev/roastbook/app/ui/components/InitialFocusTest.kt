@@ -19,7 +19,7 @@ import org.robolectric.annotation.Config
 
 /**
  * A destructive question gives Cancel the first focus, so Enter by habit keeps the thing
- * (app-standard section 12, rules 23 and 34).
+ * (as in the other Merriment Labs apps).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], application = android.app.Application::class)

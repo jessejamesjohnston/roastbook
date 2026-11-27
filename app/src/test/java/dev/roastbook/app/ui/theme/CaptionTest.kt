@@ -15,7 +15,7 @@ import org.robolectric.annotation.Config
 /**
  * The desktop caption bar takes the page's color, with dark buttons on a light page and light
  * buttons on a dark one, and follows the in-app Light/Dark choice and high contrast, not only the
- * system's (app-standard section 12, rule 4).
+ * system's (as in the other Merriment Labs apps).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], application = android.app.Application::class)

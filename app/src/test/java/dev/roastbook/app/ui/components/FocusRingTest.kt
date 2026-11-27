@@ -32,7 +32,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * The keyboard focus ring (app-standard section 12, rule 20): a 3dp line in the accent color on the
+ * The keyboard focus ring (as in the other Merriment Labs apps): a 3dp line in the accent color on the
  * control's own bounds, drawn only while it has focus, kept apart from a filled control's own fill
  * by a thin band of the page color; and every control in the app's sources asks for it.
  */

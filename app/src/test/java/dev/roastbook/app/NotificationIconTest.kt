@@ -5,7 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Every notification uses the dedicated one-color status icon, never the launcher artwork (app-standard section 12, rule 28). */
+/** Every notification uses the dedicated one-color status icon, never the launcher artwork (as in the other Merriment Labs apps). */
 class NotificationIconTest {
     private val main = listOf(File("src/main"), File("app/src/main")).first { it.isDirectory }
 

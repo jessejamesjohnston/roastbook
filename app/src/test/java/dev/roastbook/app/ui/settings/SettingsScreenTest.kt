@@ -445,7 +445,7 @@ class SettingsScreenTest {
     }
 
     /**
-     * A refused key is said under its field (app-standard section 12, rule 19): within 8dp below it,
+     * A refused key is said under its field (as in the other Merriment Labs apps): within 8dp below it,
      * as the field's own error, and gone once the field is edited.
      */
     @Test fun aRefusedKeySitsUnderItsFieldAndClearsOnEdit() {
@@ -465,7 +465,7 @@ class SettingsScreenTest {
     }
 
     /**
-     * After notifications were refused (app-standard section 12, rule 18), Reminders says they can't
+     * After notifications were refused (as in the other Merriment Labs apps), Reminders says they can't
      * show and offers the way back: Allow notifications while Android still asks, then Open Settings.
      */
     @Test fun afterARefusalRemindersSayTheyCantShowAndOfferAllow() {
@@ -804,7 +804,7 @@ class SettingsScreenTest {
         assertEquals("the sentence describes these two folders", listOf("file:autobackup/", "file:datastore/"), cloud)
     }
 
-    /** A settings toggle row: at least 56dp, a 16sp Medium title over a 14sp hint (app-standard section 12, rule 11). */
+    /** A settings toggle row: at least 56dp, a 16sp Medium title over a 14sp hint (as in the other Merriment Labs apps). */
     @Test fun aSwitchRowUsesTheHouseRowNumbers() {
         show()
         val row = text(R.string.settings_high_contrast).performScrollTo().fetchSemanticsNode()
@@ -826,7 +826,7 @@ class SettingsScreenTest {
     }
 
     /**
-     * The house frame (app-standard section 12, rule 8): one centered column at most 720dp wide with
+     * The house frame (as in the other Merriment Labs apps): one centered column at most 720dp wide with
      * its 24dp side padding inside, the back button and title in the same column, 16dp sides under 600dp.
      */
     @Test @Config(qualifiers = "w1280dp-h800dp")
@@ -846,7 +846,7 @@ class SettingsScreenTest {
 
     /**
      * At twice the text size on a 360dp phone, no text in Settings is cut off or runs past the window
-     * (app-standard section 12, rule 30).
+     * (as in the other Merriment Labs apps).
      */
     @Test @Config(qualifiers = "w360dp-h640dp")
     fun atTwiceTheTextSizeNothingInSettingsIsCutOff() {

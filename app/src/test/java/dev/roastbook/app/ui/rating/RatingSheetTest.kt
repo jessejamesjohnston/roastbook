@@ -140,7 +140,7 @@ class RatingSheetTest {
     }
 
     /**
-     * One body size in the sheet (app-standard section 12, rule 25): the question under the title and
+     * One body size in the sheet (as in the other Merriment Labs apps): the question under the title and
      * the reason under Save are the same size, as the score labels are.
      */
     @Test fun theSheetsSentencesAndLabelsShareOneSize() {
