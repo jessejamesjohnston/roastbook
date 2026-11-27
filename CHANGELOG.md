@@ -60,6 +60,8 @@ All notable changes to Roastbook are recorded here. The format follows
 - Notifications show a one-color Roastbook icon in the status bar instead of the full launcher art.
 - The "Show only" sheet's date row reads like its other rows, and every date choice, "Any time"
   included, is a chip that shows when it is chosen.
+- The "Show only" sheet opens all the way, so on a laptop window its last row, the date choices, is
+  never cut off at the bottom; in a short window it scrolls to them.
 - A bag size that can't be right (often a misread gram figure, such as 3409 g for a 12 oz bag)
   gives way to the net weight printed on the label, when the label states it clearly. A bag size
   you typed is never changed.
