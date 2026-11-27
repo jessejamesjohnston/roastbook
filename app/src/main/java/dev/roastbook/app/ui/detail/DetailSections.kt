@@ -111,7 +111,7 @@ private fun CardFrame(tint: Color, content: @Composable () -> Unit) {
     Column(
         Modifier.padding(horizontal = 16.dp, vertical = 6.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(tint)
             .then(if (hc) Modifier.border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp)) else Modifier)
-            .padding(14.dp),
+            .padding(16.dp),
     ) { content() }
 }
 

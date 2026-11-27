@@ -272,7 +272,7 @@ private fun CaptureControls(
                 }
             }
         }
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(16.dp))
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween,

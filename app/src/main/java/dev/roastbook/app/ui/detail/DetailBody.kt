@@ -190,12 +190,12 @@ private const val RETRY_READER = "retry"
 private fun ReadingBanner(c: CoffeeEntity) {
         Row(
             Modifier.padding(horizontal = 16.dp, vertical = 6.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.primary).padding(horizontal = 16.dp, vertical = 14.dp)
+                .background(MaterialTheme.colorScheme.primary).padding(horizontal = 16.dp, vertical = 12.dp)
                 .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CircularProgressIndicator(Modifier.size(22.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.5.dp)
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(12.dp))
             Column {
                 val (readingTitle, readingSubtitle) = extractingLines(c.extractionTrail, c.nextAttemptAt)
                 Text(readingTitle, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimary)

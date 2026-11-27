@@ -147,7 +147,7 @@ private fun CounterOrFilterLine(filter: HistoryFilter, sources: List<SourceEntit
 private fun BackupBanner(nudge: BackupNudge, onSettings: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.tertiaryContainer)
-            .focusRing(RoundedCornerShape(14.dp)).clickable(role = Role.Button) { onSettings() }.padding(horizontal = 14.dp, vertical = 10.dp),
+            .focusRing(RoundedCornerShape(14.dp)).clickable(role = Role.Button) { onSettings() }.padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
