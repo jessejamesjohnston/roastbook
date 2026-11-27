@@ -90,7 +90,7 @@ class FocusRingTest {
         val buttons = Regex(
             """\b(IconButton|TextButton|FilledTonalButton|FilledTonalIconButton|FilledIconButton|OutlinedButton|OutlinedIconButton|Button|""" +
                 """DropdownMenuItem|FilterChip|AssistChip|InputChip|SuggestionChip|FloatingActionButton|ExtendedFloatingActionButton|""" +
-                """SmallFloatingActionButton|Switch|Checkbox|RadioButton|Card|Surface)\(""",
+                """SmallFloatingActionButton|SegmentedButton|Switch|Checkbox|RadioButton|Card|Surface)\(""",
         )
         val chained = Regex("""\.(clickable|selectable|toggleable|combinedClickable)\(""")
         val missing = mutableListOf<String>()

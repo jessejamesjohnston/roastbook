@@ -60,10 +60,12 @@ fun AppearanceSection(settings: UserSettings, onThemeMode: (ThemeMode) -> Unit, 
     )
     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
         modes.forEachIndexed { i, (mode, label) ->
+            val shape = SegmentedButtonDefaults.itemShape(index = i, count = modes.size)
             SegmentedButton(
                 selected = settings.themeMode == mode,
                 onClick = { onThemeMode(mode) },
-                shape = SegmentedButtonDefaults.itemShape(index = i, count = modes.size),
+                modifier = Modifier.focusRing(shape),
+                shape = shape,
                 label = { Text(stringResource(label)) },
             )
         }
