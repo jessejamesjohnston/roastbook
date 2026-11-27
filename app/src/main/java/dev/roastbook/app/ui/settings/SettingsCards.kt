@@ -152,6 +152,11 @@ internal fun BackupCard(vm: SettingsViewModel) {
         }
         ui.message?.let { m -> ResultLine(m) }
     }
+    // What Android's own backup carries (data_extraction_rules.xml), under the card, in the muted color.
+    Text(
+        stringResource(R.string.settings_android_backup_note), style = MaterialTheme.typography.bodyMedium, color = muted,
+        modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp),
+    )
 }
 
 /** Cloud AI: the user's own Gemini key (save, test, remove) and, with a key, the model name. */

@@ -741,6 +741,20 @@ class SettingsScreenTest {
         eventually { runBlocking { rig.graph.userPrefs.current() }.weeklyUpdateCheck }
     }
 
+    /**
+     * One muted line under the Backup card says what Android's own backup carries; it must match the
+     * rules file, so a change to what that backup includes fails here until the sentence follows.
+     */
+    @Test fun theBackupCardSaysWhatAndroidsOwnBackupCarries() {
+        show()
+        text(R.string.settings_android_backup_note).performScrollTo().assertExists()
+        val rules = listOf(java.io.File("src/main/res/xml/data_extraction_rules.xml"), java.io.File("app/src/main/res/xml/data_extraction_rules.xml"))
+            .first { it.isFile }.readText()
+        val cloud = Regex("""<include domain="(\w+)" path="([^"]+)"""").findAll(rules.substringAfter("<cloud-backup>").substringBefore("</cloud-backup>"))
+            .map { "${it.groupValues[1]}:${it.groupValues[2]}" }.toList()
+        assertEquals("the sentence describes these two folders", listOf("file:autobackup/", "file:datastore/"), cloud)
+    }
+
     @Test fun theLicensesRowOpensTheLicensesScreen() {
         show()
         aboutRow(R.string.settings_licenses, R.string.about_licenses_hint, R.string.about_row).performClick()

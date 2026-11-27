@@ -69,6 +69,7 @@
     <string name="onboarding_next">Next</string>
     <string name="onboarding_back">Back</string>
     <string name="settings_getting_started">Getting started</string>
+    <string name="settings_android_backup_note">Android\'s own backup also keeps your coffees, their small photos and your settings. Full-size photos come back only from a Roastbook backup.</string>
     <string name="settings_replay_intro">Show the intro again</string>
     <string name="settings_replay_intro_hint">The three pages from your first start</string>
     <string name="onboarding_start">Get started</string>
