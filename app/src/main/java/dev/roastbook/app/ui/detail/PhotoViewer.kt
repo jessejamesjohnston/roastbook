@@ -65,6 +65,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import dev.roastbook.app.R
+import dev.roastbook.app.data.db.CoffeePhotoEntity
 import dev.roastbook.app.ui.theme.PaintWindowWhile
 import dev.roastbook.app.util.englishString
 import java.io.File
@@ -150,6 +151,21 @@ fun PhotoViewer(title: String, files: List<File>, start: Int, onClose: () -> Uni
         }
     }
 }
+
+/** A photo the viewer can show: its id, and the file on disk (the original, else the thumb). */
+internal data class ViewablePhoto(val id: String, val file: File)
+
+/**
+ * [coffeeId]'s photos that have a file, in [photos] order: a photo whose files are both missing is
+ * left out, and a photo of another coffee never gets in. [resolve] maps a stored path to its file.
+ */
+internal fun viewablePhotos(coffeeId: String, photos: List<CoffeePhotoEntity>, resolve: (String) -> File): List<ViewablePhoto> =
+    photos.filter { it.coffeeId == coffeeId }.mapNotNull { p ->
+        listOfNotNull(p.original, p.thumb).map(resolve).firstOrNull { it.exists() }?.let { ViewablePhoto(p.id, it) }
+    }
+
+/** Where photo [id] sits among the viewable ones, or -1 when it has no file (or isn't this coffee's). */
+internal fun List<ViewablePhoto>.indexOfId(id: String): Int = indexOfFirst { it.id == id }
 
 /** How far a photo is zoomed and panned; 1x is the whole photo fitted to the window. */
 @Stable

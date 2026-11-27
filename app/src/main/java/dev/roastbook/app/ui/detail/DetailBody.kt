@@ -30,6 +30,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -87,15 +88,17 @@ internal fun DetailBody(
 ) {
     val hero = photos.firstOrNull { it.id == c.heroPhotoId } ?: photos.firstOrNull()
     // After a Tier 0 (Auto Backup) landing only thumbs exist; show what we have and say so below.
-    val heroFile = listOfNotNull(hero?.square, hero?.original, hero?.thumb).map { vm.photoStore.file(it) }.firstOrNull { it.exists() }
-    val thumbnailOnly = hero != null && !vm.photoStore.file(hero.original).exists() &&
-        hero.thumb?.let { vm.photoStore.file(it).exists() } == true
+    // The disk is checked once per coffee and again when its photos change, not on every redraw.
+    val heroFile = remember(hero) { listOfNotNull(hero?.square, hero?.original, hero?.thumb).map { vm.photoStore.file(it) }.firstOrNull { it.exists() } }
+    val thumbnailOnly = remember(hero) {
+        hero != null && !vm.photoStore.file(hero.original).exists() && hero.thumb?.let { vm.photoStore.file(it).exists() } == true
+    }
     val extracting = c.state == CoffeeState.EXTRACTING
-    // Which photo is open full window, if any (by its place in [photos]); kept across a rotation.
-    var viewing by rememberSaveable(c.id) { mutableStateOf<Int?>(null) }
-    val photoFiles = photos.mapNotNull { p -> listOfNotNull(p.original, p.thumb).map { vm.photoStore.file(it) }.firstOrNull { it.exists() } }
-    val openPhoto = { i: Int -> if (photoFiles.isNotEmpty()) viewing = i.coerceIn(0, photoFiles.lastIndex) }
-    val heroIndex = photos.indexOf(hero).coerceAtLeast(0)
+    // Which photo is open full window, if any, by its id (a missing file can't shift it onto another
+    // photo); kept across a rotation. Only this coffee's photos with a file can open.
+    var viewing by rememberSaveable(c.id) { mutableStateOf<String?>(null) }
+    val viewable = remember(c.id, photos) { viewablePhotos(c.id, photos) { vm.photoStore.file(it) } }
+    val openPhoto = { id: String -> if (viewable.indexOfId(id) >= 0) viewing = id }
     val readingTitle = extractingLines(c.extractionTrail, c.nextAttemptAt).first
     val title = when {
         extracting -> readingTitle
@@ -116,12 +119,12 @@ internal fun DetailBody(
             val heroLabel = stringResource(R.string.detail_hero_description, title)
             if (wide) {
                 Row(Modifier.padding(horizontal = 16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    HeroBox(heroFile, tint.tint, heroLabel, Modifier.width(260.dp)) { openPhoto(heroIndex) }
+                    HeroBox(heroFile, tint.tint, heroLabel, Modifier.width(260.dp)) { hero?.id?.let(openPhoto) }
                     Spacer(Modifier.width(20.dp))
                     TitleBlock(c, title, Modifier.weight(1f))
                 }
             } else {
-                HeroBox(heroFile, tint.tint, heroLabel, Modifier.padding(horizontal = 16.dp).fillMaxWidth()) { openPhoto(heroIndex) }
+                HeroBox(heroFile, tint.tint, heroLabel, Modifier.padding(horizontal = 16.dp).fillMaxWidth()) { hero?.id?.let(openPhoto) }
                 Spacer(Modifier.height(16.dp))
                 TitleBlock(c, title, Modifier.padding(horizontal = 20.dp))
             }
@@ -178,7 +181,10 @@ internal fun DetailBody(
             )
         }
     }
-    viewing?.let { start -> PhotoViewer(title, photoFiles, start, onClose = { viewing = null }) }
+    viewing?.let { id ->
+        val start = viewable.indexOfId(id)
+        if (start >= 0) PhotoViewer(title, viewable.map { it.file }, start, onClose = { viewing = null })
+    }
 }
 
 /** The reader card's two download actions, by name, for [rememberReaderDownloadStarter]. */
@@ -223,7 +229,7 @@ private fun DetailCards(
     onFinishEditing: () -> Unit,
     onRatingChange: (RatingDraft) -> Unit,
     onDraftChange: (String, String) -> Unit,
-    onOpenPhoto: (Int) -> Unit = {},
+    onOpenPhoto: (String) -> Unit = {},
 ) {
     val editingKey = session?.section
     val secondary = onTintVariant()
@@ -291,7 +297,7 @@ private fun DetailCards(
                     val openLabel = stringResource(R.string.detail_photo_open)
                     HeroSquare(vm.photoStore.fileOrNull(p.thumb ?: p.original), 88.dp, 12.dp, stroke = false,
                         modifier = Modifier.clip(RoundedCornerShape(12.dp))
-                            .focusRing(RoundedCornerShape(12.dp)).clickable(onClickLabel = openLabel, role = Role.Button) { onOpenPhoto(i) }
+                            .focusRing(RoundedCornerShape(12.dp)).clickable(onClickLabel = openLabel, role = Role.Button) { onOpenPhoto(p.id) }
                             .semantics { contentDescription = label })
                 }
             }
