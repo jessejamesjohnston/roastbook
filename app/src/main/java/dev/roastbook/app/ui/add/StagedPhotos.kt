@@ -1,5 +1,7 @@
 package dev.roastbook.app.ui.add
 
+import dev.roastbook.app.ui.components.FOCUS_RING_WIDTH
+import dev.roastbook.app.ui.components.focusRing
 import android.view.accessibility.AccessibilityManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -97,7 +99,7 @@ internal fun StagedThumb(
                     .clip(RoundedCornerShape(8.dp))
                     .border(1.dp, Color.White.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
                     .background(Color.Black.copy(alpha = 0.35f))
-                    .clickable(enabled = enabled, onClickLabel = changeLabel) { menu = true }
+                    .focusRing(RoundedCornerShape(8.dp), color = Honey).clickable(enabled = enabled, onClickLabel = changeLabel) { menu = true }
                     // One node: the label and arrow are replaced by the description; click and its label stay.
                     .clearAndSetSemantics { contentDescription = roleDescription }
                     .heightIn(min = 32.dp)
@@ -113,7 +115,7 @@ internal fun StagedThumb(
                     DropdownMenuItem(
                         text = { Text(stringResource(role.label())) }, onClick = { onRole(role); menu = false },
                         trailingIcon = if (current) ({ Icon(Icons.Default.Check, contentDescription = null) }) else null,
-                        modifier = Modifier.semantics { selected = current },
+                        modifier = Modifier.semantics { selected = current }.focusRing(),
                     )
                 }
             }
@@ -134,6 +136,8 @@ private fun RemoveButton(label: String, enabled: Boolean, onClick: () -> Unit, m
     Box(
         modifier
             .size(48.dp)
+            // The focus ring is drawn by the disc below, white and FOCUS_RING_WIDTH thick: over a photo,
+            // white with the disc's dark edge reads where the accent may not.
             .clickable(interactionSource = interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.TopEnd,
@@ -142,7 +146,7 @@ private fun RemoveButton(label: String, enabled: Boolean, onClick: () -> Unit, m
             Modifier
                 .padding(2.dp)
                 .size(30.dp)
-                .border(2.dp, if (focused) Color.White else Color.Transparent, CircleShape)
+                .border(FOCUS_RING_WIDTH, if (focused) Color.White else Color.Transparent, CircleShape)
                 .padding(3.dp)
                 .clip(CircleShape)
                 .indication(interaction, ripple(color = Color.White))
@@ -188,7 +192,7 @@ internal fun RemovedUndo(removed: List<RemovedPhoto>, onUndo: () -> Unit, onExpi
     ) {
         Text(englishPlural(R.plurals.add_photos_removed, removed.size), color = Color.White,
             style = MaterialTheme.typography.bodyMedium)
-        TextButton(onClick = onUndo, modifier = Modifier.focusRequester(undoFocus),
+        TextButton(onClick = onUndo, modifier = Modifier.focusRequester(undoFocus).focusRing(CircleShape, color = Honey),
             colors = ButtonDefaults.textButtonColors(contentColor = Honey)) {
             Text(stringResource(R.string.add_photo_undo), style = MaterialTheme.typography.labelLarge)
         }

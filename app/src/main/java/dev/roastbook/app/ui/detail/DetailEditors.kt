@@ -1,5 +1,8 @@
 package dev.roastbook.app.ui.detail
 
+import androidx.compose.foundation.shape.CircleShape
+import dev.roastbook.app.ui.components.ChipRingShape
+import dev.roastbook.app.ui.components.focusRing
 import android.content.res.Resources
 import android.view.WindowManager
 import androidx.compose.foundation.background
@@ -146,7 +149,7 @@ internal fun FieldsEditor(
                         Text(s, style = MaterialTheme.typography.labelMedium,
                             modifier = Modifier.minimumInteractiveComponentSize().clip(RoundedCornerShape(8.dp))
                                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                                .clickable(role = Role.Button) { onChange("source", s) }.padding(horizontal = 10.dp, vertical = 6.dp))
+                                .focusRing(ChipRingShape).clickable(role = Role.Button) { onChange("source", s) }.padding(horizontal = 10.dp, vertical = 6.dp))
                     }
                 }
             }
@@ -197,9 +200,9 @@ internal fun EditDialog(
                         modifier = Modifier.padding(bottom = 8.dp).semantics { liveRegion = LiveRegionMode.Polite })
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = onDiscard) { Text(stringResource(if (dirty) R.string.edit_discard else R.string.detail_cancel)) }
+                    TextButton(modifier = Modifier.focusRing(CircleShape), onClick = onDiscard) { Text(stringResource(if (dirty) R.string.edit_discard else R.string.detail_cancel)) }
                     Spacer(Modifier.width(8.dp))
-                    Button(onClick = onSave, enabled = canSave,
+                    Button(modifier = Modifier.focusRing(CircleShape, onFill = true), onClick = onSave, enabled = canSave,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary,
                         )) {
@@ -219,7 +222,7 @@ internal fun DiscardConfirm(onDiscard: () -> Unit, onKeep: () -> Unit) {
         onDismissRequest = onKeep,
         title = { Text(stringResource(R.string.edit_discard_title)) },
         text = { Text(stringResource(R.string.edit_discard_body)) },
-        confirmButton = { TextButton(onClick = onDiscard) { Text(stringResource(R.string.edit_discard)) } },
-        dismissButton = { TextButton(onClick = onKeep) { Text(stringResource(R.string.edit_keep_editing)) } },
+        confirmButton = { TextButton(modifier = Modifier.focusRing(CircleShape), onClick = onDiscard) { Text(stringResource(R.string.edit_discard)) } },
+        dismissButton = { TextButton(modifier = Modifier.focusRing(CircleShape), onClick = onKeep) { Text(stringResource(R.string.edit_keep_editing)) } },
     )
 }

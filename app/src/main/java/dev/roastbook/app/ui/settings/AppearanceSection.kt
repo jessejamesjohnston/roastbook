@@ -1,5 +1,7 @@
 package dev.roastbook.app.ui.settings
 
+import androidx.compose.foundation.shape.CircleShape
+import dev.roastbook.app.ui.components.focusRing
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -78,7 +80,7 @@ fun AppearanceSection(settings: UserSettings, onThemeMode: (ThemeMode) -> Unit, 
         Spacer(Modifier.height(4.dp))
         Row(
             Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
-                .clickable(role = Role.Button, onClickLabel = stringResource(R.string.settings_language_change)) { languagePicker = true }
+                .focusRing(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClickLabel = stringResource(R.string.settings_language_change)) { languagePicker = true }
                 .padding(vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -103,7 +105,7 @@ fun AppearanceSection(settings: UserSettings, onThemeMode: (ThemeMode) -> Unit, 
                         val selected = language == tag
                         Row(
                             Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp))
-                                .selectable(selected = selected, role = Role.RadioButton, onClick = {
+                                .focusRing(RoundedCornerShape(8.dp)).selectable(selected = selected, role = Role.RadioButton, onClick = {
                                     AppLanguage.set(context, tag); languagePicker = false
                                 }),
                             verticalAlignment = Alignment.CenterVertically,
@@ -121,7 +123,7 @@ fun AppearanceSection(settings: UserSettings, onThemeMode: (ThemeMode) -> Unit, 
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { languagePicker = false }) { Text(stringResource(R.string.detail_cancel)) } },
+            confirmButton = { TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { languagePicker = false }) { Text(stringResource(R.string.detail_cancel)) } },
         )
     }
 }
@@ -134,7 +136,7 @@ fun AppearanceSection(settings: UserSettings, onThemeMode: (ThemeMode) -> Unit, 
 fun SwitchRow(title: String, hint: String?, checked: Boolean, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
-            .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChange)
+            .focusRing().toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChange)
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

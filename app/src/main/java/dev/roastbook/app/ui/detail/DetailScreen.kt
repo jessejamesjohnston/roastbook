@@ -1,5 +1,7 @@
 package dev.roastbook.app.ui.detail
 
+import androidx.compose.foundation.shape.CircleShape
+import dev.roastbook.app.ui.components.focusRing
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Box
@@ -128,21 +130,23 @@ fun DetailScreen(
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    if (!inPane) IconButton(onClick = { editing.finishOrAsk(onBack) }) {
+                    if (!inPane) IconButton(modifier = Modifier.focusRing(CircleShape), onClick = { editing.finishOrAsk(onBack) }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.detail_back))
                     }
                 },
                 actions = {
                     Box {
-                        IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, stringResource(R.string.detail_more)) }
+                        IconButton(modifier = Modifier.focusRing(CircleShape), onClick = { menu = true }) { Icon(Icons.Default.MoreVert, stringResource(R.string.detail_more)) }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                             DropdownMenuItem(
+                                modifier = Modifier.focusRing(),
                                 text = { Text(stringResource(R.string.detail_read_again)) },
                                 leadingIcon = { Icon(Icons.Default.DocumentScanner, null) },
                                 enabled = c?.state != CoffeeState.EXTRACTING,
                                 onClick = { menu = false; vm.reextract() },
                             )
                             DropdownMenuItem(
+                                modifier = Modifier.focusRing(),
                                 text = { Text(stringResource(R.string.detail_delete)) },
                                 leadingIcon = { Icon(Icons.Default.DeleteOutline, null) },
                                 onClick = { menu = false; confirmDelete = true },
@@ -189,10 +193,10 @@ fun DetailScreen(
         title = { Text(stringResource(R.string.detail_delete_confirm)) },
         text = { Text(stringResource(if (savesToGallery) R.string.detail_delete_body_gallery else R.string.detail_delete_body)) },
         confirmButton = {
-            TextButton(onClick = { confirmDelete = false; sessions.forCoffee(id)?.let { sessions.clear() }; vm.delete(onBack) }) {
+            TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { confirmDelete = false; sessions.forCoffee(id)?.let { sessions.clear() }; vm.delete(onBack) }) {
                 Text(stringResource(R.string.detail_delete_yes))
             }
         },
-        dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.detail_cancel)) } },
+        dismissButton = { TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { confirmDelete = false }) { Text(stringResource(R.string.detail_cancel)) } },
     )
 }

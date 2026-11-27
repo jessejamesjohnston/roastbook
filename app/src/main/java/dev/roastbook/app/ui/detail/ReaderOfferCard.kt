@@ -1,5 +1,7 @@
 package dev.roastbook.app.ui.detail
 
+import androidx.compose.foundation.shape.CircleShape
+import dev.roastbook.app.ui.components.focusRing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -118,7 +120,7 @@ fun ReaderOfferCard(
             }
             else -> {
                 Spacer(Modifier.height(4.dp))
-                TextButton(onClick = onCancel, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.reader_cancel)) }
+                TextButton(onClick = onCancel, modifier = Modifier.heightIn(min = 48.dp).focusRing(CircleShape)) { Text(stringResource(R.string.reader_cancel)) }
             }
         }
     }
@@ -138,8 +140,8 @@ fun ReaderState.asJustAccepted(): ReaderState =
 @Composable
 private fun Buttons(primary: Pair<String, () -> Unit>, secondary: Pair<String, () -> Unit>) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
-        Button(onClick = primary.second, modifier = Modifier.heightIn(min = 48.dp)) { Text(primary.first) }
-        TextButton(onClick = secondary.second, modifier = Modifier.heightIn(min = 48.dp)) { Text(secondary.first) }
+        Button(onClick = primary.second, modifier = Modifier.heightIn(min = 48.dp).focusRing(CircleShape, onFill = true)) { Text(primary.first) }
+        TextButton(onClick = secondary.second, modifier = Modifier.heightIn(min = 48.dp).focusRing(CircleShape)) { Text(secondary.first) }
     }
 }
 

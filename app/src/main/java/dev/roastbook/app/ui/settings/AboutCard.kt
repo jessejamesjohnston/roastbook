@@ -1,5 +1,6 @@
 package dev.roastbook.app.ui.settings
 
+import dev.roastbook.app.ui.components.focusRing
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Build
@@ -216,7 +217,7 @@ private fun AboutSwitchRow(icon: ImageVector, title: String, subtitle: String, c
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     Row(
         Modifier.fillMaxWidth().heightIn(min = 56.dp)
-            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
+            .focusRing().toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
             .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -261,7 +262,7 @@ private fun AboutRow(icon: ImageVector, title: String, subtitle: String, kind: A
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     Row(
         Modifier.fillMaxWidth().heightIn(min = 56.dp)
-            .clickable(role = if (kind == AboutRowKind.IN_APP || kind == AboutRowKind.ACTION) Role.Button else null, onClick = onClick)
+            .focusRing().clickable(role = if (kind == AboutRowKind.IN_APP || kind == AboutRowKind.ACTION) Role.Button else null, onClick = onClick)
             // The children's own text is replaced by one description; click and role stay on the row.
             .clearAndSetSemantics { contentDescription = description }
             .padding(start = 16.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),

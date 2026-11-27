@@ -1,5 +1,7 @@
 package dev.roastbook.app.ui.detail
 
+import dev.roastbook.app.ui.theme.Honey
+import dev.roastbook.app.ui.components.focusRing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -120,7 +122,7 @@ fun PhotoViewer(title: String, files: List<File>, start: Int, onClose: () -> Uni
                     .safeDrawingPadding().padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                FilledTonalIconButton(onClick = onClose) {
+                FilledTonalIconButton(modifier = Modifier.focusRing(CircleShape, color = Honey), onClick = onClose) {
                     Icon(Icons.Default.Close, stringResource(R.string.photo_viewer_close))
                 }
                 Text(
@@ -132,13 +134,13 @@ fun PhotoViewer(title: String, files: List<File>, start: Int, onClose: () -> Uni
                 if (pager.currentPage > 0) {
                     FilledTonalIconButton(
                         onClick = { go(pager.currentPage - 1) },
-                        modifier = Modifier.align(Alignment.CenterStart).safeDrawingPadding().padding(8.dp).clip(CircleShape),
+                        modifier = Modifier.align(Alignment.CenterStart).safeDrawingPadding().padding(8.dp).clip(CircleShape).focusRing(CircleShape, color = Honey),
                     ) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.photo_viewer_previous)) }
                 }
                 if (pager.currentPage < files.lastIndex) {
                     FilledTonalIconButton(
                         onClick = { go(pager.currentPage + 1) },
-                        modifier = Modifier.align(Alignment.CenterEnd).safeDrawingPadding().padding(8.dp).clip(CircleShape),
+                        modifier = Modifier.align(Alignment.CenterEnd).safeDrawingPadding().padding(8.dp).clip(CircleShape).focusRing(CircleShape, color = Honey),
                     ) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.photo_viewer_next)) }
                 }
             }

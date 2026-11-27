@@ -1,5 +1,6 @@
 package dev.roastbook.app.ui.onboarding
 
+import dev.roastbook.app.ui.components.focusRing
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -102,7 +103,7 @@ fun OnboardingScreen(
     ) {
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = finish) { Text(stringResource(R.string.onboarding_skip)) }
+            TextButton(modifier = Modifier.focusRing(CircleShape), onClick = finish) { Text(stringResource(R.string.onboarding_skip)) }
         }
         HorizontalPager(state = pager, modifier = Modifier.weight(1f)) { i ->
             val p = pages[i]
@@ -151,11 +152,11 @@ fun OnboardingScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
         ) {
             if (pager.currentPage > 0) {
-                TextButton(onClick = back, modifier = Modifier.heightIn(min = 52.dp)) { Text(stringResource(R.string.onboarding_back)) }
+                TextButton(onClick = back, modifier = Modifier.heightIn(min = 52.dp).focusRing(CircleShape)) { Text(stringResource(R.string.onboarding_back)) }
             }
             Button(
                 onClick = { if (pager.currentPage >= pages.lastIndex) finish() else go(pager.currentPage + 1) },
-                modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+                modifier = Modifier.weight(1f).heightIn(min = 52.dp).focusRing(CircleShape, onFill = true),
             ) { Text(stringResource(if (pager.currentPage < pages.lastIndex) R.string.onboarding_next else R.string.onboarding_start)) }
         }
         Spacer(Modifier.height(24.dp))

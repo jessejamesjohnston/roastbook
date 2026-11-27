@@ -1,5 +1,7 @@
 package dev.roastbook.app.ui.history
 
+import dev.roastbook.app.ui.components.ChipRingShape
+import dev.roastbook.app.ui.components.focusRing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -79,13 +81,13 @@ fun HistoryHeader(
         IconButton(
             onClick = onOpenFilters,
             modifier = Modifier.clip(CircleShape)
-                .background(if (filtered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainer),
+                .background(if (filtered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainer).focusRing(CircleShape, onFill = true),
         ) {
             Icon(Icons.Default.Tune, contentDescription = stringResource(R.string.history_filters),
                 tint = if (filtered) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.width(8.dp))
-        IconButton(onClick = onSettings, modifier = Modifier.clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainer)) {
+        IconButton(onClick = onSettings, modifier = Modifier.clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainer).focusRing(CircleShape)) {
             Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.history_settings),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -135,7 +137,7 @@ private fun CounterOrFilterLine(filter: HistoryFilter, sources: List<SourceEntit
         Text(stringResource(R.string.filter_clear_short), style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(start = 4.dp).minimumInteractiveComponentSize().clip(RoundedCornerShape(6.dp))
-                .clickable(role = Role.Button, onClickLabel = stringResource(R.string.filter_clear)) { onClearFilters() }
+                .focusRing(RoundedCornerShape(6.dp)).clickable(role = Role.Button, onClickLabel = stringResource(R.string.filter_clear)) { onClearFilters() }
                 .padding(horizontal = 4.dp, vertical = 2.dp))
     }
 }
@@ -145,7 +147,7 @@ private fun CounterOrFilterLine(filter: HistoryFilter, sources: List<SourceEntit
 private fun BackupBanner(nudge: BackupNudge, onSettings: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.tertiaryContainer)
-            .clickable(role = Role.Button) { onSettings() }.padding(horizontal = 14.dp, vertical = 10.dp),
+            .focusRing(RoundedCornerShape(14.dp)).clickable(role = Role.Button) { onSettings() }.padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -192,7 +194,7 @@ private fun SortChips(sort: HistorySort, descending: Boolean, onSort: (HistorySo
                 modifier = Modifier.semantics {
                     role = Role.RadioButton
                     contentDescription = if (sort == s) "$labelText, $direction" else labelText
-                },
+                }.focusRing(ChipRingShape, onFill = sort == s),
                 shape = RoundedCornerShape(8.dp),
                 colors = ChoiceChipDefaults.colors(),
             )

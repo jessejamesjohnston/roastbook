@@ -1,5 +1,7 @@
 package dev.roastbook.app.ui.history
 
+import androidx.compose.foundation.shape.CircleShape
+import dev.roastbook.app.ui.components.focusRing
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -85,7 +87,7 @@ fun FilterSheet(
             }
             if (filter.isActive) {
                 Spacer(Modifier.height(12.dp))
-                TextButton(onClick = { vm.clearFilters() }) { Text(stringResource(R.string.filter_clear)) }
+                TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { vm.clearFilters() }) { Text(stringResource(R.string.filter_clear)) }
             }
         }
     }
@@ -106,7 +108,7 @@ private fun PickerRow(label: String, current: String?, options: List<Pair<String
     Box {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
-                .clickable(enabled = options.isNotEmpty(), role = Role.DropdownList) { open = true }.padding(vertical = 8.dp),
+                .focusRing().clickable(enabled = options.isNotEmpty(), role = Role.DropdownList) { open = true }.padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Nothing to pick yet (no coffee has a roaster, say): muted and "None yet", so the row
@@ -121,9 +123,9 @@ private fun PickerRow(label: String, current: String?, options: List<Pair<String
             )
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            DropdownMenuItem(text = { Text(stringResource(R.string.filter_any)) }, onClick = { onPick(null); open = false })
+            DropdownMenuItem(modifier = Modifier.focusRing(), text = { Text(stringResource(R.string.filter_any)) }, onClick = { onPick(null); open = false })
             options.forEach { (value, name) ->
-                DropdownMenuItem(text = { Text(name) }, onClick = { onPick(value); open = false })
+                DropdownMenuItem(modifier = Modifier.focusRing(), text = { Text(name) }, onClick = { onPick(value); open = false })
             }
         }
     }
@@ -134,7 +136,7 @@ private fun PickerRow(label: String, current: String?, options: List<Pair<String
 private fun FilterRow(label: String, checked: Boolean, onToggle: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
-            .toggleable(value = checked, role = Role.Switch, onValueChange = { onToggle() }).padding(vertical = 6.dp),
+            .focusRing().toggleable(value = checked, role = Role.Switch, onValueChange = { onToggle() }).padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))

@@ -1,5 +1,7 @@
 package dev.roastbook.app.ui.settings
 
+import androidx.compose.foundation.shape.CircleShape
+import dev.roastbook.app.ui.components.focusRing
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -161,9 +163,9 @@ fun LocalReaderSection(vm: LocalReaderViewModel = hiltViewModel()) {
         title = { Text(stringResource(R.string.reader_delete_title)) },
         text = { Text(stringResource(R.string.reader_delete_confirm)) },
         confirmButton = {
-            TextButton(onClick = { confirmDelete = false; vm.delete() }) { Text(stringResource(R.string.reader_delete_yes)) }
+            TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { confirmDelete = false; vm.delete() }) { Text(stringResource(R.string.reader_delete_yes)) }
         },
-        dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.detail_cancel)) } },
+        dismissButton = { TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { confirmDelete = false }) { Text(stringResource(R.string.detail_cancel)) } },
     )
 }
 
@@ -226,7 +228,7 @@ private fun ReaderReady(sizeOnDisk: String, cache: String?, onDelete: () -> Unit
         style = MaterialTheme.typography.bodyLarge,
     )
     Spacer(Modifier.height(8.dp))
-    OutlinedButton(onClick = onDelete, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.reader_delete)) }
+    OutlinedButton(onClick = onDelete, modifier = Modifier.heightIn(min = 48.dp).focusRing(CircleShape)) { Text(stringResource(R.string.reader_delete)) }
 }
 
 /** Downloading, checking, or waiting for a network: the progress line and bar, then Pause and Cancel. */
@@ -251,9 +253,9 @@ private fun ReaderInProgress(
     // FlowRow: at large text sizes the second button moves below instead of squeezing to two lines.
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
         if (s.phase != DownloadPhase.VERIFYING) {
-            OutlinedButton(onClick = onPause, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.reader_pause)) }
+            OutlinedButton(onClick = onPause, modifier = Modifier.heightIn(min = 48.dp).focusRing(CircleShape)) { Text(stringResource(R.string.reader_pause)) }
         }
-        TextButton(onClick = onCancel, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.reader_cancel)) }
+        TextButton(onClick = onCancel, modifier = Modifier.heightIn(min = 48.dp).focusRing(CircleShape)) { Text(stringResource(R.string.reader_cancel)) }
     }
 }
 
@@ -279,7 +281,7 @@ private fun ReaderIdleOrFailed(
         Spacer(Modifier.height(8.dp))
     }
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
-        Button(onClick = onDownload, modifier = Modifier.heightIn(min = 48.dp)) {
+        Button(onClick = onDownload, modifier = Modifier.heightIn(min = 48.dp).focusRing(CircleShape, onFill = true)) {
             Text(
                 when {
                     s.failure != null -> stringResource(R.string.reader_retry)
@@ -289,7 +291,7 @@ private fun ReaderIdleOrFailed(
             )
         }
         if (s.downloadedBytes > 0) {
-            TextButton(onClick = onCancel, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.reader_cancel)) }
+            TextButton(onClick = onCancel, modifier = Modifier.heightIn(min = 48.dp).focusRing(CircleShape)) { Text(stringResource(R.string.reader_cancel)) }
         }
     }
 }

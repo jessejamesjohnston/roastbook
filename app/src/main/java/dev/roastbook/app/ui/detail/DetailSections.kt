@@ -1,5 +1,7 @@
 package dev.roastbook.app.ui.detail
 
+import androidx.compose.foundation.shape.CircleShape
+import dev.roastbook.app.ui.components.focusRing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -77,7 +79,7 @@ internal fun HeroBox(file: File?, tint: Color, label: String, modifier: Modifier
     val openLabel = stringResource(R.string.detail_photo_open)
     Box(
         modifier.aspectRatio(1f).clip(RoundedCornerShape(20.dp)).background(tint)
-            .then(if (file != null && onOpen != null) Modifier.clickable(onClickLabel = openLabel, role = Role.Button, onClick = onOpen) else Modifier),
+            .focusRing(RoundedCornerShape(20.dp)).then(if (file != null && onOpen != null) Modifier.clickable(onClickLabel = openLabel, role = Role.Button, onClick = onOpen) else Modifier),
     ) {
         if (file != null) {
             AsyncImage(model = file, contentDescription = label, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
@@ -127,7 +129,7 @@ private fun CardHeader(
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(title, style = MaterialTheme.typography.labelMedium, color = secondary, modifier = Modifier.weight(1f).semantics { heading() })
         trailing()
-        if (editable) IconButton(onClick = { if (editing) onDone() else onEdit() }, modifier = Modifier.size(40.dp)) {
+        if (editable) IconButton(onClick = { if (editing) onDone() else onEdit() }, modifier = Modifier.size(40.dp).focusRing(CircleShape)) {
             if (editing) {
                 Icon(Icons.Default.Check, stringResource(R.string.detail_done_section, title), Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.onSurface)
@@ -221,7 +223,7 @@ internal fun RatingSection(
             else -> {
                 Text(stringResource(R.string.detail_unrated), style = MaterialTheme.typography.bodyMedium, color = secondary)
                 Spacer(Modifier.height(8.dp))
-                Button(onClick = onEdit,
+                Button(modifier = Modifier.focusRing(CircleShape, onFill = true), onClick = onEdit,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary,
                     )) {
@@ -269,14 +271,14 @@ internal fun RoasterLinks(c: CoffeeEntity, tint: Color, vm: DetailViewModel) {
                     ),
                     style = MaterialTheme.typography.bodySmall, color = secondary,
                 )
-                TextButton(onClick = { vm.wrongRoaster() }) { Text(stringResource(R.string.detail_wrong_roaster)) }
+                TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { vm.wrongRoaster() }) { Text(stringResource(R.string.detail_wrong_roaster)) }
             }
         } else {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                OutlinedButton(onClick = { open("https://www.google.com/search?q=" + URLEncoder.encode(query, "UTF-8")) }) {
+                OutlinedButton(modifier = Modifier.focusRing(CircleShape), onClick = { open("https://www.google.com/search?q=" + URLEncoder.encode(query, "UTF-8")) }) {
                     Text(stringResource(R.string.detail_find_roaster))
                 }
-                if (hasKey) OutlinedButton(onClick = { vm.lookUpRoaster() }, enabled = !lookingUp) {
+                if (hasKey) OutlinedButton(modifier = Modifier.focusRing(CircleShape), onClick = { vm.lookUpRoaster() }, enabled = !lookingUp) {
                     Text(stringResource(if (lookingUp) R.string.detail_looking_up else R.string.detail_look_up_roaster))
                 }
             }
@@ -302,7 +304,7 @@ internal fun RoasterLinks(c: CoffeeEntity, tint: Color, vm: DetailViewModel) {
 private fun LinkRow(label: String, url: String, onOpen: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp))
-            .clickable(onClickLabel = stringResource(R.string.detail_open_link), role = Role.Button, onClick = onOpen)
+            .focusRing(RoundedCornerShape(8.dp)).clickable(onClickLabel = stringResource(R.string.detail_open_link), role = Role.Button, onClick = onOpen)
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

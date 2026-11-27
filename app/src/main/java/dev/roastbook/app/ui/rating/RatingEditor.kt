@@ -1,5 +1,7 @@
 package dev.roastbook.app.ui.rating
 
+import dev.roastbook.app.ui.components.ChipRingShape
+import dev.roastbook.app.ui.components.focusRing
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -130,7 +132,7 @@ fun RatingEditor(
         Spacer(Modifier.height(10.dp))
         Row(
             Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                .toggleable(value = draft.buyAgain, role = androidx.compose.ui.semantics.Role.Switch) { onChange(draft.copy(buyAgain = it)) },
+                .focusRing().toggleable(value = draft.buyAgain, role = androidx.compose.ui.semantics.Role.Switch) { onChange(draft.copy(buyAgain = it)) },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(stringResource(R.string.rate_buy_again), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
@@ -214,7 +216,7 @@ private fun DotPicker(value: Int?, accent: Color, onPick: (Int?) -> Unit) {
             androidx.compose.foundation.layout.Box(
                 Modifier
                     .size(width = 28.dp, height = 44.dp)
-                    .clickable(
+                    .focusRing(ChipRingShape).clickable(
                         interactionSource = null,
                         indication = androidx.compose.material3.ripple(bounded = false, radius = 16.dp),
                     ) { onPick(if (value == i) null else i) },

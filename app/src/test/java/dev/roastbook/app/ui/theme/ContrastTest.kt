@@ -45,6 +45,9 @@ class ContrastTest {
         // Non-text: outlined fields, switch tracks, dividers that carry meaning.
         Pair("outline/surface (non-text)", s.outline, s.surface, 3.0),
         Pair("outline/surfaceContainer (non-text)", s.outline, s.surfaceContainer, 3.0),
+        // The keyboard focus ring, on the page and on a card.
+        Pair("focus ring primary/surface (non-text)", s.primary, s.surface, 3.0),
+        Pair("focus ring primary/surfaceContainer (non-text)", s.primary, s.surfaceContainer, 3.0),
     )
 
     private fun check(pairs: List<Pair>): List<String> = pairs.mapNotNull { p ->

@@ -1,5 +1,8 @@
 package dev.roastbook.app.ui.history
 
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.foundation.shape.CircleShape
+import dev.roastbook.app.ui.components.focusRing
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -115,6 +118,7 @@ fun HistoryScreen(
         containerColor = MaterialTheme.colorScheme.surface,
         floatingActionButton = {
             FloatingActionButton(
+                modifier = Modifier.focusRing(FloatingActionButtonDefaults.shape, onFill = true),
                 onClick = onAdd,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -236,7 +240,7 @@ private fun TriedSheet(
                             if (choice == TriedChoice.RATE_NOW) vm.openRating(coffeeId)
                         }
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().focusRing(CircleShape),
                 ) { Text(stringResource(label), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface) }
             }
         }

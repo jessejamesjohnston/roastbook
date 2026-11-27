@@ -1,5 +1,6 @@
 package dev.roastbook.app.ui.detail
 
+import dev.roastbook.app.ui.components.focusRing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -290,7 +291,7 @@ private fun DetailCards(
                     val openLabel = stringResource(R.string.detail_photo_open)
                     HeroSquare(vm.photoStore.fileOrNull(p.thumb ?: p.original), 88.dp, 12.dp, stroke = false,
                         modifier = Modifier.clip(RoundedCornerShape(12.dp))
-                            .clickable(onClickLabel = openLabel, role = Role.Button) { onOpenPhoto(i) }
+                            .focusRing(RoundedCornerShape(12.dp)).clickable(onClickLabel = openLabel, role = Role.Button) { onOpenPhoto(i) }
                             .semantics { contentDescription = label })
                 }
             }

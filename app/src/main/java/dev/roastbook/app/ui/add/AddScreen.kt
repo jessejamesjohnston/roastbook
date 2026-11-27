@@ -1,5 +1,7 @@
 package dev.roastbook.app.ui.add
 
+import dev.roastbook.app.ui.theme.Honey
+import dev.roastbook.app.ui.components.focusRing
 import android.Manifest
 import android.net.Uri
 import android.util.Log
@@ -192,11 +194,11 @@ private fun CameraPermissionPrompt(launchers: CaptureLaunchers, modifier: Modifi
         )
         Spacer(Modifier.height(12.dp))
         when (ask) {
-            PermissionAsk.FIRST_ASK -> Button(onClick = launchers::askCamera) { Text(stringResource(R.string.add_camera_permission_button)) }
+            PermissionAsk.FIRST_ASK -> Button(modifier = Modifier.focusRing(CircleShape, onFill = true), onClick = launchers::askCamera) { Text(stringResource(R.string.add_camera_permission_button)) }
             PermissionAsk.ASK_AGAIN ->
-                Button(onClick = launchers::askCamera) { Text(stringResource(R.string.add_camera_permission_button)) }
+                Button(modifier = Modifier.focusRing(CircleShape, onFill = true), onClick = launchers::askCamera) { Text(stringResource(R.string.add_camera_permission_button)) }
             else ->
-                Button(onClick = { PermissionAsks.openAppSettings(context) }) { Text(stringResource(R.string.permission_open_settings)) }
+                Button(modifier = Modifier.focusRing(CircleShape, onFill = true), onClick = { PermissionAsks.openAppSettings(context) }) { Text(stringResource(R.string.permission_open_settings)) }
         }
     }
 }
@@ -225,7 +227,7 @@ private fun AddTopBar(step: CaptureStep, cancelEnabled: Boolean, onCancel: () ->
             .statusBarsPadding().padding(start = 8.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onCancel, enabled = cancelEnabled) {
+        IconButton(modifier = Modifier.focusRing(CircleShape, color = Honey), onClick = onCancel, enabled = cancelEnabled) {
             Icon(Icons.Default.Close, stringResource(R.string.detail_cancel), tint = Color.White)
         }
         Spacer(Modifier.width(4.dp))
@@ -281,7 +283,7 @@ private fun CaptureControls(
                 colors = IconButtonDefaults.filledIconButtonColors(
                     containerColor = Color.White.copy(alpha = 0.2f), contentColor = Color.White,
                 ),
-                modifier = Modifier.size(52.dp),
+                modifier = Modifier.size(52.dp).focusRing(CircleShape, color = Honey),
             ) { Icon(Icons.Default.PhotoLibrary, stringResource(R.string.add_library)) }
             Shutter(
                 on = !saving && hasCamera && cameraReady == true, lit = hasCamera && cameraReady == true,
@@ -296,7 +298,7 @@ private fun CaptureControls(
                     containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary,
                     disabledContainerColor = Color.White.copy(alpha = 0.12f), disabledContentColor = Color.White.copy(alpha = 0.4f),
                 ),
-                modifier = Modifier.size(52.dp),
+                modifier = Modifier.size(52.dp).focusRing(CircleShape, color = Honey),
             ) {
                 if (saving) CircularProgressIndicator(Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
                 else Icon(Icons.Default.Check, stringResource(R.string.add_done))
@@ -316,7 +318,7 @@ private fun Shutter(on: Boolean, lit: Boolean, onShoot: () -> Unit) {
             onClick = { if (on) onShoot() },
             // No camera yet, or none that started: the shutter is off (Library still works).
             enabled = on,
-            modifier = Modifier.size(64.dp).clip(CircleShape).background(Color.White.copy(alpha = if (lit) 1f else 0.4f)),
+            modifier = Modifier.size(64.dp).clip(CircleShape).background(Color.White.copy(alpha = if (lit) 1f else 0.4f)).focusRing(CircleShape, onFill = true, color = Honey),
         ) {
             // The white disc is the whole affordance; the invisible icon only carries the label.
             Icon(Icons.Default.PhotoCamera, stringResource(R.string.add_take_photo), tint = Color.Transparent)

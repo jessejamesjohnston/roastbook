@@ -1,5 +1,7 @@
 package dev.roastbook.app.ui.history
 
+import androidx.compose.foundation.shape.CircleShape
+import dev.roastbook.app.ui.components.focusRing
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -94,7 +96,7 @@ fun CoffeeRowCard(
             }
             row.state == CoffeeState.LOGGED -> Button(
                 onClick = onRate, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
-                modifier = Modifier.heightIn(min = 32.dp),
+                modifier = Modifier.heightIn(min = 32.dp).focusRing(CircleShape, onFill = true),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
@@ -116,7 +118,7 @@ fun CoffeeRowCard(
             else -> null
         },
         // Only the coffee open beside the list says "Selected"; on a phone every card said "Not selected".
-        modifier = Modifier.fillMaxWidth().then(if (selected) Modifier.semantics { this.selected = true } else Modifier),
+        modifier = Modifier.fillMaxWidth().then(if (selected) Modifier.semantics { this.selected = true } else Modifier).focusRing(RoundedCornerShape(16.dp)),
     ) {
         BoxWithConstraints {
         // Where the rating or rate button would squeeze the name until its longest word breaks letter

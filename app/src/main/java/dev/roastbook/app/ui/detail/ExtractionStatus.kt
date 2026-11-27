@@ -1,5 +1,7 @@
 package dev.roastbook.app.ui.detail
 
+import androidx.compose.foundation.shape.CircleShape
+import dev.roastbook.app.ui.components.focusRing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -175,7 +177,7 @@ fun ExtractionStatusCard(
             // keeps a one-line card; the 48dp button is centered on it and reaches into the card's
             // padding, so the target stays 48dp to touch while the cross itself stays small.
             Box(Modifier.padding(start = 4.dp).size(width = 36.dp, height = 24.dp)) {
-                IconButton(onClick = onDismiss, modifier = Modifier.requiredSize(48.dp).offset(x = 6.dp)) {
+                IconButton(onClick = onDismiss, modifier = Modifier.requiredSize(48.dp).offset(x = 6.dp).focusRing(CircleShape)) {
                     Icon(Icons.Default.Close, stringResource(R.string.detail_dismiss_note), tint = secondary, modifier = Modifier.size(20.dp))
                 }
             }
@@ -183,7 +185,7 @@ fun ExtractionStatusCard(
         if (w.offerReread) {
             Spacer(Modifier.height(8.dp))
             val description = stringResource(R.string.what_reread_description)
-            OutlinedButton(onClick = onReread, modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = description }) {
+            OutlinedButton(onClick = onReread, modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = description }.focusRing(CircleShape)) {
                 Icon(Icons.Default.DocumentScanner, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.what_reread))

@@ -1,5 +1,7 @@
 package dev.roastbook.app.ui.settings
 
+import androidx.compose.foundation.shape.CircleShape
+import dev.roastbook.app.ui.components.focusRing
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -216,7 +218,7 @@ private fun BackBar(title: String, onBack: () -> Unit) {
                 modifier = Modifier.semantics { heading() },
             )
         },
-        navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.detail_back)) } },
+        navigationIcon = { IconButton(modifier = Modifier.focusRing(CircleShape), onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.detail_back)) } },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
     )
 }
@@ -231,7 +233,7 @@ private fun ReadingColumn(modifier: Modifier = Modifier, content: @Composable ()
 @Composable
 fun LinkRow(title: String, subtitle: String?, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).focusRing().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {

@@ -1,10 +1,12 @@
 package dev.roastbook.app.ui.components
 
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import dev.roastbook.app.R
 
@@ -19,7 +21,7 @@ fun PermissionReasonDialog(title: String, reason: String, onContinue: () -> Unit
         onDismissRequest = onNotNow,
         title = { Text(title) },
         text = { Text(reason) },
-        confirmButton = { Button(onClick = onContinue) { Text(stringResource(R.string.permission_continue)) } },
-        dismissButton = { TextButton(onClick = onNotNow) { Text(stringResource(R.string.permission_not_now)) } },
+        confirmButton = { Button(modifier = Modifier.focusRing(CircleShape, onFill = true), onClick = onContinue) { Text(stringResource(R.string.permission_continue)) } },
+        dismissButton = { TextButton(modifier = Modifier.focusRing(CircleShape), onClick = onNotNow) { Text(stringResource(R.string.permission_not_now)) } },
     )
 }

@@ -1,5 +1,7 @@
 package dev.roastbook.app.ui.settings
 
+import androidx.compose.foundation.shape.CircleShape
+import dev.roastbook.app.ui.components.focusRing
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -60,7 +62,7 @@ fun SettingsScreen(
                         modifier = Modifier.semantics { heading() },
                     )
                 },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.detail_back)) } },
+                navigationIcon = { IconButton(modifier = Modifier.focusRing(CircleShape), onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.detail_back)) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
             )
         },
@@ -98,8 +100,8 @@ fun SettingsScreen(
             onDismissRequest = { vm.cancelRestore() },
             title = { Text(stringResource(R.string.settings_restore_title)) },
             text = { Text(stringResource(R.string.settings_restore_body, date, coffees, photos)) },
-            confirmButton = { TextButton(onClick = { vm.confirmRestore() }) { Text(stringResource(R.string.settings_restore_yes)) } },
-            dismissButton = { TextButton(onClick = { vm.cancelRestore() }) { Text(stringResource(R.string.detail_cancel)) } },
+            confirmButton = { TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { vm.confirmRestore() }) { Text(stringResource(R.string.settings_restore_yes)) } },
+            dismissButton = { TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { vm.cancelRestore() }) { Text(stringResource(R.string.detail_cancel)) } },
         )
     }
 }

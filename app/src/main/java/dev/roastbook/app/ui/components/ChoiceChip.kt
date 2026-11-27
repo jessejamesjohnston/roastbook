@@ -42,6 +42,6 @@ fun ChoiceChip(selected: Boolean, onClick: () -> Unit, label: String, modifier: 
         label = { Text(label, style = MaterialTheme.typography.labelMedium) },
         shape = RoundedCornerShape(8.dp),
         colors = ChoiceChipDefaults.colors(),
-        modifier = modifier.semantics { role = Role.RadioButton },
+        modifier = modifier.semantics { role = Role.RadioButton }.focusRing(ChipRingShape, onFill = selected),
     )
 }

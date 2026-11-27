@@ -1,5 +1,7 @@
 package dev.roastbook.app.ui.rating
 
+import androidx.compose.foundation.shape.CircleShape
+import dev.roastbook.app.ui.components.focusRing
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -91,10 +93,10 @@ fun RatingSheet(coffee: CoffeeEntity, accent: Color, onSave: (RatingDraft) -> Un
                 // (large text on a narrow phone), Cancel and Save move to a line of their own.
                 FlowRow(Modifier.fillMaxWidth(), itemVerticalAlignment = Alignment.CenterVertically) {
                     // Saves whatever is entered so far, then opens the Detail editor (profile + notes).
-                    TextButton(onClick = { onMore(draft) }) { Text(stringResource(R.string.rate_more), maxLines = 1, softWrap = false) }
+                    TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { onMore(draft) }) { Text(stringResource(R.string.rate_more), maxLines = 1, softWrap = false) }
                     Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                        TextButton(onClick = onDismiss) { Text(stringResource(R.string.detail_cancel), maxLines = 1, softWrap = false) }
-                        Button(enabled = draft.complete, onClick = {
+                        TextButton(modifier = Modifier.focusRing(CircleShape), onClick = onDismiss) { Text(stringResource(R.string.detail_cancel), maxLines = 1, softWrap = false) }
+                        Button(modifier = Modifier.focusRing(CircleShape, onFill = true), enabled = draft.complete, onClick = {
                             onSave(draft)
                             reaction = Reactions.forOverall(context, draft.overall ?: 3f)
                         }) { Text(stringResource(R.string.rate_save), maxLines = 1, softWrap = false) }

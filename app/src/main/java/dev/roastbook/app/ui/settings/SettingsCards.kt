@@ -1,5 +1,7 @@
 package dev.roastbook.app.ui.settings
 
+import androidx.compose.foundation.shape.CircleShape
+import dev.roastbook.app.ui.components.focusRing
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -79,7 +81,7 @@ internal fun BackupCard(vm: SettingsViewModel) {
                 Text(stringResource(R.string.settings_backup_folder), style = MaterialTheme.typography.labelMedium, color = muted)
                 Text(ui.folderName ?: stringResource(R.string.settings_backup_folder_none), style = MaterialTheme.typography.bodyLarge)
             }
-            OutlinedButton(onClick = { pickFolder.launch(null) }, enabled = !busy) {
+            OutlinedButton(modifier = Modifier.focusRing(CircleShape), onClick = { pickFolder.launch(null) }, enabled = !busy) {
                 Text(stringResource(if (state.folderUri == null) R.string.settings_choose_folder else R.string.settings_change_folder))
             }
         }
@@ -133,7 +135,7 @@ internal fun BackupCard(vm: SettingsViewModel) {
         )
         Spacer(Modifier.height(12.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Button(onClick = { vm.backUpNow() }, enabled = state.folderUri != null && !busy) {
+            Button(modifier = Modifier.focusRing(CircleShape, onFill = true), onClick = { vm.backUpNow() }, enabled = state.folderUri != null && !busy) {
                 if (ui.working == BackupUi.Working.BACKUP) {
                     CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
                     Spacer(Modifier.width(8.dp))
@@ -141,6 +143,7 @@ internal fun BackupCard(vm: SettingsViewModel) {
                 } else Text(stringResource(R.string.settings_back_up_now))
             }
             TextButton(
+                modifier = Modifier.focusRing(CircleShape),
                 onClick = { pickZip.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")) },
                 enabled = !busy,
             ) {
@@ -182,14 +185,14 @@ internal fun CloudCard(vm: SettingsViewModel, settings: UserSettings) {
         )
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Button(onClick = { vm.saveKey(keyDraft); keyDraft = "" }, enabled = keyDraft.isNotBlank()) {
+            Button(modifier = Modifier.focusRing(CircleShape, onFill = true), onClick = { vm.saveKey(keyDraft); keyDraft = "" }, enabled = keyDraft.isNotBlank()) {
                 Text(stringResource(R.string.settings_cloud_save))
             }
             if (cloud.hasKey) {
-                OutlinedButton(onClick = { vm.testKey() }, enabled = !cloud.testing) {
+                OutlinedButton(modifier = Modifier.focusRing(CircleShape), onClick = { vm.testKey() }, enabled = !cloud.testing) {
                     Text(stringResource(if (cloud.testing) R.string.settings_cloud_testing else R.string.settings_cloud_test))
                 }
-                TextButton(onClick = { vm.removeKey() }) { Text(stringResource(R.string.settings_cloud_remove)) }
+                TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { vm.removeKey() }) { Text(stringResource(R.string.settings_cloud_remove)) }
             }
         }
         cloud.message?.let { m -> ResultLine(m, top = 6) }
@@ -201,7 +204,7 @@ internal fun CloudCard(vm: SettingsViewModel, settings: UserSettings) {
                 supportingText = { Text(stringResource(R.string.settings_cloud_model_hint)) },
                 trailingIcon = {
                     if (modelDraft != settings.geminiModel && modelDraft.isNotBlank()) {
-                        TextButton(onClick = { vm.setModel(modelDraft) }) { Text(stringResource(R.string.detail_save)) }
+                        TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { vm.setModel(modelDraft) }) { Text(stringResource(R.string.detail_save)) }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
