@@ -31,6 +31,8 @@ All notable changes to Roastbook are recorded here. The format follows
 
 ### Fixed
 
+- The "Show only" sheet's date row reads like its other rows, and every date choice, "Any time"
+  included, is a chip that shows when it is chosen.
 - A bag size that can't be right (often a misread gram figure, such as 3409 g for a 12 oz bag)
   gives way to the net weight printed on the label, when the label states it clearly. A bag size
   you typed is never changed.

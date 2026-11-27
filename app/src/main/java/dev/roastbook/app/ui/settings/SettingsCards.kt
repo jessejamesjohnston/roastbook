@@ -41,6 +41,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import dev.roastbook.app.R
+import dev.roastbook.app.ui.components.ChoiceChip
+import dev.roastbook.app.ui.components.ChoiceChipDefaults
 import dev.roastbook.app.util.englishPlural
 import dev.roastbook.app.data.backup.BackupOff
 import dev.roastbook.app.data.backup.NO_SPACE_ERROR
@@ -225,13 +227,14 @@ internal fun RemindersCard(vm: SettingsViewModel, settings: UserSettings) {
         if (settings.secondLookEnabled) {
             Spacer(Modifier.height(6.dp))
             // One choice of several: TalkBack reads them as radio buttons, not check boxes.
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.selectableGroup()) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(ChoiceChipDefaults.spacing),
+                verticalArrangement = Arrangement.spacedBy(ChoiceChipDefaults.spacing),
+                modifier = Modifier.selectableGroup(),
+            ) {
                 UserSettings.SECOND_LOOK_CHOICES.forEach { d ->
-                    FilterChip(
-                        selected = settings.secondLookDays == d, onClick = { vm.setSecondLookDays(d) },
-                        label = { Text(englishPlural(R.plurals.settings_days, d)) },
-                        modifier = Modifier.semantics { role = Role.RadioButton },
-                    )
+                    ChoiceChip(selected = settings.secondLookDays == d, onClick = { vm.setSecondLookDays(d) },
+                        label = englishPlural(R.plurals.settings_days, d))
                 }
             }
         }

@@ -22,7 +22,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -46,6 +45,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.roastbook.app.R
+import dev.roastbook.app.ui.components.ChoiceChipDefaults
 import dev.roastbook.app.util.englishPlural
 import dev.roastbook.app.util.englishString
 import dev.roastbook.app.data.backup.BackupNudge
@@ -194,11 +194,7 @@ private fun SortChips(sort: HistorySort, descending: Boolean, onSort: (HistorySo
                     contentDescription = if (sort == s) "$labelText, $direction" else labelText
                 },
                 shape = RoundedCornerShape(8.dp),
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
-                ),
+                colors = ChoiceChipDefaults.colors(),
             )
         }
     }

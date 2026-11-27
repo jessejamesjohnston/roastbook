@@ -4,13 +4,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
@@ -19,7 +20,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
@@ -41,6 +41,8 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.roastbook.app.R
+import dev.roastbook.app.ui.components.ChoiceChip
+import dev.roastbook.app.ui.components.ChoiceChipDefaults
 import dev.roastbook.app.data.db.DateRange
 import dev.roastbook.app.data.db.HistoryFilter
 import dev.roastbook.app.data.db.SourceEntity
@@ -50,7 +52,7 @@ import dev.roastbook.app.data.db.SourceEntity
  * journal actually holds, the logged-date range, and Clear while anything is on. Every change
  * applies at once; there is no Apply button.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun FilterSheet(
     filter: HistoryFilter, sources: List<SourceEntity>, roasters: List<String>, origins: List<String>, processes: List<String>,
@@ -69,19 +71,16 @@ fun FilterSheet(
             PickerRow(stringResource(R.string.field_roaster), filter.roaster, roasters.map { it to it }) { vm.setRoaster(it) }
             PickerRow(stringResource(R.string.field_origin_country), filter.originCountry, origins.map { it to it }) { vm.setOrigin(it) }
             PickerRow(stringResource(R.string.field_process), filter.process, processes.map { it to it }) { vm.setProcess(it) }
-            Spacer(Modifier.height(10.dp))
-            Text(stringResource(R.string.filter_logged), style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.semantics { heading() })
-            Spacer(Modifier.height(6.dp))
-            // One choice of several: TalkBack reads them as radio buttons, not check boxes.
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.selectableGroup()) {
-                val ranges = DateRange.entries
-                items(ranges.size) { i ->
-                    val r = ranges[i]
-                    FilterChip(selected = filter.dateRange == r, onClick = { vm.setDateRange(r) },
-                        label = { Text(stringResource(r.label())) },
-                        modifier = Modifier.semantics { role = Role.RadioButton })
+            // The date row reads like every row above it; its choices are chips, "Any time" included.
+            Text(stringResource(R.string.filter_logged), style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.heightIn(min = 48.dp).padding(vertical = 8.dp).semantics { heading() })
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(ChoiceChipDefaults.spacing),
+                verticalArrangement = Arrangement.spacedBy(ChoiceChipDefaults.spacing),
+                modifier = Modifier.selectableGroup(),
+            ) {
+                DateRange.entries.forEach { r ->
+                    ChoiceChip(selected = filter.dateRange == r, onClick = { vm.setDateRange(r) }, label = stringResource(r.label()))
                 }
             }
             if (filter.isActive) {

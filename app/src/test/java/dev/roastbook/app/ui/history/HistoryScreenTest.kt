@@ -423,6 +423,44 @@ class HistoryScreenTest {
         compose.onNodeWithText(coffees(3)).assertExists()
     }
 
+    /** Every row of the filter sheet reads in one style, and each date choice is a chip, spaced alike. */
+    @Config(qualifiers = "w400dp-h1600dp")
+    @Test fun theFilterSheetsRowsShareOneStyleAndEveryDateChoiceIsAChip() {
+        insert("a") { copy(roaster = "Northwind", coffeeName = "Harbor Fog", extractionSource = ExtractionSource.OCR) }
+        show(vm())
+        waitForText("Harbor Fog")
+        openFilters()
+        fun size(text: String): Float {
+            val node = compose.onNodeWithText(text, useUnmergedTree = true).fetchSemanticsNode()
+            val layout = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+            node.config[androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult].action!!(layout)
+            return layout.single().layoutInput.style.fontSize.value
+        }
+        assertEquals("Date reads like the other rows", size(str(R.string.field_roaster)), size(str(R.string.filter_logged)))
+        assertEquals(size(str(R.string.filter_unrated)), size(str(R.string.filter_logged)))
+        val chips = DateRange.entries.map { str(it.label()) }
+        // Each choice, "Any time" included, is a selectable chip (one of several: a radio button).
+        for (label in chips) {
+            compose.onNode(hasText(label) and SemanticsMatcher.expectValue(androidx.compose.ui.semantics.SemanticsProperties.Role,
+                androidx.compose.ui.semantics.Role.RadioButton)).assertExists()
+        }
+        compose.onNode(hasText(str(R.string.filter_date_any)) and SemanticsMatcher.expectValue(
+            androidx.compose.ui.semantics.SemanticsProperties.Role, androidx.compose.ui.semantics.Role.RadioButton)).assertIsSelected()
+        // The chips sit the same distance apart.
+        val bounds = chips.map { label ->
+            compose.onNode(hasText(label) and SemanticsMatcher.expectValue(androidx.compose.ui.semantics.SemanticsProperties.Role,
+                androidx.compose.ui.semantics.Role.RadioButton)).fetchSemanticsNode().boundsInRoot
+        }
+        // A chip narrower than its 48dp touch target sits centered in a 48dp slot; the gaps are between slots.
+        val target = 48 * context.resources.displayMetrics.density
+        fun slot(r: androidx.compose.ui.geometry.Rect): Pair<Float, Float> {
+            val pad = maxOf(0f, (target - r.width) / 2)
+            return (r.left - pad) to (r.right + pad)
+        }
+        val gaps = bounds.zipWithNext().filter { (a, b) -> a.top == b.top }.map { (a, b) -> slot(b).first - slot(a).second }
+        assertTrue("gaps $gaps bounds $bounds", gaps.isNotEmpty() && gaps.all { kotlin.math.abs(it - gaps.first()) <= 1f })
+    }
+
     @Test fun theRoasterPickerListsTheBooksRoastersAndAnyLiftsIt() {
         insert("a") { copy(roaster = "Northwind", coffeeName = "Harbor Fog", extractionSource = ExtractionSource.OCR) }
         insert("b") { copy(roaster = "Sable & Rye", coffeeName = "Copper Kettle", extractionSource = ExtractionSource.OCR) }
