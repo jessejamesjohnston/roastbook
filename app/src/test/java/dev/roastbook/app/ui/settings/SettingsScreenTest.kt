@@ -768,6 +768,34 @@ class SettingsScreenTest {
         assertEquals(14f, style(compose.onNodeWithText(str(R.string.settings_high_contrast_hint), useUnmergedTree = true)).fontSize.value, 0.01f)
     }
 
+    /**
+     * Where the page's column starts, from the back button, whose 48dp target sits at its start edge
+     * (its semantics bounds are the 40dp circle, 4dp inside the target).
+     */
+    private fun columnStart(): Float {
+        val back = compose.onNodeWithContentDescription(str(R.string.detail_back)).fetchSemanticsNode().boundsInRoot
+        return back.left / context.resources.displayMetrics.density - 4f
+    }
+
+    /**
+     * The house frame (app-standard section 12, rule 8): one centered column at most 720dp wide with
+     * its 24dp side padding inside, the back button and title in the same column, 16dp sides under 600dp.
+     */
+    @Test @Config(qualifiers = "w1280dp-h800dp")
+    fun onALaptopTheColumnIsCenteredAndHoldsTheTitle() {
+        show()
+        assertEquals((1280f - 720f) / 2 + 24f, columnStart(), 1f)
+        val title = compose.onNode(hasText(str(R.string.settings_title)) and androidx.compose.ui.test.isHeading()).fetchSemanticsNode().boundsInRoot
+        val back = compose.onNodeWithContentDescription(str(R.string.detail_back)).fetchSemanticsNode().boundsInRoot
+        assertTrue("the title follows the back button in the column", title.left >= back.right && title.left < back.right + 24 * context.resources.displayMetrics.density)
+    }
+
+    @Test @Config(qualifiers = "w360dp-h800dp")
+    fun onAPhoneTheColumnHas16dpSides() {
+        show()
+        assertEquals(16f, columnStart(), 1f)
+    }
+
     @Test fun theLicensesRowOpensTheLicensesScreen() {
         show()
         aboutRow(R.string.settings_licenses, R.string.about_licenses_hint, R.string.about_row).performClick()

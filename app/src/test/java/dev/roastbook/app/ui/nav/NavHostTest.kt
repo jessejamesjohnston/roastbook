@@ -194,7 +194,8 @@ class NavHostTest {
         waitForText(str(R.string.licenses_intro))
         compose.onNodeWithContentDescription(str(R.string.detail_back)).performClick()
         waitForText(str(R.string.settings_title))
-        compose.onNodeWithContentDescription(str(R.string.detail_back)).performClick()
+        // Settings comes back scrolled to where it was; its bar scrolls with the page.
+        compose.onNodeWithContentDescription(str(R.string.detail_back)).performScrollTo().performClick()
         waitFor { onHistory() }
     }
 
