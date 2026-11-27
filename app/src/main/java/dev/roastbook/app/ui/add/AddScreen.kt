@@ -28,7 +28,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -75,6 +79,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import dev.roastbook.app.R
+import dev.roastbook.app.ui.theme.PaintWindowWhile
 import dev.roastbook.app.ui.components.PermissionReasonDialog
 import dev.roastbook.app.ui.components.PermissionAsk
 import dev.roastbook.app.ui.components.PermissionAskState
@@ -98,6 +103,8 @@ fun AddScreen(onCancel: () -> Unit, onCreated: (String) -> Unit, vm: AddViewMode
     val hasCamera = launchers.hasCamera
 
     val screenName = stringResource(R.string.add_title)
+    // Black under the caption too, so a desktop window's caption buttons stay light and visible.
+    PaintWindowWhile(Color.Black)
     Box(Modifier.fillMaxSize().background(Color.Black).semantics { paneTitle = screenName }) {
         if (hasCamera) {
             CameraPreview(launchers.imageCapture, onStarted = vm::cameraStarted, modifier = Modifier.fillMaxSize())
@@ -224,7 +231,8 @@ private fun AddTopBar(step: CaptureStep, cancelEnabled: Boolean, onCancel: () ->
                 drawRect(Brush.verticalGradient(
                     0f to Color.Black.copy(alpha = 0.6f), solidUntil to Color.Black.copy(alpha = 0.6f), 1f to Color.Transparent))
             }
-            .statusBarsPadding().padding(start = 8.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
+            // The top system bars include a desktop window's caption: the title never sits under it.
+            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top)).padding(start = 8.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(modifier = Modifier.focusRing(CircleShape, color = Honey), onClick = onCancel, enabled = cancelEnabled) {

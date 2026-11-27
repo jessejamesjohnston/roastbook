@@ -65,6 +65,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import dev.roastbook.app.R
+import dev.roastbook.app.ui.theme.PaintWindowWhile
 import dev.roastbook.app.util.englishString
 import java.io.File
 import kotlinx.coroutines.launch
@@ -78,6 +79,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun PhotoViewer(title: String, files: List<File>, start: Int, onClose: () -> Unit) {
     if (files.isEmpty()) return
+    // Black under the caption too, so a desktop window's caption buttons stay light and visible.
+    PaintWindowWhile(Color.Black)
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         val pager = rememberPagerState(initialPage = start.coerceIn(0, files.lastIndex)) { files.size }
         val scope = rememberCoroutineScope()

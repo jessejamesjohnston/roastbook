@@ -6,7 +6,7 @@ import android.os.Build
 import android.view.WindowInsetsController
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
@@ -44,5 +44,26 @@ fun PaintWindow() {
     val activity = LocalActivity.current ?: return
     val page = MaterialTheme.colorScheme.surface
     val label = stringResource(R.string.app_name)
-    LaunchedEffect(page, label) { activity.paintWindow(page, label) }
+    // Applied with the composition, in order: a black screen's PaintWindowWhile, composed later,
+    // paints over this one and hands back to it when it goes.
+    DisposableEffect(page, label) {
+        activity.paintWindow(page, label)
+        onDispose { }
+    }
+}
+
+/**
+ * Paints the window and caption in [color] while the calling screen shows (a black screen such as
+ * the photo viewer or the camera, where a page-colored caption's dark buttons would vanish), and
+ * gives the page color back when it leaves.
+ */
+@Composable
+fun PaintWindowWhile(color: Color) {
+    val activity = LocalActivity.current ?: return
+    val page = MaterialTheme.colorScheme.surface
+    val label = stringResource(R.string.app_name)
+    DisposableEffect(color, page, label) {
+        activity.paintWindow(color, label)
+        onDispose { activity.paintWindow(page, label) }
+    }
 }
