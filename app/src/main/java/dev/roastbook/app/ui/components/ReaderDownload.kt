@@ -41,6 +41,7 @@ class ReaderDownloadStarter internal constructor(
     private val ask: () -> Unit,
     private val run: (String) -> Unit,
     private val notificationsOffState: () -> Boolean,
+    private val decline: () -> Unit = {},
 ) {
     /** True while the reason dialog is up. */
     val explaining: Boolean get() = explainingState.value != null
@@ -56,10 +57,14 @@ class ReaderDownloadStarter internal constructor(
     /** Continue under the explanation: Android's dialog, then the waiting action. */
     fun continueToAsk() = ask()
 
-    /** Not now under the explanation: nothing is asked, and the waiting action runs (its progress shows in the app). */
+    /**
+     * Not now under the explanation: nothing is asked, the waiting action runs (its progress shows in
+     * the app), and the answer is remembered, so a resume or retry doesn't explain again.
+     */
     fun skipAsking() {
         val action = explainingState.value ?: return
         explainingState.value = null
+        decline()
         run(action)
     }
 }
@@ -99,12 +104,14 @@ fun rememberReaderDownloadStarter(onStart: (String) -> Unit): ReaderDownloadStar
         ReaderDownloadStarter(
             needsExplaining = {
                 notifAsk.refresh()
-                Build.VERSION.SDK_INT >= 33 && notificationsOff(context) && notifAsk.value == PermissionAsk.FIRST_ASK
+                Build.VERSION.SDK_INT >= 33 && notificationsOff(context) && notifAsk.value == PermissionAsk.FIRST_ASK &&
+                    !notifAsk.declined(NotificationReason.DOWNLOAD)
             },
             explainingState = explaining,
             ask = { notifAsk.markAsked(); launcher.launch(NOTIFICATION_PERMISSION) },
             run = { currentOnStart(it) },
             notificationsOffState = { notifOff },
+            decline = { notifAsk.decline(NotificationReason.DOWNLOAD) },
         )
     }
 }

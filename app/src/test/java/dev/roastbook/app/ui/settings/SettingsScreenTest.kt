@@ -39,6 +39,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onRoot
 import org.junit.Rule
 import org.junit.Test
@@ -64,6 +65,8 @@ class SettingsScreenTest {
     private var backs = 0
     private var licenses = 0
     private var replays = 0
+    /** Whether the reader download counts as running, for the notifications row. */
+    private var downloading = false
 
     @After fun tearDown() {
         shadowOf(RuntimeEnvironment.getApplication()).checkActivities(false)
@@ -73,7 +76,7 @@ class SettingsScreenTest {
     private fun show() {
         compose.setContent {
             RoastbookTheme {
-                SettingsScreen(onBack = { backs++ }, onLicenses = { licenses++ }, onReplayIntro = { replays++ }, vm = rig.vm, readerSection = {})
+                SettingsScreen(onBack = { backs++ }, onLicenses = { licenses++ }, onReplayIntro = { replays++ }, vm = rig.vm, readerSection = {}, downloadActive = { downloading })
             }
         }
         compose.waitForIdle()
@@ -464,31 +467,77 @@ class SettingsScreenTest {
         text(R.string.cloud_err_key).assertDoesNotExist()
     }
 
+    /** The row's sentence for these parts, in the order the row names them. */
+    private fun offLine(vararg parts: Int): String {
+        val names = parts.map { str(it) }
+        val list = when (names.size) {
+            1 -> names[0]
+            2 -> str(R.string.list_two, names[0], names[1])
+            else -> str(R.string.list_three, names[0], names[1], names[2])
+        }
+        return str(R.string.settings_notifications_off, list)
+    }
+
+    private fun refuse(c: android.content.Context = context, forGood: Boolean = false) {
+        dev.roastbook.app.ui.components.PermissionAsks.markAsked(c, android.Manifest.permission.POST_NOTIFICATIONS)
+        if (forGood) c.getSharedPreferences("permission_asks", android.content.Context.MODE_PRIVATE).edit()
+            .putBoolean(android.Manifest.permission.POST_NOTIFICATIONS + ".blocked", true).commit()
+    }
+
     /**
-     * After notifications were refused (as in the other Merriment Labs apps), Reminders says they can't
-     * show and offers the way back: Allow notifications while Android still asks, then Open Settings.
+     * After notifications were refused (as in the other Merriment Labs apps), Settings says what
+     * can't show and offers the way back: Allow notifications while Android still asks, then Open Settings.
      */
-    @Test fun afterARefusalRemindersSayTheyCantShowAndOfferAllow() {
-        dev.roastbook.app.ui.components.PermissionAsks.markAsked(context, android.Manifest.permission.POST_NOTIFICATIONS)
+    @Test fun afterARefusalSettingsSaysWhatCantShowAndOffersAllow() {
+        refuse()
         showAsking()
-        text(R.string.settings_notifications_off).performScrollTo().assertExists()
+        text(R.string.settings_notifications_off, str(R.string.notif_off_reminders)).performScrollTo().assertExists()
         text(R.string.settings_allow_notifications).performScrollTo().performClick()
         eventually { launched == listOf<Any?>(android.Manifest.permission.POST_NOTIFICATIONS) }
     }
 
-    @Test fun refusedForGoodRemindersOfferOpenSettings() {
-        val c = context
-        dev.roastbook.app.ui.components.PermissionAsks.markAsked(c, android.Manifest.permission.POST_NOTIFICATIONS)
-        c.getSharedPreferences("permission_asks", android.content.Context.MODE_PRIVATE).edit()
-            .putBoolean(android.Manifest.permission.POST_NOTIFICATIONS + ".blocked", true).commit()
+    @Test fun refusedForGoodSettingsOffersOpenSettings() {
+        refuse(forGood = true)
         show()
-        text(R.string.settings_notifications_off).performScrollTo().assertExists()
+        text(R.string.settings_notifications_off, str(R.string.notif_off_reminders)).performScrollTo().assertExists()
         compose.onNode(hasText(str(R.string.permission_open_settings)), useUnmergedTree = true).assertExists()
     }
 
-    @Test fun withNotificationsNeverAskedOrAllowedRemindersSayNothing() {
+    @Test fun withNotificationsNeverAskedOrAllowedSettingsSaysNothing() {
         show()
-        text(R.string.settings_notifications_off).assertDoesNotExist()
+        compose.onAllNodesWithText(str(R.string.settings_allow_notifications)).assertCountEquals(0)
+    }
+
+    /** "Not now" counts like a refusal here: the row names everything that now goes quiet. */
+    @Test fun afterNotNowOnTheWeeklyCheckTheRowNamesRemindersAndTheUpdateNotice() {
+        androidx.work.testing.WorkManagerTestInitHelper.initializeTestWorkManager(context)
+        showAsking()
+        text(R.string.update_weekly).performScrollTo().performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithText(str(R.string.permission_not_now)).fetchSemanticsNodes().isNotEmpty() }
+        text(R.string.permission_not_now).performClick()
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithText(offLine(R.string.notif_off_reminders, R.string.notif_off_update)).fetchSemanticsNodes().isNotEmpty()
+        }
+        assertTrue("nothing was asked", launched.isEmpty())
+    }
+
+    @Test fun aRunningDownloadIsNamedToo() {
+        refuse()
+        runBlocking { rig.graph.userPrefs.setWeeklyUpdateCheck(true) }
+        downloading = true
+        show()
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithText(offLine(R.string.notif_off_reminders, R.string.notif_off_update, R.string.notif_off_download))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    @Test fun withNothingThatNeedsNotificationsTheRowStaysAway() {
+        refuse()
+        runBlocking { rig.graph.userPrefs.setSecondLookEnabled(false) }
+        show()
+        compose.waitForIdle()
+        compose.onAllNodesWithText(str(R.string.settings_allow_notifications)).assertCountEquals(0)
     }
 
     @Test fun removingTheKeyReturnsTheCardToNoKey() {
@@ -754,7 +803,7 @@ class SettingsScreenTest {
                     override val activityResultRegistry = grantingRegistry
                 },
             ) {
-                RoastbookTheme { SettingsScreen(onBack = {}, vm = rig.vm, readerSection = {}) }
+                RoastbookTheme { SettingsScreen(onBack = {}, vm = rig.vm, readerSection = {}, downloadActive = { downloading }) }
             }
         }
         compose.waitForIdle()
@@ -855,7 +904,7 @@ class SettingsScreenTest {
             androidx.compose.runtime.CompositionLocalProvider(
                 androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(d.density, fontScale = 2f),
             ) {
-                RoastbookTheme { SettingsScreen(onBack = {}, vm = rig.vm, readerSection = {}) }
+                RoastbookTheme { SettingsScreen(onBack = {}, vm = rig.vm, readerSection = {}, downloadActive = { downloading }) }
             }
         }
         compose.waitForIdle()

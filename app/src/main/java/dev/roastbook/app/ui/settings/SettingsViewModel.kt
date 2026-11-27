@@ -163,6 +163,8 @@ class SettingsViewModel @Inject constructor(
 
     val state: StateFlow<BackupState> = prefs.state.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BackupState())
     val settings: StateFlow<UserSettings> = userPrefs.settings.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserSettings())
+    /** Whether a rate-it reminder is waiting: one of the things that needs notifications. */
+    val anyPendingReminder: StateFlow<Boolean> = repo.anyPendingReminder.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     fun setSecondLookEnabled(on: Boolean) { viewModelScope.launch { userPrefs.setSecondLookEnabled(on) } }
     fun setSecondLookDays(days: Int) { viewModelScope.launch { userPrefs.setSecondLookDays(days) } }

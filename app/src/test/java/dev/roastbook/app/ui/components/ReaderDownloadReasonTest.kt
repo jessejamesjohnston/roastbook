@@ -50,5 +50,10 @@ class ReaderDownloadReasonTest {
         compose.waitForIdle()
         assertEquals(listOf("download"), started)
         compose.onNode(isDialog()).assertDoesNotExist()
+        // Not now is remembered: the next start (a resume, a retry) runs without the reason again.
+        compose.onNodeWithText("Start").performClick()
+        compose.waitForIdle()
+        compose.onNode(isDialog()).assertDoesNotExist()
+        assertEquals(listOf("download", "download"), started)
     }
 }

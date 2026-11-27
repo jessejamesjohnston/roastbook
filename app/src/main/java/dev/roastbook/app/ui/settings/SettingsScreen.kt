@@ -33,6 +33,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import dev.roastbook.app.R
+import dev.roastbook.app.ui.components.NOTIFICATION_PERMISSION
+import dev.roastbook.app.ui.components.rememberPermissionAsk
 import dev.roastbook.app.util.englishPlural
 
 /** Settings: one card per topic (backup, cloud AI, on-device reader, reminders, photos, appearance), then About. */
@@ -44,11 +46,15 @@ fun SettingsScreen(
     vm: SettingsViewModel = hiltViewModel(),
     // A slot so tests can render the screen without Hilt (the reader section builds its own ViewModel).
     readerSection: @Composable () -> Unit = { LocalReaderSection() },
+    // Whether the reader download is running, for the notifications row (a slot for the same reason).
+    downloadActive: @Composable () -> Boolean = { readerDownloadActive() },
 ) {
     val context = LocalContext.current
     val version = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: ""
     val settings by vm.settings.collectAsState()
     val ui by vm.ui.collectAsState()
+    // One record of the notification ask, shared by the row at the top and About's Check weekly.
+    val notifAsk = rememberPermissionAsk(NOTIFICATION_PERMISSION)
 
     Scaffold(containerColor = MaterialTheme.colorScheme.surface) { padding ->
         // One centered column, at most 720dp with its side padding inside (24dp, 16dp under 600dp):
@@ -66,6 +72,15 @@ fun SettingsScreen(
                             modifier = Modifier.padding(start = 8.dp).semantics { heading() },
                         )
                     }
+                    val pendingReminder by vm.anyPendingReminder.collectAsState()
+                    NotificationsOffRow(
+                        NotificationNeeds(
+                            reminders = settings.secondLookEnabled || pendingReminder,
+                            updateNotice = settings.weeklyUpdateCheck,
+                            download = downloadActive(),
+                        ),
+                        notifAsk,
+                    )
                     BackupCard(vm)
                     CloudCard(vm, settings)
                     readerSection()
@@ -79,7 +94,7 @@ fun SettingsScreen(
                     AboutCard(
                         version, onLicenses, update = update, weeklyCheck = settings.weeklyUpdateCheck,
                         onCheckForUpdates = { vm.checkForUpdates(version) }, onUpdatePageOpened = vm::updatePageOpened,
-                        onWeeklyCheck = vm::setWeeklyUpdateCheck,
+                        onWeeklyCheck = vm::setWeeklyUpdateCheck, notifAsk = notifAsk,
                     )
                 }
             }

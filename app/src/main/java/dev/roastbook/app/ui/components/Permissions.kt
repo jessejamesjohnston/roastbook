@@ -88,6 +88,16 @@ object PermissionAsks {
         if (prefs(c).getBoolean("$permission.blocked", false)) prefs(c).edit { putBoolean("$permission.blocked", false) }
     }
 
+    /** "Not now" under a notification reason: remembered per reason, so that reason isn't shown again. */
+    fun declined(c: Context, reason: NotificationReason): Boolean = prefs(c).getBoolean("declined.${reason.name}", false)
+    fun markDeclined(c: Context, reason: NotificationReason) = prefs(c).edit { putBoolean("declined.${reason.name}", true) }
+    fun anyDeclined(c: Context): Boolean = NotificationReason.entries.any { declined(c, it) }
+
+    /** Notifications allowed after all: every "Not now" is moot. */
+    fun clearDeclined(c: Context) {
+        if (anyDeclined(c)) prefs(c).edit { NotificationReason.entries.forEach { remove("declined.${it.name}") } }
+    }
+
     /** Android's settings page for this app, where a refused permission can be turned on. */
     fun openAppSettings(c: Context) {
         runCatching {
@@ -96,14 +106,27 @@ object PermissionAsks {
     }
 }
 
+/** The things that ask for notifications with a reason first; each remembers its own "Not now". */
+enum class NotificationReason { REMINDER, UPDATE, DOWNLOAD }
+
 /** A permission's [PermissionAsk], refreshed whenever the screen comes back (from Settings, say). */
 class PermissionAskState(private val context: Context, private val activity: Activity?, val permission: String) {
     var value by mutableStateOf(PermissionAsks.state(context, permission))
         private set
+    /** For notifications: a "Not now" was given to one of the reasons (see [NotificationReason]). */
+    var declined by mutableStateOf(PermissionAsks.anyDeclined(context))
+        private set
     fun refresh() {
         value = PermissionAsks.state(context, permission)
-        if (value == PermissionAsk.GRANTED) PermissionAsks.clearBlocked(context, permission)
+        if (value == PermissionAsk.GRANTED) {
+            PermissionAsks.clearBlocked(context, permission)
+            PermissionAsks.clearDeclined(context)
+        }
+        declined = PermissionAsks.anyDeclined(context)
     }
+    /** "Not now" to [reason]: remembered, and this state follows. */
+    fun decline(reason: NotificationReason) { PermissionAsks.markDeclined(context, reason); refresh() }
+    fun declined(reason: NotificationReason): Boolean = PermissionAsks.declined(context, reason)
     fun markAsked() { PermissionAsks.markAsked(context, permission) }
     /** Call from the dialog's result callback, before [refresh]. */
     fun answered(granted: Boolean) { PermissionAsks.recordAnswer(context, activity, permission, granted); refresh() }

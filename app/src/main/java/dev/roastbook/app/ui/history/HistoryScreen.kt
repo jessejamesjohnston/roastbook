@@ -55,6 +55,7 @@ import dev.roastbook.app.R
 import dev.roastbook.app.ui.components.PermissionReasonDialog
 import dev.roastbook.app.data.photo.PhotoStore
 import dev.roastbook.app.ui.components.NOTIFICATION_PERMISSION
+import dev.roastbook.app.ui.components.NotificationReason
 import dev.roastbook.app.ui.components.PermissionAsk
 import dev.roastbook.app.ui.components.PermissionAskState
 import dev.roastbook.app.ui.components.rememberPermissionAsk
@@ -198,7 +199,7 @@ fun HistoryScreen(
                 notifAsk.markAsked()
                 notifPermission.launch(NOTIFICATION_PERMISSION)
             },
-            onNotNow = { explainNotifications = false },
+            onNotNow = { explainNotifications = false; notifAsk.decline(NotificationReason.REMINDER) },
         )
     }
 }
@@ -231,9 +232,10 @@ private fun TriedSheet(
                         vm.answerTried(coffeeId, choice)
                         notifAsk.refresh()
                         val ask = notifAsk.value
-                        // Only the first time: a person who said no isn't asked again on every bag.
+                        // Only the first time: a person who said no, or Not now, isn't asked again on every bag
+                        // (Settings says the reminders can't show, with the way back).
                         val remind = choice == TriedChoice.TOMORROW || choice == TriedChoice.NEXT_WEEK
-                        if (remind && Build.VERSION.SDK_INT >= 33 && ask == PermissionAsk.FIRST_ASK) {
+                        if (remind && Build.VERSION.SDK_INT >= 33 && ask == PermissionAsk.FIRST_ASK && !notifAsk.declined(NotificationReason.REMINDER)) {
                             onExplain()
                         } else {
                             vm.dismissTried()

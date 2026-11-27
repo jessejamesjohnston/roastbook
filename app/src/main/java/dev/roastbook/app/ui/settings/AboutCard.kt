@@ -64,7 +64,9 @@ import androidx.core.net.toUri
 import dev.roastbook.app.R
 import dev.roastbook.app.util.ExternalLinks
 import dev.roastbook.app.ui.components.NOTIFICATION_PERMISSION
+import dev.roastbook.app.ui.components.NotificationReason
 import dev.roastbook.app.ui.components.PermissionAsk
+import dev.roastbook.app.ui.components.PermissionAskState
 import dev.roastbook.app.ui.components.PermissionReasonDialog
 import dev.roastbook.app.ui.components.rememberPermissionAsk
 import dev.roastbook.app.ui.theme.RowTitleStyle
@@ -86,6 +88,8 @@ internal fun AboutCard(
     onCheckForUpdates: () -> Unit = {},
     onUpdatePageOpened: () -> Unit = {},
     onWeeklyCheck: (Boolean) -> Unit = {},
+    // Shared with Settings' notifications row, so a Not now here shows there at once.
+    notifAsk: PermissionAskState = rememberPermissionAsk(NOTIFICATION_PERMISSION),
 ) {
     val context = LocalContext.current
     // An inline line under a row when nothing on the device can open its page or email.
@@ -99,7 +103,6 @@ internal fun AboutCard(
     // Turning on the weekly check asks for the notification permission it needs to tell anyone
     // anything (Android 13+), unless Android would no longer show the dialog. The switch turns on
     // whatever the answer.
-    val notifAsk = rememberPermissionAsk(NOTIFICATION_PERMISSION)
     val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> notifAsk.answered(granted) }
     // The reason shows first, in the same dialog as every other ask; Android's question follows Continue.
     var explainWeekly by rememberSaveable { mutableStateOf(false) }
@@ -107,7 +110,9 @@ internal fun AboutCard(
         onWeeklyCheck(on)
         if (!on || Build.VERSION.SDK_INT < 33) return
         notifAsk.refresh()
-        if (notifAsk.value == PermissionAsk.FIRST_ASK || notifAsk.value == PermissionAsk.ASK_AGAIN) explainWeekly = true
+        val askable = notifAsk.value == PermissionAsk.FIRST_ASK || notifAsk.value == PermissionAsk.ASK_AGAIN
+        // After Not now the reason doesn't come back; Settings' notifications row says what can't show.
+        if (askable && !notifAsk.declined(NotificationReason.UPDATE)) explainWeekly = true
     }
     if (explainWeekly) {
         PermissionReasonDialog(
@@ -117,7 +122,7 @@ internal fun AboutCard(
                 notifAsk.markAsked()
                 notifPermission.launch(NOTIFICATION_PERMISSION)
             },
-            onNotNow = { explainWeekly = false },
+            onNotNow = { explainWeekly = false; notifAsk.decline(NotificationReason.UPDATE) },
         )
     }
     // A check that found a newer version opens the release page once.

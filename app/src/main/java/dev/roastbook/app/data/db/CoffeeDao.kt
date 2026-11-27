@@ -64,6 +64,10 @@ interface CoffeeDao {
     @Query("SELECT * FROM coffee WHERE remind_at IS NOT NULL AND state != 'RATED'")
     suspend fun pendingReminders(): List<CoffeeEntity>
 
+    /** Whether any rate-it reminder is waiting, as it changes (Settings says when they can't show). */
+    @Query("SELECT EXISTS(SELECT 1 FROM coffee WHERE remind_at IS NOT NULL AND state != 'RATED')")
+    fun anyPendingReminder(): Flow<Boolean>
+
     /** Column-scoped writes: these fields have their own owners, so they never ride a whole-row update. */
     @Query("UPDATE coffee SET remind_at = :at, updated_at = :now WHERE id = :id")
     suspend fun setRemindAt(id: String, at: Long?, now: Long)

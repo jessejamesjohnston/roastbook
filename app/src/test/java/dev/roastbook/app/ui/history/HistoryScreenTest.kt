@@ -628,6 +628,27 @@ class HistoryScreenTest {
         assertNull(vm.triedSheetFor.value)
     }
 
+    /** Not now is remembered: the next reminder is stored without the reason or Android's question. */
+    @Test fun afterNotNowTheNextReminderAsksNothing() {
+        insert("c1") { copy(coffeeName = "Harbor Fog", extractionSource = ExtractionSource.OCR) }
+        insert("c2", at = 2_000) { copy(coffeeName = "Tide Line", extractionSource = ExtractionSource.OCR) }
+        val handle = SavedStateHandle(mapOf("triedSheetFor" to "c1"))
+        val vm = HistoryViewModel(handle, repo, pending, backupPrefs)
+        show(vm)
+        waitForText(str(R.string.sheet_tried_title))
+        compose.onNodeWithText(str(R.string.sheet_remind_tomorrow)).performClick()
+        waitForText(str(R.string.notif_reason_reminder_title))
+        compose.onNodeWithText(str(R.string.permission_not_now)).performClick()
+        waitGone(str(R.string.notif_why_reminder))
+        compose.runOnIdle { handle["triedSheetFor"] = "c2" }
+        waitForText(str(R.string.sheet_tried_title))
+        compose.onNodeWithText(str(R.string.sheet_remind_tomorrow)).performClick()
+        waitGone(str(R.string.sheet_tried_title))
+        compose.onNodeWithText(str(R.string.notif_reason_reminder_title)).assertDoesNotExist()
+        assertTrue(launched.isEmpty())
+        waitFor { row("c2")?.remindAt != null }
+    }
+
     @Test fun withNotificationsAllowedNextWeekJustSetsTheReminder() {
         shadowOf(compose.activity.application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
         val vm = showTriedSheet()

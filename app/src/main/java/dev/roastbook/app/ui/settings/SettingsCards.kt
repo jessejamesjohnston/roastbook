@@ -1,6 +1,6 @@
 package dev.roastbook.app.ui.settings
 
-import dev.roastbook.app.ui.components.rememberPermissionAsk
+import dev.roastbook.app.ui.components.PermissionAskState
 import dev.roastbook.app.ui.components.PermissionAsks
 import dev.roastbook.app.ui.components.PermissionAsk
 import dev.roastbook.app.ui.components.NOTIFICATION_PERMISSION
@@ -243,7 +243,6 @@ internal fun RemindersCard(vm: SettingsViewModel, settings: UserSettings) {
             stringResource(R.string.settings_reminders_explainer),
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        NotificationsOffRow()
         Spacer(Modifier.height(8.dp))
         SwitchRow(
             title = stringResource(R.string.settings_second_look),
@@ -267,18 +266,36 @@ internal fun RemindersCard(vm: SettingsViewModel, settings: UserSettings) {
     }
 }
 
+/** The parts that need notifications and are in use, each named for the row's sentence. */
+internal data class NotificationNeeds(val reminders: Boolean, val updateNotice: Boolean, val download: Boolean) {
+    val any: Boolean get() = reminders || updateNotice || download
+}
+
 /**
- * After notifications were refused (Android 13+), a tonal row says reminders can't show, with the way
- * back: "Allow notifications" opens Android's dialog while it still asks; once refused for good,
- * "Open Settings" opens the app's page there. Nothing shows before the first ask or once allowed.
+ * When notifications are off and the person said no to Android or Not now to a reason (Android
+ * 13+), a tonal row says what can't show, naming whichever parts are in use (reminders, the update
+ * notice, the download's progress), with the way back: "Allow notifications" opens Android's
+ * dialog while it still asks; once refused for good, "Open Settings" opens the app's page there.
+ * Nothing shows before any answer, once allowed, or when nothing needs notifications.
  */
 @Composable
-private fun NotificationsOffRow() {
+internal fun NotificationsOffRow(needs: NotificationNeeds, ask: PermissionAskState) {
     if (Build.VERSION.SDK_INT < 33) return
-    val ask = rememberPermissionAsk(NOTIFICATION_PERMISSION)
     val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> ask.answered(granted) }
     val context = LocalContext.current
-    if (ask.value != PermissionAsk.ASK_AGAIN && ask.value != PermissionAsk.BLOCKED) return
+    val answered = ask.value == PermissionAsk.ASK_AGAIN || ask.value == PermissionAsk.BLOCKED ||
+        (ask.value == PermissionAsk.FIRST_ASK && ask.declined)
+    if (!answered || !needs.any) return
+    val names = buildList {
+        if (needs.reminders) add(stringResource(R.string.notif_off_reminders))
+        if (needs.updateNotice) add(stringResource(R.string.notif_off_update))
+        if (needs.download) add(stringResource(R.string.notif_off_download))
+    }
+    val list = when (names.size) {
+        1 -> names[0]
+        2 -> stringResource(R.string.list_two, names[0], names[1])
+        else -> stringResource(R.string.list_three, names[0], names[1], names[2])
+    }
     Spacer(Modifier.height(8.dp))
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.secondaryContainer)
@@ -286,7 +303,7 @@ private fun NotificationsOffRow() {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            stringResource(R.string.settings_notifications_off), style = MaterialTheme.typography.bodyMedium,
+            stringResource(R.string.settings_notifications_off, list), style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.weight(1f),
         )
         if (ask.value == PermissionAsk.BLOCKED) {

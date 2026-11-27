@@ -109,6 +109,13 @@ class LocalReaderViewModel @Inject constructor(
  * including one whose own AI reads bags (there it carries the choice of which one reads); elsewhere
  * it says why the reader can't run, or draws nothing (see [ReaderOffer.of]).
  */
+/** Whether the reader download is waiting, running or being checked: its progress wants a notification. */
+@Composable
+internal fun readerDownloadActive(vm: LocalReaderViewModel = hiltViewModel()): Boolean {
+    val state by vm.state.collectAsState()
+    return state?.phase in setOf(DownloadPhase.WAITING_FOR_NETWORK, DownloadPhase.DOWNLOADING, DownloadPhase.VERIFYING)
+}
+
 @Composable
 fun LocalReaderSection(vm: LocalReaderViewModel = hiltViewModel()) {
     val context = LocalContext.current

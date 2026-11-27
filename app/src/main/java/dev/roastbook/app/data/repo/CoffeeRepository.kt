@@ -198,6 +198,9 @@ class CoffeeRepository @Inject constructor(
         secondLookAt?.let { reminders.scheduleSecondLook(id, it) }
     }
 
+    /** Whether any rate-it reminder is waiting. */
+    val anyPendingReminder: Flow<Boolean> get() = dao.anyPendingReminder()
+
     /** Stores the rate-it reminder and arms (or clears) the alarm. Column-scoped: extraction may be writing the row. */
     suspend fun setReminder(id: String, at: Long?) = committed {
         if (dao.get(id) == null) return@committed
