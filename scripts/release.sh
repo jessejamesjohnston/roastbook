@@ -59,7 +59,7 @@ die() { echo "release: $*" >&2; exit 1; }
 # 3. its signature is an SSH signature. An OpenPGP or X.509 signature is refused before git sees
 #    it, because git would check one against whatever keyring the releaser happens to have;
 # 4. git verify-tag accepts it against the allowed-signers file git's gpg.ssh.allowedSignersFile
-#    names. git asks ssh-keygen (-Y find-principals, then -Y verify in the "git" namespace at the
+#    names, with ssh-keygen forced as the verifier. git asks it (-Y find-principals, then -Y verify in the "git" namespace at the
 #    tag's own date), so the file is read as ssh-keygen documents it, options such as
 #    namespaces="git", valid-after=... and cert-authority included, and the signer is found by
 #    its key, never by git's user.email;
@@ -67,8 +67,12 @@ die() { echo "release: $*" >&2; exit 1; }
 # Prints the key and the principal that signed. Sets TAG_OBJECT and TAG_COMMIT.
 check_tag() {
     local text named signers verified good principal key
+    # The tag is always named in full (refs/tags/<tag>), and a branch of the same name is refused,
+    # so nothing here or in a later checkout can take the branch for the tag.
     git -C "$REPO" rev-parse -q --verify "refs/tags/$TAG" >/dev/null || die "no tag $TAG in $REPO"
-    TAG_OBJECT="$(git -C "$REPO" rev-parse "refs/tags/$TAG")"
+    ! git -C "$REPO" show-ref -q --verify "refs/heads/$TAG" \
+        || die "a branch is also named $TAG; rename or delete it, so the tag cannot be mistaken for it"
+    TAG_OBJECT="$(git -C "$REPO" rev-parse -q --verify "refs/tags/$TAG")"
     [[ "$(git -C "$REPO" cat-file -t "$TAG_OBJECT")" == tag ]] || die "tag $TAG is a lightweight tag, so it carries no signature"
     text="$(git -C "$REPO" cat-file tag "$TAG_OBJECT")"
     named="$(sed -n '1,/^$/s/^tag //p' <<<"$text")"
@@ -79,7 +83,10 @@ check_tag() {
     signers="$(git -C "$REPO" config --type=path --get gpg.ssh.allowedSignersFile || true)"
     [[ -n "$signers" && -f "$signers" ]] \
         || die "set gpg.ssh.allowedSignersFile (git config) to the file of keys allowed to sign release tags"
-    verified="$(git -C "$REPO" -c gpg.ssh.allowedSignersFile="$signers" verify-tag --raw "$TAG_OBJECT" 2>&1)" \
+    # The verifier is forced to ssh-keygen: a gpg.ssh.program in any git config could otherwise
+    # point git at a program that calls every signature good.
+    verified="$(git -C "$REPO" -c gpg.format=ssh -c gpg.ssh.program=ssh-keygen \
+        -c gpg.ssh.allowedSignersFile="$signers" verify-tag --raw "$TAG_OBJECT" 2>&1)" \
         || die "the SSH signature on tag $TAG does not verify against $signers (a key it does not list, or an altered tag)"
     # ssh-keygen reports: Good "git" signature for <principal> with <TYPE> key SHA256:<fingerprint>
     # (a certificate adds its ID and CA after the fingerprint). Without a listed principal git

@@ -154,6 +154,18 @@ run_case() {
     fi
 }
 
+# Stands in for ssh-keygen when git config points gpg.ssh.program at it: it calls every signature
+# good, by the pinned key. The release script must not let git use it.
+cat > "$WORK/bin/fake-verifier" <<EOF
+#!/bin/sh
+case "\$*" in
+    *find-principals*) echo "$PRINCIPAL" ;;
+    *) echo "Good \\"git\\" signature for $PRINCIPAL with ED25519 key \$FAKE_FP" ;;
+esac
+exit 0
+EOF
+chmod +x "$WORK/bin/fake-verifier"
+
 # 1. Signed by the owner's key, which the file lists and the run pins.
 retag; g tag -s "$TAG" -m "$APP $VERSION" "$COMMIT_A"
 run_case "correctly signed (own-key pin)" pass "signed by $OWNER_FP, listed for $PRINCIPAL" "${PREFIX}_TAG_KEY=$OWNER_FP"
@@ -203,7 +215,19 @@ retag; g tag -s "$TAG" -m "$APP $VERSION" "$COMMIT_B"; MOVED="$(g rev-parse "$TA
 retag; g tag -s "$TAG" -m "$APP $VERSION" "$COMMIT_A"
 run_case "tag moved after the first check" refuse "moved during the build" "${PREFIX}_TAG_KEY=$OWNER_FP" TEST_MOVE_TAG_TO="$MOVED"
 [[ "$(cat "$WORK/build.log" 2>/dev/null)" == built ]] || { FAILED=1; ROWS+=("WRONG | tag moved after the first check | the stub build never ran |"); }
-# 14. --check-tag runs the check alone.
+# 14. git config points gpg.ssh.program at a verifier that calls everything good, and a key the
+#    file does not list signed the tag.
+retag; g -c user.signingkey="$HOME/.ssh/stranger" tag -s "$TAG" -m "$APP $VERSION" "$COMMIT_A"
+g config gpg.ssh.program "$WORK/bin/fake-verifier"
+run_case "gpg.ssh.program set to a fake verifier" refuse "does not verify against" "${PREFIX}_TAG_KEY=$OWNER_FP" FAKE_FP="$OWNER_FP"
+g config --unset gpg.ssh.program
+# 15. A branch named like the tag, beside a correctly signed tag: refused before any build.
+retag; g tag -s "$TAG" -m "$APP $VERSION" "$COMMIT_A"
+g branch "$TAG" "$COMMIT_B"
+run_case "a branch named like the tag" refuse "a branch is also named $TAG" "${PREFIX}_TAG_KEY=$OWNER_FP"
+[[ ! -e "$WORK/build.log" ]] || { FAILED=1; ROWS+=("WRONG | a branch named like the tag | the build started |"); }
+g branch -D "$TAG" >/dev/null
+# 16. --check-tag runs the check alone.
 retag; g tag -s "$TAG" -m "$APP $VERSION" "$COMMIT_A"
 rc=0; out="$(env "${PREFIX}_TAG_KEY=$OWNER_FP" PATH="$WORK/shim:$WORK/bin:$PATH" ANDROID_HOME="$SDK" \
     "$REPO/scripts/release.sh" --check-tag "$TAG" 2>&1)" || rc=$?

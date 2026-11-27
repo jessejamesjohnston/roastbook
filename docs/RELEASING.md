@@ -115,12 +115,14 @@ is used whatever the key's alias; if yours holds several, name one with
 6. **Build.** `ROASTBOOK_KEYSTORE_PATH=<keystore> scripts/release.sh vX.Y.Z`. It first checks the
    tag, before it reads the keystore:
    - the tag is a tag object (not a lightweight tag) made for this tag's own name, so a signed
-     tag for another version cannot be moved under this name;
+     tag for another version cannot be moved under this name. It is always looked up as
+     `refs/tags/<tag>`, and a branch with the same name is refused;
    - it carries an SSH signature. An OpenPGP or X.509 signature is refused before git sees it,
      since git would check one against whatever keyring is at hand;
    - `git verify-tag` accepts the signature against the allowed-signers file git's
-     `gpg.ssh.allowedSignersFile` names. git has ssh-keygen find the principal the file lists
-     for the signing key and verify it, so options on the key's line are read as ssh-keygen
+     `gpg.ssh.allowedSignersFile` names, with ssh-keygen forced as the verifier (a
+     `gpg.ssh.program` in any git config is ignored). git has ssh-keygen find the principal
+     the file lists for the signing key and verify it, so options on the key's line are read as ssh-keygen
      reads them, and the signer is found by key, not by git's `user.email`;
    - the signing key's fingerprint is the release-tag key above (`ROASTBOOK_TAG_KEY` replaces it
      for your own builds).
@@ -186,7 +188,9 @@ case: a correctly signed tag passes (also when the signer's git email differs fr
 the file lists, when the key's line carries an options field, and when git config names the file
 with `~/`); the same tag under the default pin, a lightweight tag, an unsigned tag, an
 OpenPGP-signed tag (gpg is never run), a key the file does not list, a listed key that is not the
-pinned one, a signed tag object made for another name, and a tag moved during the build are each
+pinned one, a signed tag object made for another name, a tag moved during the build, a tag
+signed by an unlisted key while git config points `gpg.ssh.program` at a verifier that calls
+everything good, and a branch named like the tag (refused before any build) are each
 refused with their own message and leave `dist/` unwritten. It needs git, ssh-keygen, gpg,
 keytool and python3, works in a temporary directory with its own HOME (your keys, keyring and git
 settings are never read), and exits non-zero if any case gives the wrong result. The Gradle gate
