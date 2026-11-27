@@ -1,5 +1,11 @@
 package dev.roastbook.app.ui.settings
 
+import dev.roastbook.app.ui.components.rememberPermissionAsk
+import dev.roastbook.app.ui.components.PermissionAsks
+import dev.roastbook.app.ui.components.PermissionAsk
+import dev.roastbook.app.ui.components.NOTIFICATION_PERMISSION
+import androidx.compose.ui.platform.LocalContext
+import android.os.Build
 import androidx.compose.ui.semantics.error
 import androidx.compose.foundation.shape.CircleShape
 import dev.roastbook.app.ui.components.focusRing
@@ -237,6 +243,7 @@ internal fun RemindersCard(vm: SettingsViewModel, settings: UserSettings) {
             stringResource(R.string.settings_reminders_explainer),
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        NotificationsOffRow()
         Spacer(Modifier.height(8.dp))
         SwitchRow(
             title = stringResource(R.string.settings_second_look),
@@ -255,6 +262,40 @@ internal fun RemindersCard(vm: SettingsViewModel, settings: UserSettings) {
                     ChoiceChip(selected = settings.secondLookDays == d, onClick = { vm.setSecondLookDays(d) },
                         label = englishPlural(R.plurals.settings_days, d))
                 }
+            }
+        }
+    }
+}
+
+/**
+ * After notifications were refused (Android 13+), a tonal row says reminders can't show, with the way
+ * back: "Allow notifications" opens Android's dialog while it still asks; once refused for good,
+ * "Open Settings" opens the app's page there. Nothing shows before the first ask or once allowed.
+ */
+@Composable
+private fun NotificationsOffRow() {
+    if (Build.VERSION.SDK_INT < 33) return
+    val ask = rememberPermissionAsk(NOTIFICATION_PERMISSION)
+    val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> ask.answered(granted) }
+    val context = LocalContext.current
+    if (ask.value != PermissionAsk.ASK_AGAIN && ask.value != PermissionAsk.BLOCKED) return
+    Spacer(Modifier.height(8.dp))
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.secondaryContainer)
+            .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            stringResource(R.string.settings_notifications_off), style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.weight(1f),
+        )
+        if (ask.value == PermissionAsk.BLOCKED) {
+            TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { PermissionAsks.openAppSettings(context) }) {
+                Text(stringResource(R.string.permission_open_settings))
+            }
+        } else {
+            TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { ask.markAsked(); request.launch(NOTIFICATION_PERMISSION) }) {
+                Text(stringResource(R.string.settings_allow_notifications))
             }
         }
     }

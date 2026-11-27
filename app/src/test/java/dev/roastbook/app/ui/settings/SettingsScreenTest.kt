@@ -464,6 +464,33 @@ class SettingsScreenTest {
         text(R.string.cloud_err_key).assertDoesNotExist()
     }
 
+    /**
+     * After notifications were refused (app-standard section 12, rule 18), Reminders says they can't
+     * show and offers the way back: Allow notifications while Android still asks, then Open Settings.
+     */
+    @Test fun afterARefusalRemindersSayTheyCantShowAndOfferAllow() {
+        dev.roastbook.app.ui.components.PermissionAsks.markAsked(context, android.Manifest.permission.POST_NOTIFICATIONS)
+        showAsking()
+        text(R.string.settings_notifications_off).performScrollTo().assertExists()
+        text(R.string.settings_allow_notifications).performScrollTo().performClick()
+        eventually { launched == listOf<Any?>(android.Manifest.permission.POST_NOTIFICATIONS) }
+    }
+
+    @Test fun refusedForGoodRemindersOfferOpenSettings() {
+        val c = context
+        dev.roastbook.app.ui.components.PermissionAsks.markAsked(c, android.Manifest.permission.POST_NOTIFICATIONS)
+        c.getSharedPreferences("permission_asks", android.content.Context.MODE_PRIVATE).edit()
+            .putBoolean(android.Manifest.permission.POST_NOTIFICATIONS + ".blocked", true).commit()
+        show()
+        text(R.string.settings_notifications_off).performScrollTo().assertExists()
+        compose.onNode(hasText(str(R.string.permission_open_settings)), useUnmergedTree = true).assertExists()
+    }
+
+    @Test fun withNotificationsNeverAskedOrAllowedRemindersSayNothing() {
+        show()
+        text(R.string.settings_notifications_off).assertDoesNotExist()
+    }
+
     @Test fun removingTheKeyReturnsTheCardToNoKey() {
         runBlocking { rig.graph.secrets.setGeminiKey("FAKETestKey1234") }
         show()
