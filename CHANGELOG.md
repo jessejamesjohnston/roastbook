@@ -40,9 +40,21 @@ All notable changes to Roastbook are recorded here. The format follows
 - On a Chromebook or Googlebook Roastbook opens as a normal resizable window (1040 by 700 dp to
   start, down to 320 dp), like other apps, instead of full screen.
 - The intro can be stepped back through: a Back button on every page after the first, and the
-  system Back or Escape go back one page. Settings, About has "Show the intro again".
-- Before Android asks for notifications (a reminder, the reader's download) or the camera, the
-  reason now comes as a proper dialog with a title, Continue, and Not now, which asks nothing.
+  system Back or Escape go back one page. Settings has "Show the intro again" under Getting started.
+- Before Android asks for notifications (a reminder, the reader's download, Check weekly) or the
+  camera, the reason now comes as a proper dialog with a title, Not now, and Continue, which is the
+  only way on to Android's question. Check weekly used to ask with no reason at all.
+- After notifications are refused, Settings, Reminders says reminders can't show and offers "Allow
+  notifications", or "Open Settings" once Android no longer asks.
+- With a keyboard, every button, row, chip and card shows a clear 3 dp ring in the accent color
+  where the focus is. A question that deletes or replaces something starts with Cancel focused.
+- On a Chromebook or Googlebook the window's title bar takes the page's color, light or dark, and
+  follows the theme chosen in Settings.
+- Settings keeps its title and back button in the same centered column as its cards on a wide
+  window, and its rows, About block and copyright line use the sizes the other Merriment Labs apps
+  use. A line under Backup says what Android's own backup carries.
+- A refused Gemini key is said under the key field, which turns red, and clears once you edit it.
+- Notifications show a one-color Roastbook icon in the status bar instead of the full launcher art.
 - The "Show only" sheet's date row reads like its other rows, and every date choice, "Any time"
   included, is a chip that shows when it is chosen.
 - A bag size that can't be right (often a misread gram figure, such as 3409 g for a 12 oz bag)
