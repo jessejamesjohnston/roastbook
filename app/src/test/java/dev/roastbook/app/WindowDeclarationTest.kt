@@ -28,10 +28,19 @@ class WindowDeclarationTest {
         assertEquals("true", a.getAttributeNS(ns, "resizeableActivity"))
         val layout = a.getElementsByTagName("layout").item(0) as Element?
         assertNotNull("a <layout> with the window's default size", layout)
-        assertEquals("720dp", layout!!.getAttributeNS(ns, "defaultWidth"))
-        assertEquals("640dp", layout.getAttributeNS(ns, "defaultHeight"))
+        assertEquals("1040dp", layout!!.getAttributeNS(ns, "defaultWidth"))
+        assertEquals("700dp", layout.getAttributeNS(ns, "defaultHeight"))
         assertEquals("320dp", layout.getAttributeNS(ns, "minWidth"))
         assertEquals("320dp", layout.getAttributeNS(ns, "minHeight"))
+    }
+
+    /** Nothing in the app hides the system bars or the caption, or goes full screen (checklist rule 2). */
+    @Test fun nothingHidesTheBarsOrGoesFullScreen() {
+        val src = listOf(File("src/main"), File("app/src/main")).first { it.isDirectory }
+        val banned = listOf("hide(WindowInsets", "FLAG_FULLSCREEN", "windowFullscreen", "BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE")
+        val hits = src.walk().filter { it.isFile && it.extension in setOf("kt", "xml") }
+            .flatMap { f -> banned.filter { it in f.readText() }.map { "${f.name}: $it" } }.toList()
+        assertEquals(emptyList<String>(), hits)
     }
 
     @Test fun noOrientationOrAspectRatioIsLocked() {

@@ -43,7 +43,8 @@
             android:value="subject_segment" />
 
         <!-- On a laptop-class device the app opens as a normal window of this size, like any
-             desktop app, and can be resized down to a phone's width; nothing locks orientation. -->
+             desktop app, and can be resized down to a phone's width; nothing locks orientation.
+             1040 x 700 dp is the size every app in the family declares. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -51,8 +52,8 @@
             android:resizeableActivity="true"
             android:windowSoftInputMode="adjustResize">
             <layout
-                android:defaultWidth="720dp"
-                android:defaultHeight="640dp"
+                android:defaultWidth="1040dp"
+                android:defaultHeight="700dp"
                 android:minWidth="320dp"
                 android:minHeight="320dp" />
             <intent-filter>
