@@ -2,6 +2,7 @@ package dev.roastbook.app.ui.settings
 
 import androidx.compose.foundation.shape.CircleShape
 import dev.roastbook.app.ui.components.focusRing
+import dev.roastbook.app.ui.components.initialFocus
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -94,7 +95,7 @@ fun SettingsScreen(
             title = { Text(stringResource(R.string.settings_restore_title)) },
             text = { Text(stringResource(R.string.settings_restore_body, date, coffees, photos)) },
             confirmButton = { TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { vm.confirmRestore() }) { Text(stringResource(R.string.settings_restore_yes)) } },
-            dismissButton = { TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { vm.cancelRestore() }) { Text(stringResource(R.string.detail_cancel)) } },
+            dismissButton = { TextButton(modifier = Modifier.initialFocus().focusRing(CircleShape), onClick = { vm.cancelRestore() }) { Text(stringResource(R.string.detail_cancel)) } },
         )
     }
 }

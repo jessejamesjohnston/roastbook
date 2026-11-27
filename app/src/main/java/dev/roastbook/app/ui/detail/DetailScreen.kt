@@ -2,6 +2,7 @@ package dev.roastbook.app.ui.detail
 
 import androidx.compose.foundation.shape.CircleShape
 import dev.roastbook.app.ui.components.focusRing
+import dev.roastbook.app.ui.components.initialFocus
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Box
@@ -197,6 +198,6 @@ fun DetailScreen(
                 Text(stringResource(R.string.detail_delete_yes))
             }
         },
-        dismissButton = { TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { confirmDelete = false }) { Text(stringResource(R.string.detail_cancel)) } },
+        dismissButton = { TextButton(modifier = Modifier.initialFocus().focusRing(CircleShape), onClick = { confirmDelete = false }) { Text(stringResource(R.string.detail_cancel)) } },
     )
 }

@@ -3,6 +3,7 @@ package dev.roastbook.app.ui.detail
 import androidx.compose.foundation.shape.CircleShape
 import dev.roastbook.app.ui.components.ChipRingShape
 import dev.roastbook.app.ui.components.focusRing
+import dev.roastbook.app.ui.components.initialFocus
 import android.content.res.Resources
 import android.view.WindowManager
 import androidx.compose.foundation.background
@@ -223,6 +224,6 @@ internal fun DiscardConfirm(onDiscard: () -> Unit, onKeep: () -> Unit) {
         title = { Text(stringResource(R.string.edit_discard_title)) },
         text = { Text(stringResource(R.string.edit_discard_body)) },
         confirmButton = { TextButton(modifier = Modifier.focusRing(CircleShape), onClick = onDiscard) { Text(stringResource(R.string.edit_discard)) } },
-        dismissButton = { TextButton(modifier = Modifier.focusRing(CircleShape), onClick = onKeep) { Text(stringResource(R.string.edit_keep_editing)) } },
+        dismissButton = { TextButton(modifier = Modifier.initialFocus().focusRing(CircleShape), onClick = onKeep) { Text(stringResource(R.string.edit_keep_editing)) } },
     )
 }

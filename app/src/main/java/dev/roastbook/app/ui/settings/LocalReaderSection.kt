@@ -2,6 +2,7 @@ package dev.roastbook.app.ui.settings
 
 import androidx.compose.foundation.shape.CircleShape
 import dev.roastbook.app.ui.components.focusRing
+import dev.roastbook.app.ui.components.initialFocus
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -165,7 +166,7 @@ fun LocalReaderSection(vm: LocalReaderViewModel = hiltViewModel()) {
         confirmButton = {
             TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { confirmDelete = false; vm.delete() }) { Text(stringResource(R.string.reader_delete_yes)) }
         },
-        dismissButton = { TextButton(modifier = Modifier.focusRing(CircleShape), onClick = { confirmDelete = false }) { Text(stringResource(R.string.detail_cancel)) } },
+        dismissButton = { TextButton(modifier = Modifier.initialFocus().focusRing(CircleShape), onClick = { confirmDelete = false }) { Text(stringResource(R.string.detail_cancel)) } },
     )
 }
 
