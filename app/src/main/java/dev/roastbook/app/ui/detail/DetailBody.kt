@@ -23,6 +23,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -88,6 +90,11 @@ internal fun DetailBody(
     val thumbnailOnly = hero != null && !vm.photoStore.file(hero.original).exists() &&
         hero.thumb?.let { vm.photoStore.file(it).exists() } == true
     val extracting = c.state == CoffeeState.EXTRACTING
+    // Which photo is open full window, if any (by its place in [photos]); kept across a rotation.
+    var viewing by rememberSaveable(c.id) { mutableStateOf<Int?>(null) }
+    val photoFiles = photos.mapNotNull { p -> listOfNotNull(p.original, p.thumb).map { vm.photoStore.file(it) }.firstOrNull { it.exists() } }
+    val openPhoto = { i: Int -> if (photoFiles.isNotEmpty()) viewing = i.coerceIn(0, photoFiles.lastIndex) }
+    val heroIndex = photos.indexOf(hero).coerceAtLeast(0)
     val readingTitle = extractingLines(c.extractionTrail, c.nextAttemptAt).first
     val title = when {
         extracting -> readingTitle
@@ -108,12 +115,12 @@ internal fun DetailBody(
             val heroLabel = stringResource(R.string.detail_hero_description, title)
             if (wide) {
                 Row(Modifier.padding(horizontal = 16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    HeroBox(heroFile, tint.tint, heroLabel, Modifier.width(260.dp))
+                    HeroBox(heroFile, tint.tint, heroLabel, Modifier.width(260.dp)) { openPhoto(heroIndex) }
                     Spacer(Modifier.width(20.dp))
                     TitleBlock(c, title, Modifier.weight(1f))
                 }
             } else {
-                HeroBox(heroFile, tint.tint, heroLabel, Modifier.padding(horizontal = 16.dp).fillMaxWidth())
+                HeroBox(heroFile, tint.tint, heroLabel, Modifier.padding(horizontal = 16.dp).fillMaxWidth()) { openPhoto(heroIndex) }
                 Spacer(Modifier.height(16.dp))
                 TitleBlock(c, title, Modifier.padding(horizontal = 20.dp))
             }
@@ -166,10 +173,11 @@ internal fun DetailBody(
             DetailCards(
                 c, photos, facts, prose, sourceNames, tint, vm, extracting,
                 inlineEditing, session, refusedCloses, reaction,
-                onStartEditing, onFinishEditing, onRatingChange, onDraftChange,
+                onStartEditing, onFinishEditing, onRatingChange, onDraftChange, onOpenPhoto = openPhoto,
             )
         }
     }
+    viewing?.let { start -> PhotoViewer(title, photoFiles, start, onClose = { viewing = null }) }
 }
 
 /** The reader card's two download actions, by name, for [rememberReaderDownloadStarter]. */
@@ -214,6 +222,7 @@ private fun DetailCards(
     onFinishEditing: () -> Unit,
     onRatingChange: (RatingDraft) -> Unit,
     onDraftChange: (String, String) -> Unit,
+    onOpenPhoto: (Int) -> Unit = {},
 ) {
     val editingKey = session?.section
     val secondary = onTintVariant()
@@ -278,8 +287,11 @@ private fun DetailCards(
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 itemsIndexed(photos, key = { _, p -> p.id }) { i, p ->
                     val label = englishString(R.string.detail_photo_position, i + 1, photos.size)
+                    val openLabel = stringResource(R.string.detail_photo_open)
                     HeroSquare(vm.photoStore.fileOrNull(p.thumb ?: p.original), 88.dp, 12.dp, stroke = false,
-                        modifier = Modifier.semantics { contentDescription = label })
+                        modifier = Modifier.clip(RoundedCornerShape(12.dp))
+                            .clickable(onClickLabel = openLabel, role = Role.Button) { onOpenPhoto(i) }
+                            .semantics { contentDescription = label })
                 }
             }
         }

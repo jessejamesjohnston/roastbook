@@ -6,6 +6,12 @@ All notable changes to Roastbook are recorded here. The format follows
 
 ## [0.4.1] - Unreleased
 
+### Added
+
+- A coffee's photos open full window from its page: tap the bag photo or any photo in the strip.
+  Swipe, the side buttons or the arrow keys move between them; pinch, double tap, the scroll wheel
+  or + and - zoom; Back, Escape or Close return to the page.
+
 ### Changed
 
 - On a Chromebook or Googlebook, links that leave the app (About, a roaster's site) open in your

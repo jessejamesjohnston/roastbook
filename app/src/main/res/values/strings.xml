@@ -354,6 +354,12 @@
     <string name="rate_range">from %1$s to %2$s</string>
     <string name="detail_hero_description">Bag photo: %1$s</string>
     <string name="detail_photo_position">Photo %1$d of %2$d</string>
+    <string name="detail_photo_open">View photo</string>
+    <string name="photo_viewer_description">%1$s, photo %2$d of %3$d</string>
+    <string name="photo_viewer_close">Close photo</string>
+    <string name="photo_viewer_previous">Previous photo</string>
+    <string name="photo_viewer_next">Next photo</string>
+    <string name="photo_viewer_zoomed">Zoomed in</string>
     <string name="detail_edit_section">Edit %1$s</string>
     <string name="detail_done_section">Done editing %1$s</string>
     <string name="detail_overall_description">Overall %1$s out of 5</string>

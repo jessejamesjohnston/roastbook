@@ -71,10 +71,14 @@ import dev.roastbook.app.util.WebLinks
 import java.io.File
 import java.net.URLEncoder
 
-/** The square Detail hero: the photo over the bag's tint, or the tint alone without a file. */
+/** The square Detail hero: the photo over the bag's tint, or the tint alone without a file. [onOpen] shows it full window. */
 @Composable
-internal fun HeroBox(file: File?, tint: Color, label: String, modifier: Modifier) {
-    Box(modifier.aspectRatio(1f).clip(RoundedCornerShape(20.dp)).background(tint)) {
+internal fun HeroBox(file: File?, tint: Color, label: String, modifier: Modifier, onOpen: (() -> Unit)? = null) {
+    val openLabel = stringResource(R.string.detail_photo_open)
+    Box(
+        modifier.aspectRatio(1f).clip(RoundedCornerShape(20.dp)).background(tint)
+            .then(if (file != null && onOpen != null) Modifier.clickable(onClickLabel = openLabel, role = Role.Button, onClick = onOpen) else Modifier),
+    ) {
         if (file != null) {
             AsyncImage(model = file, contentDescription = label, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         }
