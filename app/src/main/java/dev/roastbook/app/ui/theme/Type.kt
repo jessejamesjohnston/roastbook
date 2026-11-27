@@ -41,6 +41,8 @@ val RoastbookTypography = Typography(
     labelSmall = TextStyle(fontFamily = Text, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp),
 )
 
+/** A settings or About row's title: Figtree Medium 16/22, the family's row title. */
+val RowTitleStyle = TextStyle(fontFamily = Text, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 22.sp)
 /** Tasting-notes line: Figtree italic, 13.5/18. */
 val NotesStyle = TextStyle(fontFamily = Text, fontWeight = FontWeight.Normal, fontStyle = FontStyle.Italic, fontSize = 13.5.sp, lineHeight = 18.sp)
 /** Overall number in the row's rating column. */

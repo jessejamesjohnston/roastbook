@@ -523,6 +523,38 @@ class SettingsScreenTest {
         assertEquals(1, replays)
     }
 
+    /** The size, line height and weight a text node is drawn with. */
+    private fun style(node: SemanticsNodeInteraction): androidx.compose.ui.text.TextStyle {
+        val out = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        node.fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult].action!!.invoke(out)
+        return out.single().layoutInput.style
+    }
+
+    @Test fun theIntroRowSitsAboveTheAboutBlockSoTheHouseOrderStaysWhole() {
+        show()
+        // Positions, not clipped bounds: one of the two may sit below the window.
+        val replay = compose.onNode(hasContentDescription(str(R.string.about_row, str(R.string.settings_replay_intro), str(R.string.settings_replay_intro_hint))))
+            .performScrollTo().fetchSemanticsNode().let { it.positionInRoot.y + it.size.height }
+        val about = compose.onNode(hasText(str(R.string.settings_about)) and androidx.compose.ui.test.isHeading()).fetchSemanticsNode().positionInRoot.y
+        assertTrue("the intro row ends before the About label", replay <= about)
+        // Help is followed by Contact with nothing between: one divider row apart at most.
+        val contact = aboutContactRow().fetchSemanticsNode().positionInRoot.y
+        val help = compose.onNode(hasContentDescription(str(R.string.about_opens_browser, str(R.string.about_help), str(R.string.about_help_hint))))
+            .fetchSemanticsNode().let { it.positionInRoot.y + it.size.height }
+        assertTrue("Contact comes right after Help", contact - help in 0f..4f)
+    }
+
+    @Test fun theAboutHeaderAndCopyrightUseTheHouseSizes() {
+        show()
+        val version = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: ""
+        val title = style(compose.onNodeWithText(str(R.string.settings_version, version), useUnmergedTree = true).performScrollTo())
+        assertEquals(16f, title.fontSize.value, 0.01f)
+        assertEquals(androidx.compose.ui.text.font.FontWeight.Medium, title.fontWeight)
+        val copyright = text(R.string.settings_copyright).performScrollTo()
+        assertEquals(12f, style(copyright).fontSize.value, 0.01f)
+        assertTrue("below the card's last row", copyright.fetchSemanticsNode().boundsInRoot.top >= aboutContactRow().fetchSemanticsNode().boundsInRoot.bottom)
+    }
+
     private fun aboutContactRow() = compose.onNode(
         hasContentDescription(str(R.string.about_opens_email, str(R.string.about_contact), str(R.string.about_contact_address))),
     ).performScrollTo()

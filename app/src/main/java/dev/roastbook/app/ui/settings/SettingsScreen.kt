@@ -80,8 +80,9 @@ fun SettingsScreen(
                     AppearanceSection(settings, onThemeMode = vm::setThemeMode, onHighContrast = vm::setHighContrast)
                 }
                 val update by vm.update.collectAsState()
+                ReplayIntroCard(onReplayIntro)
                 AboutCard(
-                    version, onLicenses, onReplayIntro = onReplayIntro, update = update, weeklyCheck = settings.weeklyUpdateCheck,
+                    version, onLicenses, update = update, weeklyCheck = settings.weeklyUpdateCheck,
                     onCheckForUpdates = { vm.checkForUpdates(version) }, onUpdatePageOpened = vm::updatePageOpened,
                     onWeeklyCheck = vm::setWeeklyUpdateCheck,
                 )

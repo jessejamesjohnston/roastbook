@@ -68,6 +68,7 @@ import dev.roastbook.app.ui.components.NOTIFICATION_PERMISSION
 import dev.roastbook.app.ui.components.PermissionAsk
 import dev.roastbook.app.ui.components.PermissionReasonDialog
 import dev.roastbook.app.ui.components.rememberPermissionAsk
+import dev.roastbook.app.ui.theme.RowTitleStyle
 import dev.roastbook.app.update.UpdateCheckResult
 import dev.roastbook.app.update.UpdateChecker
 
@@ -86,7 +87,6 @@ internal fun AboutCard(
     onCheckForUpdates: () -> Unit = {},
     onUpdatePageOpened: () -> Unit = {},
     onWeeklyCheck: (Boolean) -> Unit = {},
-    onReplayIntro: () -> Unit = {},
 ) {
     val context = LocalContext.current
     // An inline line under a row when nothing on the device can open its page or email.
@@ -161,9 +161,6 @@ internal fun AboutCard(
         AboutRow(Icons.AutoMirrored.Outlined.HelpOutline, stringResource(R.string.about_help), stringResource(R.string.about_help_hint),
             AboutRowKind.BROWSER) { openPage(supportUrl) }
         RowDivider()
-        AboutRow(Icons.Outlined.School, stringResource(R.string.settings_replay_intro), stringResource(R.string.settings_replay_intro_hint),
-            AboutRowKind.IN_APP, onReplayIntro)
-        RowDivider()
         val address = stringResource(R.string.about_contact_address)
         val subject = stringResource(R.string.settings_version, version)
         AboutRow(Icons.Outlined.Email, stringResource(R.string.about_contact), address, AboutRowKind.EMAIL) {
@@ -182,9 +179,21 @@ internal fun AboutCard(
     }
     // Below the card, outside it, like every Merriment Labs app; TalkBack reads it after the last row.
     Text(
-        stringResource(R.string.settings_copyright), style = MaterialTheme.typography.bodySmall,
+        stringResource(R.string.settings_copyright), style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 12.dp),
     )
+}
+
+/**
+ * Getting started: the intro again. Its own section above About, so the About block keeps the
+ * family's fixed rows and order.
+ */
+@Composable
+internal fun ReplayIntroCard(onReplayIntro: () -> Unit) {
+    RowsCard(title = stringResource(R.string.settings_getting_started)) {
+        AboutRow(Icons.Outlined.School, stringResource(R.string.settings_replay_intro), stringResource(R.string.settings_replay_intro_hint),
+            AboutRowKind.IN_APP, onReplayIntro)
+    }
 }
 
 /** The update row's second line: what it does, that it is checking, or what the last check found. */
@@ -214,7 +223,7 @@ private fun AboutSwitchRow(icon: ImageVector, title: String, subtitle: String, c
         Icon(icon, contentDescription = null, tint = muted, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+            Text(title, style = RowTitleStyle, color = MaterialTheme.colorScheme.onSurface)
             Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = muted)
         }
         Spacer(Modifier.width(8.dp))
@@ -261,7 +270,7 @@ private fun AboutRow(icon: ImageVector, title: String, subtitle: String, kind: A
         Icon(icon, contentDescription = null, tint = muted, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+            Text(title, style = RowTitleStyle, color = MaterialTheme.colorScheme.onSurface)
             Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = muted)
         }
         Spacer(Modifier.width(8.dp))
@@ -291,7 +300,7 @@ private fun AboutHeader(title: String, subtitle: String) {
         }
         Spacer(Modifier.width(16.dp))
         Column(Modifier.semantics(mergeDescendants = true) {}) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(title, style = RowTitleStyle)
             Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
