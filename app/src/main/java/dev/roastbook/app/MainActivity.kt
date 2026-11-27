@@ -83,12 +83,7 @@ class MainActivity : ComponentActivity() {
      * own override restricted, which lint reports on any subclass that overrides it.
      */
     @android.annotation.SuppressLint("RestrictedApi")
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.keyCode != KeyEvent.KEYCODE_ESCAPE || !event.hasNoModifiers()) return super.dispatchKeyEvent(event)
-        if (super.dispatchKeyEvent(event)) return true
-        if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) onBackPressedDispatcher.onBackPressed()
-        return true
-    }
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean = EscapeKey.dispatch(this, event) { super.dispatchKeyEvent(it) }
 
     /** Lists the shortcuts in the system's keyboard shortcuts helper (Meta + /). */
     override fun onProvideKeyboardShortcuts(data: MutableList<KeyboardShortcutGroup>, menu: Menu?, deviceId: Int) {

@@ -34,11 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -91,15 +87,11 @@ fun OnboardingScreen(
         scope.launch { if (animationsOff) pager.scrollToPage(page) else pager.animateScrollToPage(page) }
     }
     val back = { if (pager.currentPage > 0) go(pager.currentPage - 1) }
-    // Past the first page, the system Back and Escape step back a page instead of leaving.
+    // Past the first page, the system Back steps back a page instead of leaving. Escape arrives here
+    // too: the activity turns an Escape nothing else used into Back (EscapeKey).
     BackHandler(enabled = pager.currentPage > 0) { back() }
 
-    Surface(
-        Modifier.fillMaxSize().onPreviewKeyEvent { e ->
-            if (e.type == KeyEventType.KeyDown && e.key == Key.Escape && pager.currentPage > 0) { back(); true } else false
-        },
-        color = MaterialTheme.colorScheme.surface,
-    ) {
+    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
     // System bars include a desktop window's caption, so Skip never sits under its buttons.
     Column(Modifier.fillMaxSize().systemBarsPadding()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
