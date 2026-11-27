@@ -116,7 +116,8 @@ fun RatingSheet(coffee: CoffeeEntity, accent: Color, onSave: (RatingDraft) -> Un
 private fun SaveHint() {
     val full = stringResource(R.string.edit_rating_incomplete)
     val short = stringResource(R.string.edit_rating_incomplete_short)
-    val style = MaterialTheme.typography.bodySmall
+    // The sheet's one body size, as the question under the title and the score labels.
+    val style = MaterialTheme.typography.bodyMedium
     val measurer = rememberTextMeasurer()
     BoxWithConstraints(Modifier.fillMaxWidth().padding(top = 4.dp)) {
         val width = constraints.maxWidth

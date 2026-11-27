@@ -139,6 +139,26 @@ class RatingSheetTest {
         return layout.single().lineCount
     }
 
+    /**
+     * One body size in the sheet (app-standard section 12, rule 25): the question under the title and
+     * the reason under Save are the same size, as the score labels are.
+     */
+    @Test fun theSheetsSentencesAndLabelsShareOneSize() {
+        show()
+        fun size(t: String): Float {
+            val out = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+            compose.onNodeWithText(t, useUnmergedTree = true).fetchSemanticsNode()
+                .config[SemanticsActions.GetTextLayoutResult].action!!.invoke(out)
+            return out.single().layoutInput.style.fontSize.value
+        }
+        val question = size(text(R.string.rate_title))
+        val reason = compose.onAllNodes(androidx.compose.ui.test.hasText(text(R.string.edit_rating_incomplete)) or
+            androidx.compose.ui.test.hasText(text(R.string.edit_rating_incomplete_short)), useUnmergedTree = true).fetchSemanticsNodes().single()
+        val out = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        reason.config[SemanticsActions.GetTextLayoutResult].action!!.invoke(out)
+        assertEquals("the reason under Save", question, out.single().layoutInput.style.fontSize.value, 0.01f)
+    }
+
     @Test fun addDetailsHandsOverWhatIsEnteredSoFar() {
         show()
         row(R.string.sort_aroma).setTo(3f)

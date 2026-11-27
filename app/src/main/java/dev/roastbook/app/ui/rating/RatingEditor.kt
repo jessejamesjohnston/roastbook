@@ -1,5 +1,6 @@
 package dev.roastbook.app.ui.rating
 
+import androidx.compose.ui.semantics.heading
 import dev.roastbook.app.ui.components.ChipRingShape
 import dev.roastbook.app.ui.components.focusRing
 import android.content.Context
@@ -103,7 +104,7 @@ fun RatingEditor(
 ) {
     val secondary = dev.roastbook.app.ui.theme.onTintVariant()
     Column {
-        if (!embedded) Text(stringResource(R.string.rate_score), style = MaterialTheme.typography.labelMedium, color = secondary)
+        if (!embedded) Text(stringResource(R.string.rate_score), style = MaterialTheme.typography.labelMedium, color = secondary, modifier = Modifier.semantics { heading() })
         DimRow(stringResource(R.string.sort_aroma), draft.aroma, accent) { onChange(draft.copy(aroma = it)) }
         DimRow(stringResource(R.string.sort_flavor), draft.flavor, accent) { onChange(draft.copy(flavor = it)) }
         DimRow(stringResource(R.string.sort_finish), draft.finish, accent) { onChange(draft.copy(finish = it)) }
@@ -114,7 +115,7 @@ fun RatingEditor(
         }
         if (showProfile) {
             Spacer(Modifier.height(10.dp))
-            Text(stringResource(R.string.rate_profile), style = MaterialTheme.typography.labelMedium, color = secondary)
+            Text(stringResource(R.string.rate_profile), style = MaterialTheme.typography.labelMedium, color = secondary, modifier = Modifier.semantics { heading() })
             Spacer(Modifier.height(4.dp))
             DimRow(
                 stringResource(R.string.sort_acidity),
@@ -140,7 +141,7 @@ fun RatingEditor(
         }
         if (showNotes) {
             Spacer(Modifier.height(10.dp))
-            Text(stringResource(R.string.detail_notes_header), style = MaterialTheme.typography.labelMedium, color = secondary)
+            Text(stringResource(R.string.detail_notes_header), style = MaterialTheme.typography.labelMedium, color = secondary, modifier = Modifier.semantics { heading() })
             Spacer(Modifier.height(4.dp))
             OutlinedTextField(
                 value = draft.notes, onValueChange = { onChange(draft.copy(notes = it)) },
