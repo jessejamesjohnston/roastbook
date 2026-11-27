@@ -14,7 +14,7 @@ import androidx.browser.customtabs.CustomTabsIntent
  * reports [PackageManager.FEATURE_PC], as Chromebooks and Googlebooks do) the app is one window
  * among several, so a link opens in the default browser as a normal tab. On phones, foldables and
  * tablets it opens in an in-app browser tab (a Custom Tab), or in the browser when no installed
- * browser offers those tabs.
+ * browser offers those tabs. Email leaves through [email], and a notification's page through [browserIntent].
  */
 object ExternalLinks {
     /** How a link opens. */
@@ -32,8 +32,19 @@ object ExternalLinks {
         val newTask = if (context.activity() == null) Intent.FLAG_ACTIVITY_NEW_TASK else 0
         when (way(laptop, inAppTabs)) {
             Way.IN_APP_TAB -> CustomTabsIntent.Builder().build().apply { intent.addFlags(newTask) }.launchUrl(context, uri)
-            Way.BROWSER -> context.startActivity(Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE).addFlags(newTask))
+            Way.BROWSER -> context.startActivity(browserIntent(uri).addFlags(newTask))
         }
+    }.isSuccess
+
+    /** [uri] in the default browser: the intent behind the browser case, and a notification's tap. */
+    fun browserIntent(uri: Uri): Intent = Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE)
+
+    /** Starts an email to [address] with [subject]; false when no mail app can take it, so the caller can say so. */
+    fun email(context: Context, address: String, subject: String): Boolean = runCatching {
+        context.startActivity(
+            Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).putExtra(Intent.EXTRA_EMAIL, arrayOf(address)).putExtra(Intent.EXTRA_SUBJECT, subject)
+                .addFlags(if (context.activity() == null) Intent.FLAG_ACTIVITY_NEW_TASK else 0),
+        )
     }.isSuccess
 
     private tailrec fun Context.activity(): Activity? = when (this) {

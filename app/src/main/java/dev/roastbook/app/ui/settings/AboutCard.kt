@@ -1,8 +1,6 @@
 package dev.roastbook.app.ui.settings
 
 import dev.roastbook.app.ui.components.focusRing
-import android.content.ActivityNotFoundException
-import android.content.Intent
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -166,10 +164,7 @@ internal fun AboutCard(
         val subject = stringResource(R.string.settings_version, version)
         AboutRow(Icons.Outlined.Email, stringResource(R.string.about_contact), address, AboutRowKind.EMAIL) {
             aboutMessage = null
-            val mail = Intent(Intent.ACTION_SENDTO, "mailto:".toUri())
-                .putExtra(Intent.EXTRA_EMAIL, arrayOf(address))
-                .putExtra(Intent.EXTRA_SUBJECT, subject)
-            try { context.startActivity(mail) } catch (_: ActivityNotFoundException) { aboutMessage = R.string.about_contact_no_app to "" }
+            if (!ExternalLinks.email(context, address, subject)) aboutMessage = R.string.about_contact_no_app to ""
         }
         aboutMessage?.let { (res, arg) ->
             Text(

@@ -82,4 +82,33 @@ class ExternalLinksTest {
         shadowOf(app).checkActivities(true)
         assertFalse(ExternalLinks.open(app, page))
     }
+
+    @Test fun aNotificationsPageOpensInTheBrowserByTheSameIntent() {
+        val i = ExternalLinks.browserIntent(page)
+        assertEquals(Intent.ACTION_VIEW, i.action)
+        assertEquals(page, i.data)
+        assertTrue(i.hasCategory(Intent.CATEGORY_BROWSABLE))
+    }
+
+    @Test fun emailOpensTheMailAppWithTheAddressAndSubject() {
+        assertTrue(ExternalLinks.email(app, "hello@example.com", "Roastbook 1.0"))
+        val i = opened()
+        assertEquals(Intent.ACTION_SENDTO, i.action)
+        assertEquals("mailto:", i.dataString)
+        assertEquals(listOf("hello@example.com"), i.getStringArrayExtra(Intent.EXTRA_EMAIL)!!.toList())
+        assertEquals("Roastbook 1.0", i.getStringExtra(Intent.EXTRA_SUBJECT))
+    }
+
+    @Test fun withNoMailAppTheCallerIsTold() {
+        shadowOf(app).checkActivities(true)
+        assertFalse(ExternalLinks.email(app, "hello@example.com", "x"))
+    }
+
+    /** Pages and email leave the app only through this module: no view or send intent is built elsewhere. */
+    @Test fun noOtherCodeOpensAPageOrAnEmailItself() {
+        val src = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
+        val hits = src.walk().filter { it.extension == "kt" && it.name != "ExternalLinks.kt" }
+            .flatMap { f -> listOf("ACTION_VIEW", "ACTION_SENDTO").filter { it in f.readText() }.map { "${f.name}: $it" } }.toList()
+        assertEquals(emptyList<String>(), hits)
+    }
 }
