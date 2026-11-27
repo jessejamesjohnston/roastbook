@@ -756,6 +756,18 @@ class SettingsScreenTest {
         assertEquals("the sentence describes these two folders", listOf("file:autobackup/", "file:datastore/"), cloud)
     }
 
+    /** A settings toggle row: at least 56dp, a 16sp Medium title over a 14sp hint (app-standard section 12, rule 11). */
+    @Test fun aSwitchRowUsesTheHouseRowNumbers() {
+        show()
+        val row = text(R.string.settings_high_contrast).performScrollTo().fetchSemanticsNode()
+        val density = context.resources.displayMetrics.density
+        assertTrue("at least 56dp: ${row.size.height / density}", row.size.height / density >= 56f - 0.5f)
+        val title = style(compose.onNodeWithText(str(R.string.settings_high_contrast), useUnmergedTree = true))
+        assertEquals(16f, title.fontSize.value, 0.01f)
+        assertEquals(androidx.compose.ui.text.font.FontWeight.Medium, title.fontWeight)
+        assertEquals(14f, style(compose.onNodeWithText(str(R.string.settings_high_contrast_hint), useUnmergedTree = true)).fontSize.value, 0.01f)
+    }
+
     @Test fun theLicensesRowOpensTheLicensesScreen() {
         show()
         aboutRow(R.string.settings_licenses, R.string.about_licenses_hint, R.string.about_row).performClick()

@@ -42,6 +42,7 @@ import dev.roastbook.app.R
 import dev.roastbook.app.data.prefs.ThemeMode
 import dev.roastbook.app.data.prefs.UserSettings
 import dev.roastbook.app.ui.theme.AppLanguage
+import dev.roastbook.app.ui.theme.RowTitleStyle
 
 /** Settings > Appearance: theme (System default), high contrast, and the per-app language. */
 @Composable
@@ -79,16 +80,16 @@ fun AppearanceSection(settings: UserSettings, onThemeMode: (ThemeMode) -> Unit, 
     if (AppLanguage.available) {
         Spacer(Modifier.height(4.dp))
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
+            Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(RoundedCornerShape(12.dp))
                 .focusRing(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClickLabel = stringResource(R.string.settings_language_change)) { languagePicker = true }
-                .padding(vertical = 6.dp),
+                .padding(vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.settings_language), style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.settings_language), style = RowTitleStyle)
                 Text(
                     language?.let { AppLanguage.displayName(it) } ?: stringResource(R.string.settings_language_device),
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -130,20 +131,20 @@ fun AppearanceSection(settings: UserSettings, onThemeMode: (ThemeMode) -> Unit, 
 
 /**
  * A settings toggle: the whole row is one switch for touch, keyboard and TalkBack (it reads the
- * title, the hint and the on/off state together), and the row is at least 48 dp tall.
+ * title, the hint and the on/off state together), and the row is at least 56 dp tall.
  */
 @Composable
 fun SwitchRow(title: String, hint: String?, checked: Boolean, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
-            .focusRing().toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChange)
-            .padding(vertical = 6.dp),
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(RoundedCornerShape(12.dp))
+            .focusRing(RoundedCornerShape(12.dp)).toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChange)
+            .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f).padding(end = 12.dp)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge,
+            Text(title, style = RowTitleStyle,
                 color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
-            if (hint != null) Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (hint != null) Text(hint, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Switch(checked = checked, onCheckedChange = null, enabled = enabled)
     }
