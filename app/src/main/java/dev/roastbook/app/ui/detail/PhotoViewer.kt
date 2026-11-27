@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
@@ -113,7 +114,12 @@ fun PhotoViewer(title: String, files: List<File>, start: Int, onClose: () -> Uni
                     },
                 )
             }
-            Row(Modifier.fillMaxWidth().safeDrawingPadding().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            // A dark fade behind the bar keeps Close and the count readable over a light or zoomed photo.
+            Row(
+                Modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent)))
+                    .safeDrawingPadding().padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 FilledTonalIconButton(onClick = onClose) {
                     Icon(Icons.Default.Close, stringResource(R.string.photo_viewer_close))
                 }
