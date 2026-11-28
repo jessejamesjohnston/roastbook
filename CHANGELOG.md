@@ -4,7 +4,7 @@ All notable changes to Roastbook are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow the app's
 `versionName`. Versions 0.2.0 to 0.3.5 were private test builds and were not published.
 
-## [0.4.1] - Unreleased
+## [0.4.1] - 2026-11-28
 
 ### Added
 
